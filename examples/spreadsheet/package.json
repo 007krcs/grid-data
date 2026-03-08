@@ -1,0 +1,34 @@
+{
+  "name": "@gridstorm/spreadsheet-demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@gridstorm/core": "workspace:*",
+    "@gridstorm/dom-renderer": "workspace:*",
+    "@gridstorm/react": "workspace:*",
+    "@gridstorm/plugin-sorting": "workspace:*",
+    "@gridstorm/plugin-filtering": "workspace:*",
+    "@gridstorm/plugin-selection": "workspace:*",
+    "@gridstorm/plugin-editing": "workspace:*",
+    "@gridstorm/plugin-clipboard": "workspace:*",
+    "@gridstorm/plugin-column-resize": "workspace:*",
+    "@gridstorm/plugin-column-pinning": "workspace:*",
+    "@gridstorm/plugin-context-menu": "workspace:*",
+    "@gridstorm/theme-default": "workspace:*",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "typescript": "^5.5.0",
+    "vite": "^5.4.0"
+  }
+}

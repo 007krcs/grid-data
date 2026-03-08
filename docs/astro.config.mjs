@@ -53,6 +53,12 @@ export default defineConfig({
           ],
         },
         {
+          label: 'Guides',
+          items: [
+            { label: 'Migrate from AG Grid', slug: 'guides/migration-from-ag-grid' },
+          ],
+        },
+        {
           label: 'API Reference',
           items: [
             { label: 'GridConfig', slug: 'api/grid-config' },

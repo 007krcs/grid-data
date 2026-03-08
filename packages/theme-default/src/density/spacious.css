@@ -1,0 +1,12 @@
+/* GridStorm Density: Spacious */
+.gs-root[data-density='spacious'],
+.gs-density-spacious .gs-root {
+  --gs-size-row-height: 56px;
+  --gs-size-header-height: 64px;
+  --gs-spacing-cell-horizontal: 16px;
+  --gs-spacing-cell-vertical: 4px;
+  --gs-spacing-header-horizontal: 16px;
+  --gs-font-size: 14px;
+  --gs-font-size-header: 14px;
+  --gs-line-height: 1.6;
+}

@@ -1,0 +1,44 @@
+{
+  "name": "@gridstorm/theme-default",
+  "version": "0.1.0",
+  "description": "GridStorm default theme with CSS custom properties",
+  "type": "module",
+  "main": "./src/index.css",
+  "exports": {
+    ".": "./src/index.css",
+    "./light": "./src/light.css",
+    "./dark": "./src/dark.css",
+    "./high-contrast": "./src/high-contrast.css",
+    "./compact": "./src/density/compact.css",
+    "./comfortable": "./src/density/comfortable.css",
+    "./spacious": "./src/density/spacious.css"
+  },
+  "files": [
+    "src"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "datagrid",
+    "theme",
+    "css-variables",
+    "dark-mode",
+    "gridstorm"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gridstorm/gridstorm.git",
+    "directory": "packages/theme-default"
+  },
+  "bugs": {
+    "url": "https://github.com/gridstorm/gridstorm/issues"
+  },
+  "homepage": "https://gridstorm.dev",
+  "author": {
+    "name": "GridStorm",
+    "url": "https://gridstorm.dev"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/gridstorm"
+  }
+}

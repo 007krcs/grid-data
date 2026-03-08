@@ -1,0 +1,197 @@
+/* ═══════════════════════════════════════════════════════════
+   GridStorm Base Structural Styles
+   Layout and structural CSS. Does not include color/theme values.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Root ── */
+.gs-root {
+  font-family: var(--gs-font-family);
+  font-size: var(--gs-font-size);
+  line-height: var(--gs-line-height);
+  color: var(--gs-color-foreground);
+  background-color: var(--gs-color-background);
+  border: var(--gs-border-width) solid var(--gs-color-border);
+  border-radius: var(--gs-border-radius);
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.gs-root *,
+.gs-root *::before,
+.gs-root *::after {
+  box-sizing: border-box;
+}
+
+/* ── Header ── */
+.gs-header {
+  background-color: var(--gs-color-header-bg);
+  border-bottom: var(--gs-border-width) solid var(--gs-color-header-border);
+  overflow: hidden;
+  position: sticky;
+  top: 0;
+  z-index: var(--gs-z-header);
+}
+
+.gs-header-row {
+  display: flex;
+  height: var(--gs-size-header-height);
+  align-items: center;
+}
+
+.gs-header-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 var(--gs-spacing-header-horizontal);
+  font-weight: var(--gs-font-weight-header);
+  font-size: var(--gs-font-size-header);
+  color: var(--gs-color-header-fg);
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-right: var(--gs-border-width) solid var(--gs-color-border);
+  transition: background-color var(--gs-transition-duration) var(--gs-transition-easing);
+}
+
+.gs-header-cell:hover {
+  background-color: var(--gs-color-header-hover);
+}
+
+.gs-header-cell[aria-sort] {
+  cursor: pointer;
+}
+
+.gs-sort-icon {
+  font-size: 10px;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+/* ── Body ── */
+.gs-body-viewport {
+  overflow: auto;
+  position: relative;
+  flex: 1;
+  contain: strict;
+}
+
+.gs-body {
+  position: relative;
+  will-change: transform;
+}
+
+/* ── Row ── */
+.gs-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  background-color: var(--gs-color-row-bg);
+  border-bottom: var(--gs-border-width) solid var(--gs-color-border);
+  transition: background-color var(--gs-transition-duration) var(--gs-transition-easing);
+}
+
+.gs-row:nth-child(even) {
+  background-color: var(--gs-color-row-bg-alt);
+}
+
+.gs-row:hover {
+  background-color: var(--gs-color-row-bg-hover);
+}
+
+.gs-row-selected,
+.gs-row[aria-selected='true'] {
+  background-color: var(--gs-color-row-bg-selected);
+}
+
+.gs-row-selected:hover,
+.gs-row[aria-selected='true']:hover {
+  background-color: var(--gs-color-row-bg-selected-hover);
+}
+
+/* ── Cell ── */
+.gs-cell {
+  padding: var(--gs-spacing-cell-vertical) var(--gs-spacing-cell-horizontal);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-right: var(--gs-border-width) solid var(--gs-color-border);
+  color: var(--gs-color-row-fg);
+}
+
+.gs-cell:focus {
+  outline: none;
+  box-shadow: var(--gs-shadow-focus-ring);
+  z-index: 1;
+  position: relative;
+}
+
+.gs-cell:last-child {
+  border-right: none;
+}
+
+/* ── Scrollbar ── */
+.gs-body-viewport::-webkit-scrollbar {
+  width: var(--gs-size-scrollbar-width);
+  height: var(--gs-size-scrollbar-width);
+}
+
+.gs-body-viewport::-webkit-scrollbar-track {
+  background: var(--gs-scrollbar-track);
+}
+
+.gs-body-viewport::-webkit-scrollbar-thumb {
+  background: var(--gs-scrollbar-thumb);
+  border-radius: calc(var(--gs-size-scrollbar-width) / 2);
+}
+
+.gs-body-viewport::-webkit-scrollbar-thumb:hover {
+  background: var(--gs-scrollbar-thumb-hover);
+}
+
+/* ── Overlay ── */
+.gs-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--gs-color-overlay-bg);
+  color: var(--gs-color-overlay-fg);
+  z-index: var(--gs-z-overlay);
+  font-size: var(--gs-font-size);
+}
+
+/* ── Wrapper ── */
+.gs-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ── Height spacer ── */
+.gs-height-spacer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  pointer-events: none;
+}
+
+/* ── Container ── */
+.gs-container {
+  position: relative;
+}
+
+/* ── Accessibility: Focus visible ── */
+.gs-cell:focus-visible {
+  box-shadow: var(--gs-shadow-focus-ring);
+  z-index: 1;
+  position: relative;
+}

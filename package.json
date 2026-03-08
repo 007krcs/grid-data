@@ -1,0 +1,45 @@
+{
+  "name": "gridstorm",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Next-generation, framework-agnostic data grid platform",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gridstorm/gridstorm.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gridstorm/gridstorm/issues"
+  },
+  "homepage": "https://gridstorm.dev",
+  "author": {
+    "name": "GridStorm",
+    "url": "https://gridstorm.dev"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "pnpm -r --filter='./packages/*' run build",
+    "build:core": "pnpm --filter @gridstorm/core run build",
+    "build:renderer": "pnpm --filter @gridstorm/dom-renderer run build",
+    "build:react": "pnpm --filter @gridstorm/react run build",
+    "dev": "pnpm -r --parallel --filter='./packages/*' run dev",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "lint": "eslint packages/*/src --ext .ts,.tsx",
+    "typecheck": "pnpm -r run typecheck",
+    "clean": "pnpm -r run clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.3.0",
+    "tsup": "^8.2.0",
+    "jsdom": "^25.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --version)",
+      "Bash(npm --version)",
+      "Bash(pnpm install)",
+      "Bash(pnpm --filter @gridstorm/core run build)",
+      "Bash(pnpm --filter @gridstorm/dom-renderer run build)",
+      "Bash(pnpm --filter @gridstorm/plugin-sorting run build)",
+      "Bash(pnpm --filter @gridstorm/react run build)",
+      "Bash(wc -l /c/Users/chand/OneDrive/Desktop/grid-data/packages/core/src/**/*.ts)",
+      "Bash(wc -l /c/Users/chand/OneDrive/Desktop/grid-data/packages/theme-default/src/*.css)",
+      "Bash(pnpm build)",
+      "Bash(pnpm -r ls --depth 0)",
+      "Bash(pnpm -r run build)",
+      "Bash(npx vitest run)",
+      "Bash(python -c \"import json,sys; data=json.load\\(sys.stdin\\); print\\(data[0][''text'']\\)\")",
+      "Bash(npx vite)",
+      "Bash(timeout 5)",
+      "Bash(ls -la /c/Users/chand/OneDrive/Desktop/grid-data/.changeset*)",
+      "Bash(wc -l /c/Users/chand/OneDrive/Desktop/grid-data/packages/*/src/*.ts)",
+      "Bash(xargs wc -l)",
+      "Bash(du -sh /c/Users/chand/OneDrive/Desktop/grid-data/packages/*/src)",
+      "Bash(done)",
+      "Bash(ls -1 /c/Users/chand/OneDrive/Desktop/grid-data/packages/core/src/*.ts)",
+      "Bash(npx vitest run --reporter=verbose)",
+      "Bash(node -e \":*)",
+      "Bash(npx vitest run packages/plugin-aggregation/src/__tests__/aggregation-plugin.test.ts)",
+      "Bash(npx vitest run packages/plugin-clipboard/src/__tests__/clipboard-plugin.test.ts)",
+      "Bash(npx vitest run packages/plugin-pivoting/src/__tests__/pivoting-plugin.test.ts)",
+      "Bash(npx vitest run packages/plugin-filtering/src/__tests__/filtering-plugin.test.ts)",
+      "Bash(npx vitest run packages/plugin-grouping/src/__tests__/grouping-plugin.test.ts)",
+      "Bash(pnpm -r --filter='./packages/*' run build)",
+      "Bash(npx vitest run packages/dom-renderer/src/__tests__/integration.test.ts)",
+      "Bash(npx vitest run packages/dom-renderer/src/__tests__/renderer.test.ts)",
+      "Bash(npx vite build)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npm install)"
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+/* GridStorm Density: Comfortable (default) */
+.gs-root[data-density='comfortable'],
+.gs-density-comfortable .gs-root {
+  --gs-size-row-height: 40px;
+  --gs-size-header-height: 48px;
+  --gs-spacing-cell-horizontal: 12px;
+  --gs-spacing-cell-vertical: 0px;
+  --gs-spacing-header-horizontal: 12px;
+  --gs-font-size: 13px;
+  --gs-font-size-header: 13px;
+}

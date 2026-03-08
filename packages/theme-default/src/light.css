@@ -1,0 +1,26 @@
+/* ═══════════════════════════════════════════════
+   GridStorm Light Theme
+   Default color scheme. Applied automatically.
+   ═══════════════════════════════════════════════ */
+
+.gs-root,
+.gs-root[data-theme='light'] {
+  --gs-color-background: #ffffff;
+  --gs-color-foreground: #1a1a1a;
+  --gs-color-border: #e2e8f0;
+  --gs-color-accent: #3b82f6;
+  --gs-color-header-bg: #f8fafc;
+  --gs-color-header-fg: #475569;
+  --gs-color-header-border: #e2e8f0;
+  --gs-color-header-hover: #f1f5f9;
+  --gs-color-row-bg: #ffffff;
+  --gs-color-row-bg-alt: #f8fafc;
+  --gs-color-row-bg-hover: #f1f5f9;
+  --gs-color-row-bg-selected: #eff6ff;
+  --gs-color-row-bg-selected-hover: #dbeafe;
+  --gs-color-row-fg: #1e293b;
+  --gs-color-overlay-bg: rgba(255, 255, 255, 0.85);
+  --gs-color-popup-bg: #ffffff;
+  --gs-scrollbar-thumb: #cbd5e1;
+  --gs-scrollbar-thumb-hover: #94a3b8;
+}

@@ -1,0 +1,13 @@
+/* ═══════════════════════════════════════════════════════════
+   GridStorm Default Theme — Entry Point
+   Import this file to get the complete default theme.
+   ═══════════════════════════════════════════════════════════ */
+
+@import './tokens.css';
+@import './base.css';
+@import './light.css';
+@import './dark.css';
+@import './high-contrast.css';
+@import './density/compact.css';
+@import './density/comfortable.css';
+@import './density/spacious.css';

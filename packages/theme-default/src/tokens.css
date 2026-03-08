@@ -1,0 +1,96 @@
+/* ═══════════════════════════════════════════════════════════
+   GridStorm Design Tokens
+   All visual properties are controlled by CSS custom properties.
+   Override any token to customize the grid appearance.
+   ═══════════════════════════════════════════════════════════ */
+
+:root,
+.gs-root {
+  /* ── Colors: Base ── */
+  --gs-color-background: #ffffff;
+  --gs-color-foreground: #1a1a1a;
+  --gs-color-border: #e2e8f0;
+  --gs-color-accent: #3b82f6;
+  --gs-color-accent-hover: #2563eb;
+  --gs-color-error: #ef4444;
+  --gs-color-warning: #f59e0b;
+  --gs-color-success: #22c55e;
+  --gs-color-muted: #94a3b8;
+
+  /* ── Colors: Header ── */
+  --gs-color-header-bg: #f8fafc;
+  --gs-color-header-fg: #475569;
+  --gs-color-header-border: #e2e8f0;
+  --gs-color-header-hover: #f1f5f9;
+
+  /* ── Colors: Row ── */
+  --gs-color-row-bg: #ffffff;
+  --gs-color-row-bg-alt: #f8fafc;
+  --gs-color-row-bg-hover: #f1f5f9;
+  --gs-color-row-bg-selected: #eff6ff;
+  --gs-color-row-bg-selected-hover: #dbeafe;
+  --gs-color-row-fg: #1e293b;
+
+  /* ── Colors: Cell ── */
+  --gs-color-cell-focus-ring: rgba(59, 130, 246, 0.4);
+  --gs-color-cell-editing-bg: #ffffff;
+  --gs-color-cell-editing-border: #3b82f6;
+
+  /* ── Colors: Overlay ── */
+  --gs-color-overlay-bg: rgba(255, 255, 255, 0.85);
+  --gs-color-overlay-fg: #64748b;
+
+  /* ── Colors: Popup / Menu ── */
+  --gs-color-popup-bg: #ffffff;
+  --gs-color-popup-border: #e2e8f0;
+  --gs-color-popup-shadow: rgba(0, 0, 0, 0.1);
+  --gs-color-menu-item-hover: #f1f5f9;
+
+  /* ── Typography ── */
+  --gs-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --gs-font-size: 13px;
+  --gs-font-size-header: 13px;
+  --gs-font-size-small: 11px;
+  --gs-font-weight-normal: 400;
+  --gs-font-weight-header: 600;
+  --gs-font-weight-bold: 700;
+  --gs-line-height: 1.5;
+
+  /* ── Spacing ── */
+  --gs-spacing-cell-horizontal: 12px;
+  --gs-spacing-cell-vertical: 0px;
+  --gs-spacing-header-horizontal: 12px;
+
+  /* ── Sizing ── */
+  --gs-size-row-height: 40px;
+  --gs-size-header-height: 48px;
+  --gs-size-scrollbar-width: 8px;
+  --gs-size-icon: 16px;
+  --gs-size-checkbox: 16px;
+
+  /* ── Borders ── */
+  --gs-border-width: 1px;
+  --gs-border-radius: 0px;
+  --gs-border-radius-popup: 8px;
+
+  /* ── Shadows ── */
+  --gs-shadow-focus-ring: 0 0 0 2px var(--gs-color-cell-focus-ring);
+  --gs-shadow-popup: 0 4px 16px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.08);
+
+  /* ── Z-Index ── */
+  --gs-z-header: 2;
+  --gs-z-pinned: 3;
+  --gs-z-floating-filter: 4;
+  --gs-z-overlay: 10;
+  --gs-z-popup: 20;
+  --gs-z-modal: 30;
+
+  /* ── Transitions ── */
+  --gs-transition-duration: 150ms;
+  --gs-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Scrollbar ── */
+  --gs-scrollbar-track: transparent;
+  --gs-scrollbar-thumb: #cbd5e1;
+  --gs-scrollbar-thumb-hover: #94a3b8;
+}

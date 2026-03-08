@@ -1,0 +1,31 @@
+/* ═══════════════════════════════════════════════
+   GridStorm High Contrast Theme
+   For accessibility. Apply with data-theme="high-contrast".
+   ═══════════════════════════════════════════════ */
+
+.gs-root[data-theme='high-contrast'],
+.gs-theme-high-contrast .gs-root {
+  --gs-color-background: #000000;
+  --gs-color-foreground: #ffffff;
+  --gs-color-border: #ffffff;
+  --gs-color-accent: #ffff00;
+
+  --gs-color-header-bg: #000000;
+  --gs-color-header-fg: #ffffff;
+  --gs-color-header-border: #ffffff;
+  --gs-color-header-hover: #333333;
+
+  --gs-color-row-bg: #000000;
+  --gs-color-row-bg-alt: #1a1a1a;
+  --gs-color-row-bg-hover: #333333;
+  --gs-color-row-bg-selected: #003366;
+  --gs-color-row-bg-selected-hover: #004488;
+  --gs-color-row-fg: #ffffff;
+
+  --gs-color-cell-focus-ring: rgba(255, 255, 0, 0.6);
+
+  --gs-border-width: 2px;
+  --gs-font-weight-header: 700;
+
+  --gs-shadow-focus-ring: 0 0 0 3px var(--gs-color-accent);
+}

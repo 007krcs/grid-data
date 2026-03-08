@@ -1,0 +1,11 @@
+/* GridStorm Density: Compact */
+.gs-root[data-density='compact'],
+.gs-density-compact .gs-root {
+  --gs-size-row-height: 28px;
+  --gs-size-header-height: 32px;
+  --gs-spacing-cell-horizontal: 8px;
+  --gs-spacing-cell-vertical: 2px;
+  --gs-spacing-header-horizontal: 8px;
+  --gs-font-size: 12px;
+  --gs-font-size-header: 12px;
+}

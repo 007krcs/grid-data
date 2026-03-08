@@ -68,24 +68,24 @@ AG Grid has 10+ years of engineering, hundreds of contributors, and thousands of
 ### Three-Layer Product Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    ENTERPRISE LICENSE ($)                        │
+┌────────────────────────────────────────────────────────────────┐
+│                    ENTERPRISE LICENSE ($)                      │
 │  @gridstorm/plugin-pivot      @gridstorm/plugin-excel-export   │
 │  @gridstorm/plugin-charts     @gridstorm/plugin-ssrm           │
 │  @gridstorm/plugin-clipboard  @gridstorm/plugin-master-detail  │
-│  Priority support, SLA, custom development                      │
-├─────────────────────────────────────────────────────────────────┤
-│                    COMMUNITY (MIT)                               │
+│  Priority support, SLA, custom development                     │
+├────────────────────────────────────────────────────────────────┤
+│                    COMMUNITY (MIT)                             │
 │  @gridstorm/plugin-sorting    @gridstorm/plugin-filtering      │
 │  @gridstorm/plugin-selection  @gridstorm/plugin-editing        │
 │  @gridstorm/plugin-column-resize  @gridstorm/plugin-pagination │
 │  @gridstorm/plugin-row-grouping                                │
-├─────────────────────────────────────────────────────────────────┤
-│                    CORE (MIT, always free)                       │
+├────────────────────────────────────────────────────────────────┤
+│                    CORE (MIT, always free)                     │
 │  @gridstorm/core              @gridstorm/dom-renderer          │
 │  @gridstorm/react             @gridstorm/vue                   │
 │  @gridstorm/angular           @gridstorm/theme-default         │
-└─────────────────────────────────────────────────────────────────┘
+└────────────────────────────────────────────────────────────────┘
 ```
 
 ### Free vs Premium Split — Decision Framework
@@ -132,47 +132,47 @@ A feature goes premium if it meets **two or more** of these criteria:
 ### Layered Architecture Diagram
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                     FRAMEWORK ADAPTERS                           │
+┌────────────────────────────────────────────────────────────────┐
+│                     FRAMEWORK ADAPTERS                         │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐        │
 │  │  React   │  │   Vue    │  │ Angular  │  │  Svelte  │        │
 │  │  4.5KB   │  │  ~4KB    │  │  ~5KB    │  │  ~3KB    │        │
 │  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘        │
-│       │              │              │              │              │
-├───────┴──────────────┴──────────────┴──────────────┴──────────────┤
-│                       DOM RENDERER (21KB)                         │
-│  ┌───────────────┐  ┌───────────────┐  ┌────────────────────┐   │
-│  │ Virtual Scroll │  │ Scroll Mgr    │  │ DOM Renderer       │   │
-│  │ - fixed height │  │ - RAF throttle│  │ - row pooling      │   │
-│  │ - variable     │  │ - sync targets│  │ - ARIA roles       │   │
-│  │ - binary search│  │ - momentum    │  │ - cell pipeline    │   │
-│  └───────────────┘  └───────────────┘  └────────────────────┘   │
-├──────────────────────────────────────────────────────────────────┤
-│                     FEATURE PLUGINS (2-8KB each)                 │
+│       │              │              │              │           │
+├───────┴──────────────┴──────────────┴──────────────┴───────────┤
+│                       DOM RENDERER (21KB)                      │
+│  ┌────────────────┐  ┌────────────────┐   ┌───────────────────┐│
+│  │ Virtual Scroll │  │ Scroll Mgr     │   │DOM Renderer       ││
+│  │ - fixed height │  │ - RAF throttle │   │ - row pooling     ││
+│  │ - variable     │  │ - sync targets │   │ - ARIA roles      ││
+│  │ - binary search│  │ - momentum     │   │ - cell pipeline   ││
+│  └────────────────┘  └────────────────┘   └───────────────────┘│
+├────────────────────────────────────────────────────────────────┤
+│                     FEATURE PLUGINS (2-8KB each)               │
 │  ┌────────┐ ┌──────────┐ ┌───────────┐ ┌────────┐ ┌─────────┐  │
 │  │Sorting │ │Filtering │ │Selection  │ │Editing │ │Grouping │  │
 │  │2.4KB   │ │          │ │           │ │        │ │         │  │
 │  └────────┘ └──────────┘ └───────────┘ └────────┘ └─────────┘  │
-├──────────────────────────────────────────────────────────────────┤
-│                       CORE ENGINE (35KB)                         │
+├────────────────────────────────────────────────────────────────┤
+│                       CORE ENGINE (35KB)                       │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐   │
 │  │  Store   │ │ EventBus │ │ Command  │ │ Plugin Manager   │   │
 │  │  (state) │ │ (events) │ │ Bus      │ │ - topological    │   │
 │  │  - batch │ │ - typed  │ │ - middle │ │   sort           │   │
 │  │  - select│ │ - safe   │ │   ware   │ │ - lifecycle      │   │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────────────┘   │
-│  ┌──────────────────────┐ ┌──────────────────────────────────┐  │
-│  │ Column Model         │ │ Row Model                        │  │
-│  │ - resolve defs       │ │ - create nodes                   │  │
-│  │ - flex sizing        │ │ - sort (TimSort-style)           │  │
-│  │ - partition pinned   │ │ - filter (compiled predicates)   │  │
-│  │ - update/find        │ │ - position assignment            │  │
-│  └──────────────────────┘ └──────────────────────────────────┘  │
-├──────────────────────────────────────────────────────────────────┤
-│                       THEME SYSTEM (CSS only)                    │
-│  70+ CSS custom properties, 3 themes, 3 density modes           │
-│  Runtime-switchable via data-theme attribute, zero JS            │
-└──────────────────────────────────────────────────────────────────┘
+│  ┌──────────────────────┐ ┌──────────────────────────────────┐ │
+│  │ Column Model         │ │ Row Model                        │ │
+│  │ - resolve defs       │ │ - create nodes                   │ │
+│  │ - flex sizing        │ │ - sort (TimSort-style)           │ │
+│  │ - partition pinned   │ │ - filter (compiled predicates)   │ │
+│  │ - update/find        │ │ - position assignment            │ │
+│  └──────────────────────┘ └──────────────────────────────────┘ │
+├────────────────────────────────────────────────────────────────┤
+│                       THEME SYSTEM (CSS only)                  │
+│  70+ CSS custom properties, 3 themes, 3 density modes          │
+│  Runtime-switchable via data-theme attribute, zero JS          │
+└────────────────────────────────────────────────────────────────┘
 ```
 
 ### Unidirectional Data Flow

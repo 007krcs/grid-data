@@ -14,7 +14,7 @@ echo "Output: $OUT_DIR"
 
 # Clean output (remove subdirs individually if top-level dir is locked)
 rm -rf "$OUT_DIR" 2>/dev/null || {
-  rm -rf "$OUT_DIR"/playground "$OUT_DIR"/react-demo "$OUT_DIR"/financial-trading "$OUT_DIR"/spreadsheet "$OUT_DIR"/analytics-explorer "$OUT_DIR"/index.html 2>/dev/null
+  rm -rf "$OUT_DIR"/playground "$OUT_DIR"/react-demo "$OUT_DIR"/financial-trading "$OUT_DIR"/spreadsheet "$OUT_DIR"/analytics-explorer "$OUT_DIR"/feature-showcase "$OUT_DIR"/index.html 2>/dev/null
 }
 mkdir -p "$OUT_DIR"
 
@@ -22,7 +22,7 @@ mkdir -p "$OUT_DIR"
 cp "$SCRIPT_DIR/hub/index.html" "$OUT_DIR/index.html"
 
 # Build each example app
-APPS="playground react-demo financial-trading spreadsheet analytics-explorer"
+APPS="playground react-demo financial-trading spreadsheet analytics-explorer feature-showcase"
 
 for app in $APPS; do
   echo ""

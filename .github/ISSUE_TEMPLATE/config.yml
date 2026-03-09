@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://gridstorm.dev/docs
+    about: Check the documentation for guides, API reference, and examples.
+  - name: Discussions
+    url: https://github.com/gridstorm/gridstorm/discussions
+    about: Ask questions, share ideas, and connect with the community.

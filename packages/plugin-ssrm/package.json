@@ -19,7 +19,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE.md"
   ],
   "scripts": {
     "build": "tsup",
@@ -36,7 +37,10 @@
     "typescript": "^5.5.0"
   },
   "sideEffects": false,
-  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "SEE LICENSE IN LICENSE.md",
   "keywords": [
     "datagrid",
     "server-side",
@@ -44,15 +48,16 @@
     "lazy-loading",
     "infinite-scroll",
     "plugin",
-    "gridstorm"
+    "gridstorm",
+    "enterprise"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/gridstorm/gridstorm.git",
+    "url": "https://github.com/007krcs/grid-data.git",
     "directory": "packages/plugin-ssrm"
   },
   "bugs": {
-    "url": "https://github.com/gridstorm/gridstorm/issues"
+    "url": "https://github.com/007krcs/grid-data/issues"
   },
   "homepage": "https://gridstorm.dev",
   "author": {

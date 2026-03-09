@@ -3,11 +3,9 @@
   "changelog": "@changesets/cli/changelog",
   "commit": false,
   "fixed": [],
-  "linked": [
-    ["@gridstorm/core", "@gridstorm/dom-renderer", "@gridstorm/react"]
-  ],
+  "linked": [["@gridstorm/*"]],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": []
+  "ignore": ["@gridstorm/benchmarks"]
 }

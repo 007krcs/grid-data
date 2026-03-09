@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GridStorm — Live Demos</title>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --surface-hover: #1a1a1a;
+      --border: #2a2a2a;
+      --text: #fafafa;
+      --text-muted: #888;
+      --accent: #3b82f6;
+      --accent-hover: #60a5fa;
+      --green: #22c55e;
+      --purple: #a855f7;
+      --orange: #f97316;
+      --pink: #ec4899;
+      --cyan: #06b6d4;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 60px 24px;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .badge span {
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      text-decoration: none;
+      color: var(--text);
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card:hover {
+      background: var(--surface-hover);
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(59, 130, 246, 0.1);
+    }
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+    }
+
+    .card h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      flex: 1;
+    }
+
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .tag {
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--accent);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 64px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 640px) {
+      .hero h1 { font-size: 2rem; }
+      .container { padding: 40px 16px; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <div class="badge"><span>26 packages</span> &middot; 699 tests &middot; TypeScript-native</div>
+      <h1>GridStorm Demos</h1>
+      <p>Explore live examples showcasing the plugin-first data grid platform. Each demo highlights different features and use cases.</p>
+    </div>
+
+    <div class="grid">
+      <a href="/playground/" class="card">
+        <div class="card-icon" style="background: rgba(168, 85, 247, 0.15);">🧪</div>
+        <h2>Playground</h2>
+        <p>Interactive code editor with live grid preview. Edit column definitions and plugin configurations in real-time with Monaco editor.</p>
+        <div class="card-tags">
+          <span class="tag">Monaco Editor</span>
+          <span class="tag">All Plugins</span>
+          <span class="tag">Live Code</span>
+        </div>
+      </a>
+
+      <a href="/financial-trading/" class="card">
+        <div class="card-icon" style="background: rgba(34, 197, 94, 0.15);">📈</div>
+        <h2>Financial Trading</h2>
+        <p>Real-time trading dashboard with live price updates, conditional cell formatting, sparkline indicators, and portfolio management.</p>
+        <div class="card-tags">
+          <span class="tag">Real-time</span>
+          <span class="tag">Cell Renderers</span>
+          <span class="tag">Sorting</span>
+        </div>
+      </a>
+
+      <a href="/analytics-explorer/" class="card">
+        <div class="card-icon" style="background: rgba(6, 182, 212, 0.15);">📊</div>
+        <h2>Analytics Explorer</h2>
+        <p>Data analytics dashboard with grouping, aggregation, filtering, pagination, and export capabilities for large datasets.</p>
+        <div class="card-tags">
+          <span class="tag">Grouping</span>
+          <span class="tag">Aggregation</span>
+          <span class="tag">Pagination</span>
+        </div>
+      </a>
+
+      <a href="/spreadsheet/" class="card">
+        <div class="card-icon" style="background: rgba(249, 115, 22, 0.15);">📋</div>
+        <h2>Spreadsheet</h2>
+        <p>Excel-like spreadsheet with inline cell editing, clipboard copy/paste, undo/redo, column resizing, and selection ranges.</p>
+        <div class="card-tags">
+          <span class="tag">Editing</span>
+          <span class="tag">Clipboard</span>
+          <span class="tag">Selection</span>
+        </div>
+      </a>
+
+      <a href="/react-demo/" class="card">
+        <div class="card-icon" style="background: rgba(59, 130, 246, 0.15);">⚛️</div>
+        <h2>React Demo</h2>
+        <p>Comprehensive React integration demo showcasing hooks, custom cell renderers, controlled state, theming, and all community plugins.</p>
+        <div class="card-tags">
+          <span class="tag">React Hooks</span>
+          <span class="tag">Theming</span>
+          <span class="tag">Full API</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="footer">
+      <p>Built with <a href="https://github.com/007krcs/grid-data" target="_blank">GridStorm</a> &mdash; The Modern Data Grid Platform</p>
+    </div>
+  </div>
+</body>
+</html>

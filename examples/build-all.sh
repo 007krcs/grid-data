@@ -12,8 +12,10 @@ echo "Building GridStorm demos..."
 echo "Root: $ROOT_DIR"
 echo "Output: $OUT_DIR"
 
-# Clean output
-rm -rf "$OUT_DIR"
+# Clean output (remove subdirs individually if top-level dir is locked)
+rm -rf "$OUT_DIR" 2>/dev/null || {
+  rm -rf "$OUT_DIR"/playground "$OUT_DIR"/react-demo "$OUT_DIR"/financial-trading "$OUT_DIR"/spreadsheet "$OUT_DIR"/analytics-explorer "$OUT_DIR"/index.html 2>/dev/null
+}
 mkdir -p "$OUT_DIR"
 
 # Copy hub landing page

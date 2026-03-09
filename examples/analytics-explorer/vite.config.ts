@@ -4,4 +4,5 @@ import { gridstormResolve } from '../shared/gridstorm-resolve';
 
 export default defineConfig({
   plugins: [gridstormResolve(), react()],
+  base: '/analytics-explorer/',
 });

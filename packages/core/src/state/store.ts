@@ -67,8 +67,47 @@ export class Store<TState> {
   }
 
   /** Run a selector against current state. */
-  select<TResult>(selector: Selector<TState, TResult>): TResult {
-    return selector(this.state);
+  select<TResult>(selector: Selector<TState, TResult>): TResult;
+  /**
+   * Subscribe to a specific slice of state. Only fires when the selected
+   * value changes (by reference equality).
+   *
+   * @param selector - Function that extracts a slice from the full state.
+   * @param listener - Callback invoked when the selected value changes.
+   * @returns An unsubscribe function.
+   *
+   * @example
+   * ```ts
+   * const unsub = store.select(
+   *   (state) => state.sortModel,
+   *   (next, prev) => console.log('Sort changed:', prev, '->', next),
+   * );
+   * // Later: unsub();
+   * ```
+   */
+  select<TResult>(
+    selector: Selector<TState, TResult>,
+    listener: (value: TResult, prevValue: TResult) => void,
+  ): () => void;
+  select<TResult>(
+    selector: Selector<TState, TResult>,
+    listener?: (value: TResult, prevValue: TResult) => void,
+  ): TResult | (() => void) {
+    if (!listener) {
+      // Original behavior: run selector and return result
+      return selector(this.state);
+    }
+
+    // Subscription mode: only notify when selected slice changes
+    let prevValue = selector(this.state);
+    return this.subscribe(() => {
+      const nextValue = selector(this.state);
+      if (nextValue !== prevValue) {
+        const prev = prevValue;
+        prevValue = nextValue;
+        listener(nextValue, prev);
+      }
+    });
   }
 
   private notify(): void {

@@ -114,6 +114,7 @@ export class PluginManager<TData = any> {
       setState: (updater) => self.store.setState(updater),
       subscribe: (listener) => self.store.subscribe(listener),
       batch: (fn) => self.store.batch(fn),
+      select: (selector: any, listener: any) => self.store.select(selector, listener),
     };
 
     const eventBusAccess: PluginEventBus<TData> = {
@@ -122,8 +123,11 @@ export class PluginManager<TData = any> {
     };
 
     const commandBusAccess: PluginCommandBus = {
-      dispatch: (type, payload) => self.commandBus.dispatch(type, payload),
-      registerHandler: (type, handler) => self.commandBus.registerHandler(type, handler),
+      dispatch: (type: any, payload: any) => self.commandBus.dispatch(type, payload),
+      dispatchAsync: (type: any, payload: any) => self.commandBus.dispatchAsync(type, payload),
+      registerHandler: (type: any, handler: any) => self.commandBus.registerHandler(type, handler),
+      registerAsyncHandler: (type: any, handler: any) =>
+        self.commandBus.registerAsyncHandler(type, handler),
     };
 
     return {

@@ -41,7 +41,10 @@ export type {
   PluginEventBus,
   PluginCommandBus,
   CommandHandler,
+  AsyncCommandHandler,
 } from './plugin';
+
+export type { CommandMap } from './commands';
 
 export type {
   GridEventMap,

@@ -1,0 +1,74 @@
+{
+  "name": "@gridstorm/vue",
+  "version": "0.1.0",
+  "description": "GridStorm Vue 3 adapter",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@gridstorm/core": "workspace:*",
+    "@gridstorm/dom-renderer": "workspace:*"
+  },
+  "peerDependencies": {
+    "vue": "^3.3.0"
+  },
+  "devDependencies": {
+    "vue": "^3.5.0",
+    "tsup": "^8.2.0",
+    "typescript": "^5.5.0"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "keywords": [
+    "datagrid",
+    "vue",
+    "vue3",
+    "vue-grid",
+    "vue-table",
+    "gridstorm",
+    "composables"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/007krcs/grid-data.git",
+    "directory": "packages/vue-adapter"
+  },
+  "bugs": {
+    "url": "https://github.com/007krcs/grid-data/issues"
+  },
+  "homepage": "https://gridstorm.dev",
+  "author": {
+    "name": "GridStorm",
+    "url": "https://gridstorm.dev"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/gridstorm"
+  }
+}

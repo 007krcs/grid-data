@@ -1,0 +1,11 @@
+export { I18nManager, createI18n } from './i18n-manager';
+export type { I18nConfig, LocaleStrings, LocaleFormatters } from './types';
+export { defaultStrings } from './locales/en';
+export { deStrings } from './locales/de';
+export { frStrings } from './locales/fr';
+export { esStrings } from './locales/es';
+export { jaStrings } from './locales/ja';
+export { arStrings } from './locales/ar';
+export { zhStrings } from './locales/zh';
+export { RTL_LOCALES, isRTL } from './rtl';
+export { createFormatters, type NumberFormatOptions, type DateFormatOptions } from './formatters';

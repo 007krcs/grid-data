@@ -1,7 +1,7 @@
 {
-  "name": "@gridstorm/plugin-clipboard",
+  "name": "@gridstorm/plugin-ssrm",
   "version": "0.1.0",
-  "description": "GridStorm clipboard plugin — copy, cut, paste with keyboard shortcuts",
+  "description": "Server-side row model plugin for GridStorm — lazy loading with block-based caching",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -39,15 +39,17 @@
   "license": "MIT",
   "keywords": [
     "datagrid",
-    "clipboard",
-    "copy-paste",
+    "server-side",
+    "ssrm",
+    "lazy-loading",
+    "infinite-scroll",
     "plugin",
     "gridstorm"
   ],
   "repository": {
     "type": "git",
     "url": "https://github.com/gridstorm/gridstorm.git",
-    "directory": "packages/plugin-clipboard"
+    "directory": "packages/plugin-ssrm"
   },
   "bugs": {
     "url": "https://github.com/gridstorm/gridstorm/issues"

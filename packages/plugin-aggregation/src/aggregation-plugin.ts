@@ -4,6 +4,7 @@
 
 import type { GridPlugin, PluginContext, ColumnState, RowNode } from '@gridstorm/core';
 import { getValueFromData } from '@gridstorm/core';
+import { validateLicense, createWatermark } from '@gridstorm/license';
 import type { AggregationPluginOptions, AggFunc } from './types';
 import { builtInAggFuncs } from './agg-functions';
 
@@ -23,6 +24,20 @@ export function AggregationPlugin(options: AggregationPluginOptions = {}): GridP
     dependencies: ['grouping'],
 
     install(ctx: PluginContext) {
+      // ── License validation ──
+      const licenseResult = validateLicense('aggregation');
+      let unsubLicenseWatermark: (() => void) | undefined;
+      if (!licenseResult.valid && !licenseResult.isDevelopment) {
+        console.warn(licenseResult.message);
+        unsubLicenseWatermark = ctx.eventBus.on('grid:ready', () => {
+          const container = document.querySelector<HTMLElement>('.gs-root');
+          if (container) createWatermark(container);
+        });
+      }
+      if (!licenseResult.pluginLicensed && !licenseResult.isDevelopment) {
+        console.warn(licenseResult.message);
+      }
+
       // ── Set aggregation function on a column ──
       const unregSet = ctx.commandBus.registerHandler(
         'agg:setColumnFunc',
@@ -65,6 +80,7 @@ export function AggregationPlugin(options: AggregationPluginOptions = {}): GridP
       });
 
       return () => {
+        unsubLicenseWatermark?.();
         unregSet();
         unregRemove();
         unregCompute();

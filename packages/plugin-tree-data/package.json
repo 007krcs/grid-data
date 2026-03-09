@@ -1,7 +1,7 @@
 {
-  "name": "@gridstorm/plugin-clipboard",
+  "name": "@gridstorm/plugin-tree-data",
   "version": "0.1.0",
-  "description": "GridStorm clipboard plugin — copy, cut, paste with keyboard shortcuts",
+  "description": "Tree data plugin for GridStorm — hierarchical parent-child row display",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -39,15 +39,16 @@
   "license": "MIT",
   "keywords": [
     "datagrid",
-    "clipboard",
-    "copy-paste",
+    "tree",
+    "hierarchical",
+    "tree-data",
     "plugin",
     "gridstorm"
   ],
   "repository": {
     "type": "git",
     "url": "https://github.com/gridstorm/gridstorm.git",
-    "directory": "packages/plugin-clipboard"
+    "directory": "packages/plugin-tree-data"
   },
   "bugs": {
     "url": "https://github.com/gridstorm/gridstorm/issues"

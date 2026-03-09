@@ -28,7 +28,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@gridstorm/core": "workspace:*"
+    "@gridstorm/core": "workspace:*",
+    "@gridstorm/license": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.2.0",

@@ -3,6 +3,7 @@
 // Generates secondary columns based on distinct values in pivot columns.
 
 import type { GridPlugin, PluginContext, ColumnState } from '@gridstorm/core';
+import { validateLicense, createWatermark } from '@gridstorm/license';
 import type { PivotPluginOptions, PivotState } from './types';
 import { generatePivotColumns } from './pivot-columns';
 
@@ -20,6 +21,20 @@ export function PivotPlugin(options: PivotPluginOptions = {}): GridPlugin {
     dependencies: ['aggregation'],
 
     install(ctx: PluginContext) {
+      // ── License validation ──
+      const licenseResult = validateLicense('pivoting');
+      let unsubLicenseWatermark: (() => void) | undefined;
+      if (!licenseResult.valid && !licenseResult.isDevelopment) {
+        console.warn(licenseResult.message);
+        unsubLicenseWatermark = ctx.eventBus.on('grid:ready', () => {
+          const container = document.querySelector<HTMLElement>('.gs-root');
+          if (container) createWatermark(container);
+        });
+      }
+      if (!licenseResult.pluginLicensed && !licenseResult.isDevelopment) {
+        console.warn(licenseResult.message);
+      }
+
       const initialState: PivotState = {
         pivotMode: initialPivotMode,
         pivotColumns: [],
@@ -98,6 +113,7 @@ export function PivotPlugin(options: PivotPluginOptions = {}): GridPlugin {
       );
 
       return () => {
+        unsubLicenseWatermark?.();
         unregEnable();
         unregDisable();
         unregAdd();

@@ -5,8 +5,11 @@
 import type { GridEngine, GridState, ColumnState, RowNode } from '@gridstorm/core';
 import { getValueFromData } from '@gridstorm/core';
 import { VirtualScroller } from './virtual-scroll';
+import { ColumnVirtualizer } from './column-virtualizer';
+import type { ColumnVirtualResult } from './column-virtualizer';
 import { ScrollManager } from './scroll-manager';
 import { KeyboardManager } from './keyboard-manager';
+import { isServer, safeResizeObserver } from './ssr';
 
 export interface DomRendererConfig {
   /** Container element to mount the grid into. */
@@ -38,6 +41,7 @@ export class DomRenderer {
 
   // Virtualization
   private scroller = new VirtualScroller();
+  private columnVirtualizer = new ColumnVirtualizer();
   private scrollManager = new ScrollManager();
   private keyboardManager = new KeyboardManager();
 
@@ -55,6 +59,7 @@ export class DomRenderer {
   // Last rendered state
   private lastStartIndex = -1;
   private lastEndIndex = -1;
+  private lastColumnResult: ColumnVirtualResult | null = null;
 
   constructor(config: DomRendererConfig) {
     this.engine = config.engine;
@@ -62,10 +67,13 @@ export class DomRenderer {
     this.prefix = config.classPrefix ?? 'gs';
   }
 
-  /** Mount the grid into the container. */
+  /** Mount the grid into the container. No-op when running on the server. */
   mount(): void {
+    if (isServer()) return;
+
     this.createDom();
     this.setupVirtualScroller();
+    this.configureColumnVirtualizer();
     this.setupScrollManager();
     this.setupResizeObserver();
     this.setupKeyboardManager();
@@ -75,7 +83,7 @@ export class DomRenderer {
     this.renderVisibleRows();
   }
 
-  /** Unmount and clean up all DOM and subscriptions. */
+  /** Unmount and clean up all DOM and subscriptions. Safe to call on the server. */
   destroy(): void {
     for (const unsub of this.unsubscribers) unsub();
     this.unsubscribers = [];
@@ -86,7 +94,7 @@ export class DomRenderer {
     this.renderedRows.clear();
     this.rowPool = [];
 
-    if (this.root && this.container.contains(this.root)) {
+    if (this.root && this.container?.contains(this.root)) {
       this.container.removeChild(this.root);
     }
     this.root = null;
@@ -157,23 +165,82 @@ export class DomRenderer {
 
     const state = this.engine.store.getState();
     const headerHeight = this.engine.api.getGridOption('headerHeight') ?? 48;
+    const scrollLeft = this.bodyViewport?.scrollLeft ?? 0;
+
+    const { columns: renderCols, colResult } = this.getVisibleColumnsForRender(scrollLeft);
+    this.lastColumnResult = colResult;
+
+    // All visible columns for aria-colcount
+    const allVisibleCols = state.columns.filter((c) => !c.hide);
 
     const headerRow = this.el('div', `${this.prefix}-header-row`);
     headerRow.setAttribute('role', 'row');
-    headerRow.style.cssText = `display:flex;height:${headerHeight}px;align-items:center;`;
 
-    const visibleCols = state.columns.filter((c) => !c.hide);
+    if (this.columnVirtualizer.isVirtualized()) {
+      // Use the total width of all columns so the header row is scrollable
+      const totalWidth = this.columnVirtualizer.getTotalWidth();
+      headerRow.style.cssText = `display:flex;height:${headerHeight}px;align-items:center;width:${totalWidth}px;position:relative;`;
 
-    for (const col of visibleCols) {
-      const cell = this.createHeaderCell(col, state);
-      headerRow.appendChild(cell);
+      // Render pinned-left columns at fixed left positions
+      let pinnedLeftOffset = 0;
+      for (const col of renderCols.filter((c) => c.pinned === 'left')) {
+        const cell = this.createHeaderCell(col, state);
+        cell.style.position = 'sticky';
+        cell.style.left = `${pinnedLeftOffset}px`;
+        cell.style.zIndex = '1';
+        pinnedLeftOffset += col.width;
+        headerRow.appendChild(cell);
+      }
+
+      // Render visible unpinned columns with left offset spacer
+      if (colResult.offsetLeft > 0) {
+        const spacer = document.createElement('div');
+        spacer.style.cssText = `width:${colResult.offsetLeft}px;min-width:${colResult.offsetLeft}px;flex-shrink:0;`;
+        headerRow.appendChild(spacer);
+      }
+
+      for (const col of renderCols.filter((c) => !c.pinned)) {
+        const cell = this.createHeaderCell(col, state);
+        headerRow.appendChild(cell);
+      }
+
+      // Add a spacer for the remaining unpinned width
+      const renderedUnpinnedWidth = renderCols
+        .filter((c) => !c.pinned)
+        .reduce((sum, c) => sum + c.width, 0);
+      const remainingWidth = colResult.totalWidth - colResult.offsetLeft - renderedUnpinnedWidth;
+      if (remainingWidth > 0) {
+        const endSpacer = document.createElement('div');
+        endSpacer.style.cssText = `width:${remainingWidth}px;min-width:${remainingWidth}px;flex-shrink:0;`;
+        headerRow.appendChild(endSpacer);
+      }
+
+      // Render pinned-right columns at fixed right positions
+      let pinnedRightOffset = 0;
+      const pinnedRightCols = renderCols.filter((c) => c.pinned === 'right');
+      for (let i = pinnedRightCols.length - 1; i >= 0; i--) {
+        const col = pinnedRightCols[i]!;
+        const cell = this.createHeaderCell(col, state);
+        cell.style.position = 'sticky';
+        cell.style.right = `${pinnedRightOffset}px`;
+        cell.style.zIndex = '1';
+        pinnedRightOffset += col.width;
+        headerRow.appendChild(cell);
+      }
+    } else {
+      // No column virtualization — render all visible columns as before
+      headerRow.style.cssText = `display:flex;height:${headerHeight}px;align-items:center;`;
+      for (const col of renderCols) {
+        const cell = this.createHeaderCell(col, state);
+        headerRow.appendChild(cell);
+      }
     }
 
     this.headerContainer.appendChild(headerRow);
 
     // Update total row count for aria
     this.root?.setAttribute('aria-rowcount', String(state.displayedRowIds.length));
-    this.root?.setAttribute('aria-colcount', String(visibleCols.length));
+    this.root?.setAttribute('aria-colcount', String(allVisibleCols.length));
   }
 
   private createHeaderCell(col: ColumnState, state: GridState): HTMLElement {
@@ -265,6 +332,57 @@ export class DomRenderer {
     }
   }
 
+  // ── Column Virtualization ──
+
+  private configureColumnVirtualizer(): void {
+    const state = this.engine.store.getState();
+    const visibleCols = state.columns.filter((c) => !c.hide);
+
+    this.columnVirtualizer.configure({
+      columns: visibleCols.map((c) => ({
+        colId: c.colId,
+        width: c.width,
+        pinned: c.pinned,
+      })),
+      viewportWidth: this.bodyViewport?.clientWidth ?? 1200,
+      overscan: 2,
+    });
+  }
+
+  /**
+   * Get the columns to render based on horizontal scroll position.
+   * Uses the column virtualizer for grids with 20+ unpinned columns.
+   */
+  private getVisibleColumnsForRender(scrollLeft: number): {
+    columns: ColumnState[];
+    colResult: ColumnVirtualResult;
+  } {
+    const colResult = this.columnVirtualizer.calculate(scrollLeft);
+
+    if (!this.columnVirtualizer.isVirtualized()) {
+      // Not virtualized — return all visible columns
+      const state = this.engine.store.getState();
+      return {
+        columns: state.columns.filter((c) => !c.hide),
+        colResult,
+      };
+    }
+
+    // Build a set of visible column IDs for fast lookup
+    const visibleSet = new Set<string>([
+      ...colResult.pinnedLeftColumns,
+      ...colResult.pinnedRightColumns,
+      ...colResult.visibleColumns,
+    ]);
+
+    const state = this.engine.store.getState();
+    const columns = state.columns.filter(
+      (c) => !c.hide && visibleSet.has(c.colId),
+    );
+
+    return { columns, colResult };
+  }
+
   // ── Scroll Management ──
 
   private setupScrollManager(): void {
@@ -284,6 +402,19 @@ export class DomRenderer {
           scroll: { top: scrollTop, left: scrollLeft },
         }));
 
+        // Check if visible columns changed due to horizontal scroll
+        if (this.columnVirtualizer.isVirtualized()) {
+          const newColResult = this.columnVirtualizer.calculate(scrollLeft);
+          const colsChanged = this.hasColumnResultChanged(newColResult);
+          if (colsChanged) {
+            this.lastColumnResult = newColResult;
+            // Force full re-render since column set changed
+            this.lastStartIndex = -1;
+            this.lastEndIndex = -1;
+            this.renderHeader();
+          }
+        }
+
         // Re-render visible rows
         this.renderVisibleRows();
       },
@@ -291,20 +422,35 @@ export class DomRenderer {
     });
   }
 
+  // ── Column Result Comparison ──
+
+  private hasColumnResultChanged(newResult: ColumnVirtualResult): boolean {
+    if (!this.lastColumnResult) return true;
+    const prev = this.lastColumnResult;
+    if (prev.visibleColumns.length !== newResult.visibleColumns.length) return true;
+    for (let i = 0; i < newResult.visibleColumns.length; i++) {
+      if (prev.visibleColumns[i] !== newResult.visibleColumns[i]) return true;
+    }
+    return false;
+  }
+
   // ── Resize Observer ──
 
   private setupResizeObserver(): void {
-    this.resizeObserver = new ResizeObserver((entries) => {
+    this.resizeObserver = safeResizeObserver((entries) => {
       for (const entry of entries) {
         if (entry.target === this.bodyViewport) {
           const height = entry.contentRect.height;
           this.scroller.updateViewportHeight(height);
+          // Reconfigure column virtualizer with new viewport width
+          this.configureColumnVirtualizer();
+          this.renderHeader();
           this.renderVisibleRows();
         }
       }
     });
 
-    if (this.bodyViewport) {
+    if (this.resizeObserver && this.bodyViewport) {
       this.resizeObserver.observe(this.bodyViewport);
     }
   }
@@ -382,16 +528,25 @@ export class DomRenderer {
     this.unsubscribers.push(unsubSort);
 
     const unsubCols = this.engine.eventBus.on('columns:changed', () => {
+      this.configureColumnVirtualizer();
       this.renderHeader();
       this.renderVisibleRows();
     });
     this.unsubscribers.push(unsubCols);
 
     const unsubColVisible = this.engine.eventBus.on('column:visible', () => {
+      this.configureColumnVirtualizer();
       this.renderHeader();
       this.renderVisibleRows();
     });
     this.unsubscribers.push(unsubColVisible);
+
+    const unsubColPinned = this.engine.eventBus.on('column:pinned', () => {
+      this.configureColumnVirtualizer();
+      this.renderHeader();
+      this.renderVisibleRows();
+    });
+    this.unsubscribers.push(unsubColPinned);
 
     const unsubRowData = this.engine.eventBus.on('rowData:changed', () => {
       // Clear rendered row cache since row IDs may be reused with different data
@@ -435,6 +590,7 @@ export class DomRenderer {
     if (!this.bodyContainer || !this.bodyViewport) return;
 
     const scrollTop = this.bodyViewport.scrollTop;
+    const scrollLeft = this.bodyViewport.scrollLeft;
     const result = this.scroller.calculate(scrollTop);
 
     // Skip if range hasn't changed
@@ -445,7 +601,8 @@ export class DomRenderer {
     this.lastEndIndex = result.endIndex;
 
     const state = this.engine.store.getState();
-    const visibleCols = state.columns.filter((c) => !c.hide);
+    const { columns: visibleCols, colResult } = this.getVisibleColumnsForRender(scrollLeft);
+    this.lastColumnResult = colResult;
     const rowHeight = (this.engine.api.getGridOption('rowHeight') as number) ?? 40;
 
     // Determine which row IDs should be rendered

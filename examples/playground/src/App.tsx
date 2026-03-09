@@ -60,6 +60,54 @@ const pluginMap: Record<string, (config: PlaygroundConfig) => GridPlugin> = {
   clipboard: () => ClipboardPlugin(),
 };
 
+// ── Data Constants ──
+
+const DEPARTMENTS = ['Engineering', 'Sales', 'Marketing', 'HR', 'Finance', 'Support'];
+const ROLES = ['Manager', 'Senior', 'Mid-Level', 'Junior', 'Intern', 'Lead', 'Director'];
+const FIRST_NAMES = ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Frank', 'Grace', 'Hank', 'Ivy', 'Jack'];
+const LAST_NAMES = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Miller', 'Davis', 'Wilson', 'Moore', 'Taylor'];
+const CITIES = ['New York', 'San Francisco', 'Chicago', 'Seattle', 'Boston', 'Austin', 'Denver', 'Portland', 'Miami', 'Atlanta'];
+const STATES = ['NY', 'CA', 'IL', 'WA', 'MA', 'TX', 'CO', 'OR', 'FL', 'GA'];
+
+// ── Data Generators ──
+
+function generateEmployeeData(count: number): Record<string, unknown>[] {
+  return Array.from({ length: count }, (_, i) => ({
+    id: i + 1,
+    name: `${FIRST_NAMES[i % FIRST_NAMES.length]} ${LAST_NAMES[Math.floor(i / FIRST_NAMES.length) % LAST_NAMES.length]}`,
+    email: `user${i + 1}@company.com`,
+    department: DEPARTMENTS[i % DEPARTMENTS.length],
+    salary: 45000 + Math.floor((i * 7919) % 105000),
+    startDate: `${2018 + (i % 8)}-${String(1 + (i % 12)).padStart(2, '0')}-${String(1 + (i % 28)).padStart(2, '0')}`,
+    active: i % 5 !== 0,
+  }));
+}
+
+function generateGroupedData(count: number): Record<string, unknown>[] {
+  return Array.from({ length: count }, (_, i) => ({
+    name: `${FIRST_NAMES[i % FIRST_NAMES.length]} ${LAST_NAMES[Math.floor(i / FIRST_NAMES.length) % LAST_NAMES.length]}`,
+    department: DEPARTMENTS[i % DEPARTMENTS.length],
+    role: ROLES[i % ROLES.length],
+    salary: 50000 + Math.floor((i * 7919) % 100000),
+    yearsExp: 1 + (i % 20),
+  }));
+}
+
+function generatePinnedData(count: number): Record<string, unknown>[] {
+  return Array.from({ length: count }, (_, i) => ({
+    id: i + 1,
+    name: `${FIRST_NAMES[i % FIRST_NAMES.length]} ${LAST_NAMES[Math.floor(i / FIRST_NAMES.length) % LAST_NAMES.length]}`,
+    email: `user${i + 1}@company.com`,
+    department: DEPARTMENTS[i % DEPARTMENTS.length],
+    phone: `(${555 + (i % 10)}) ${100 + (i % 900)}-${1000 + (i % 9000)}`,
+    address: `${100 + i} Main Street`,
+    city: CITIES[i % CITIES.length],
+    state: STATES[i % STATES.length],
+    salary: 50000 + Math.floor((i * 7919) % 100000),
+    actions: 'View',
+  }));
+}
+
 // ── Preset Examples ──
 
 const PRESETS: Record<string, { label: string; config: PlaygroundConfig }> = {
@@ -247,52 +295,6 @@ const PRESETS: Record<string, { label: string; config: PlaygroundConfig }> = {
     },
   },
 };
-
-// ── Data Generators ──
-
-const DEPARTMENTS = ['Engineering', 'Sales', 'Marketing', 'HR', 'Finance', 'Support'];
-const ROLES = ['Manager', 'Senior', 'Mid-Level', 'Junior', 'Intern', 'Lead', 'Director'];
-const FIRST_NAMES = ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Frank', 'Grace', 'Hank', 'Ivy', 'Jack'];
-const LAST_NAMES = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Miller', 'Davis', 'Wilson', 'Moore', 'Taylor'];
-const CITIES = ['New York', 'San Francisco', 'Chicago', 'Seattle', 'Boston', 'Austin', 'Denver', 'Portland', 'Miami', 'Atlanta'];
-const STATES = ['NY', 'CA', 'IL', 'WA', 'MA', 'TX', 'CO', 'OR', 'FL', 'GA'];
-
-function generateEmployeeData(count: number): Record<string, unknown>[] {
-  return Array.from({ length: count }, (_, i) => ({
-    id: i + 1,
-    name: `${FIRST_NAMES[i % FIRST_NAMES.length]} ${LAST_NAMES[Math.floor(i / FIRST_NAMES.length) % LAST_NAMES.length]}`,
-    email: `user${i + 1}@company.com`,
-    department: DEPARTMENTS[i % DEPARTMENTS.length],
-    salary: 45000 + Math.floor((i * 7919) % 105000),
-    startDate: `${2018 + (i % 8)}-${String(1 + (i % 12)).padStart(2, '0')}-${String(1 + (i % 28)).padStart(2, '0')}`,
-    active: i % 5 !== 0,
-  }));
-}
-
-function generateGroupedData(count: number): Record<string, unknown>[] {
-  return Array.from({ length: count }, (_, i) => ({
-    name: `${FIRST_NAMES[i % FIRST_NAMES.length]} ${LAST_NAMES[Math.floor(i / FIRST_NAMES.length) % LAST_NAMES.length]}`,
-    department: DEPARTMENTS[i % DEPARTMENTS.length],
-    role: ROLES[i % ROLES.length],
-    salary: 50000 + Math.floor((i * 7919) % 100000),
-    yearsExp: 1 + (i % 20),
-  }));
-}
-
-function generatePinnedData(count: number): Record<string, unknown>[] {
-  return Array.from({ length: count }, (_, i) => ({
-    id: i + 1,
-    name: `${FIRST_NAMES[i % FIRST_NAMES.length]} ${LAST_NAMES[Math.floor(i / FIRST_NAMES.length) % LAST_NAMES.length]}`,
-    email: `user${i + 1}@company.com`,
-    department: DEPARTMENTS[i % DEPARTMENTS.length],
-    phone: `(${555 + (i % 10)}) ${100 + (i % 900)}-${1000 + (i % 9000)}`,
-    address: `${100 + i} Main Street`,
-    city: CITIES[i % CITIES.length],
-    state: STATES[i % STATES.length],
-    salary: 50000 + Math.floor((i * 7919) % 100000),
-    actions: 'View',
-  }));
-}
 
 // ── Storage Key ──
 

@@ -116,6 +116,79 @@ importers:
         specifier: ^5.4.0
         version: 5.4.21
 
+  examples/feature-showcase:
+    dependencies:
+      '@gridstorm/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@gridstorm/dom-renderer':
+        specifier: workspace:*
+        version: link:../../packages/dom-renderer
+      '@gridstorm/plugin-aggregation':
+        specifier: workspace:*
+        version: link:../../packages/plugin-aggregation
+      '@gridstorm/plugin-clipboard':
+        specifier: workspace:*
+        version: link:../../packages/plugin-clipboard
+      '@gridstorm/plugin-column-pinning':
+        specifier: workspace:*
+        version: link:../../packages/plugin-column-pinning
+      '@gridstorm/plugin-column-reorder':
+        specifier: workspace:*
+        version: link:../../packages/plugin-column-reorder
+      '@gridstorm/plugin-column-resize':
+        specifier: workspace:*
+        version: link:../../packages/plugin-column-resize
+      '@gridstorm/plugin-context-menu':
+        specifier: workspace:*
+        version: link:../../packages/plugin-context-menu
+      '@gridstorm/plugin-editing':
+        specifier: workspace:*
+        version: link:../../packages/plugin-editing
+      '@gridstorm/plugin-filtering':
+        specifier: workspace:*
+        version: link:../../packages/plugin-filtering
+      '@gridstorm/plugin-grouping':
+        specifier: workspace:*
+        version: link:../../packages/plugin-grouping
+      '@gridstorm/plugin-pagination':
+        specifier: workspace:*
+        version: link:../../packages/plugin-pagination
+      '@gridstorm/plugin-selection':
+        specifier: workspace:*
+        version: link:../../packages/plugin-selection
+      '@gridstorm/plugin-sorting':
+        specifier: workspace:*
+        version: link:../../packages/plugin-sorting
+      '@gridstorm/react':
+        specifier: workspace:*
+        version: link:../../packages/react-adapter
+      '@gridstorm/theme-default':
+        specifier: workspace:*
+        version: link:../../packages/theme-default
+      react:
+        specifier: ^18.3.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.0
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.3.0
+        version: 18.3.28
+      '@types/react-dom':
+        specifier: ^18.3.0
+        version: 18.3.7(@types/react@18.3.28)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.0
+        version: 4.7.0(vite@5.4.21)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+      vite:
+        specifier: ^5.4.0
+        version: 5.4.21
+
   examples/financial-trading:
     dependencies:
       '@gridstorm/core':

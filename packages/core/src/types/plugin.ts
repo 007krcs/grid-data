@@ -2,6 +2,7 @@
 
 import type { GridApi, GridState } from './grid';
 import type { GridEventMap } from './events';
+import type { CommandMap } from './commands';
 import type { CellRendererFn } from './column';
 import type { CellEditorDef } from './editing';
 
@@ -318,6 +319,31 @@ export interface PluginStoreAccess<TData = any> {
    * ```
    */
   batch(fn: () => void): void;
+
+  /**
+   * Subscribe to a specific slice of state. Only fires when the selected
+   * value changes (by reference equality).
+   *
+   * More efficient than `subscribe()` for plugins that only care about
+   * specific parts of the state tree, avoiding unnecessary re-computations.
+   *
+   * @typeParam T - The type of the selected state slice.
+   * @param selector - Function that extracts a slice from the full grid state.
+   * @param listener - Callback invoked when the selected value changes.
+   * @returns An unsubscribe function.
+   *
+   * @example
+   * ```ts
+   * const unsub = ctx.store.select(
+   *   (state) => state.sortModel,
+   *   (next, prev) => console.log('Sort changed:', prev, '->', next),
+   * );
+   * ```
+   */
+  select<T>(
+    selector: (state: GridState<TData>) => T,
+    listener: (value: T, prevValue: T) => void,
+  ): () => void;
 }
 
 /**
@@ -372,29 +398,78 @@ export interface PluginEventBus<TData = any> {
  */
 export interface PluginCommandBus {
   /**
-   * Dispatches a command to all registered handlers.
+   * Dispatches a typed command to all registered handlers.
    *
+   * @typeParam K - The command key from {@link CommandMap}.
    * @param commandType - The command type identifier.
-   * @param payload - The command payload (specific to each command type).
+   * @param payload - The command payload, typed according to the {@link CommandMap}.
    *
    * @example
    * ```ts
-   * ctx.commandBus.dispatch('sort:apply', {
-   *   colId: 'name',
-   *   direction: 'asc',
+   * ctx.commandBus.dispatch('sort:set', {
+   *   sortModel: [{ colId: 'name', sort: 'asc' }],
    * });
    * ```
    */
+  dispatch<K extends keyof CommandMap>(commandType: K, payload: CommandMap[K]): void;
   dispatch(commandType: string, payload: any): void;
+
+  /**
+   * Dispatches a command asynchronously to all registered handlers.
+   *
+   * Runs sync handlers first, then async handlers sequentially.
+   * Middleware is evaluated synchronously before any handler.
+   *
+   * @typeParam K - The command key from {@link CommandMap}.
+   * @param commandType - The command type identifier.
+   * @param payload - The command payload.
+   * @returns A promise that resolves when all handlers complete.
+   *
+   * @example
+   * ```ts
+   * await ctx.commandBus.dispatchAsync('ssrm:refresh', {});
+   * ```
+   */
+  dispatchAsync<K extends keyof CommandMap>(commandType: K, payload: CommandMap[K]): Promise<void>;
+  dispatchAsync(commandType: string, payload: any): Promise<void>;
 
   /**
    * Registers a handler for a specific command type.
    *
+   * @typeParam K - The command key from {@link CommandMap}.
    * @param commandType - The command type to handle.
    * @param handler - The handler function.
    * @returns An unsubscribe function that removes the handler.
    */
+  registerHandler<K extends keyof CommandMap>(
+    commandType: K,
+    handler: (payload: CommandMap[K]) => void,
+  ): () => void;
   registerHandler(commandType: string, handler: CommandHandler): () => void;
+
+  /**
+   * Registers an async handler for a specific command type.
+   *
+   * Async handlers are only invoked via {@link dispatchAsync}.
+   * They are executed sequentially, and each must complete before the next.
+   *
+   * @typeParam K - The command key from {@link CommandMap}.
+   * @param commandType - The command type to handle.
+   * @param handler - The async handler function.
+   * @returns An unsubscribe function that removes the handler.
+   *
+   * @example
+   * ```ts
+   * ctx.commandBus.registerAsyncHandler('ssrm:refresh', async (payload) => {
+   *   await fetchDataFromServer();
+   * });
+   * ```
+   */
+  registerAsyncHandler<K extends keyof CommandMap>(
+    commandType: K,
+    handler: (payload: CommandMap[K]) => Promise<void>,
+  ): () => void;
+  registerAsyncHandler(commandType: string, handler: AsyncCommandHandler): () => void;
 }
 
 /**
@@ -406,3 +481,16 @@ export interface PluginCommandBus {
  * @see {@link PluginCommandBus.registerHandler}
  */
 export type CommandHandler = (payload: any) => void;
+
+/**
+ * Function type for async command handlers that process dispatched commands.
+ *
+ * Used with {@link PluginCommandBus.registerAsyncHandler} and invoked via
+ * {@link PluginCommandBus.dispatchAsync}.
+ *
+ * @param payload - The command payload.
+ *
+ * @see {@link PluginCommandBus.registerAsyncHandler}
+ * @see {@link PluginCommandBus.dispatchAsync}
+ */
+export type AsyncCommandHandler = (payload: any) => Promise<void>;

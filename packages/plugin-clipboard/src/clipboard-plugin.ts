@@ -2,6 +2,7 @@
 // Provides copy, cut, paste operations with keyboard shortcuts.
 
 import type { GridPlugin, PluginContext, ColumnState } from '@gridstorm/core';
+import { validateLicense, createWatermark } from '@gridstorm/license';
 import type { ClipboardPluginOptions } from './types';
 import { serializeToTSV, parseTSV } from './formatters';
 
@@ -22,6 +23,20 @@ export function ClipboardPlugin(options: ClipboardPluginOptions = {}): GridPlugi
     dependencies: ['selection'],
 
     install(ctx: PluginContext) {
+      // ── License validation ──
+      const licenseResult = validateLicense('clipboard');
+      let unsubLicenseWatermark: (() => void) | undefined;
+      if (!licenseResult.valid && !licenseResult.isDevelopment) {
+        console.warn(licenseResult.message);
+        unsubLicenseWatermark = ctx.eventBus.on('grid:ready', () => {
+          const container = document.querySelector<HTMLElement>('.gs-root');
+          if (container) createWatermark(container);
+        });
+      }
+      if (!licenseResult.pluginLicensed && !licenseResult.isDevelopment) {
+        console.warn(licenseResult.message);
+      }
+
       // ── Copy selected rows ──
       const unregCopy = ctx.commandBus.registerHandler('clipboard:copy', () => {
         const data = getSelectionAsText(ctx);
@@ -173,6 +188,7 @@ export function ClipboardPlugin(options: ClipboardPluginOptions = {}): GridPlugi
       }
 
       return () => {
+        unsubLicenseWatermark?.();
         unregCopy();
         unregCut();
         unregPaste();

@@ -1,0 +1,104 @@
+---
+title: GridStorm
+description: The modern data grid platform. Plugin-first architecture, TypeScript-native, CSS variable theming, and framework adapters.
+template: splash
+hero:
+  tagline: The Modern Data Grid Platform
+  actions:
+    - text: Get Started
+      link: /getting-started/quick-start/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/gridstorm/gridstorm
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Why GridStorm?
+
+<CardGrid>
+  <Card title="Plugin-First (35 KB core)" icon="puzzle">
+    The headless core ships at 35 KB gzipped. Every feature -- sorting, filtering, grouping, editing -- is a discrete plugin. Install only what you use. Tree-shake the rest.
+  </Card>
+  <Card title="TypeScript-Native" icon="seti:typescript">
+    Written in strict TypeScript from day one. Full generic support flows from row data types through columns, events, hooks, and the public API. No `any` gaps.
+  </Card>
+  <Card title="CSS Variable Theming" icon="seti:css">
+    50+ CSS custom properties (`--gs-*`) control every visual detail. Switch between light, dark, and high-contrast themes at runtime -- no build step, no JavaScript overhead.
+  </Card>
+  <Card title="Framework Adapters" icon="rocket">
+    The core engine is framework-agnostic. Official React 18+ adapter with hooks, portals, error boundaries, and controlled/uncontrolled state modes. Vue and Svelte adapters coming soon.
+  </Card>
+</CardGrid>
+
+## Quick Start with React
+
+```tsx
+import { GridStorm } from '@gridstorm/react';
+import { SortingPlugin } from '@gridstorm/plugin-sorting';
+import { FilteringPlugin } from '@gridstorm/plugin-filtering';
+import { SelectionPlugin } from '@gridstorm/plugin-selection';
+import '@gridstorm/theme-default/light.css';
+
+interface Employee {
+  id: number;
+  name: string;
+  department: string;
+  salary: number;
+}
+
+const columns = [
+  { colId: 'name', field: 'name', headerName: 'Name', sortable: true },
+  { colId: 'dept', field: 'department', headerName: 'Department', filter: true },
+  { colId: 'salary', field: 'salary', headerName: 'Salary', sortable: true },
+];
+
+const rowData: Employee[] = [
+  { id: 1, name: 'Alice Chen', department: 'Engineering', salary: 145000 },
+  { id: 2, name: 'Bob Smith', department: 'Design', salary: 120000 },
+  { id: 3, name: 'Carol Wu', department: 'Engineering', salary: 155000 },
+];
+
+export default function App() {
+  return (
+    <GridStorm<Employee>
+      columns={columns}
+      rowData={rowData}
+      plugins={[SortingPlugin(), FilteringPlugin(), SelectionPlugin()]}
+      height={400}
+      onGridReady={(api) => console.log('Grid ready:', api)}
+    />
+  );
+}
+```
+
+## Feature Comparison
+
+How GridStorm compares to other popular data grid solutions:
+
+| Feature | GridStorm | AG Grid | TanStack Table |
+|---|---|---|---|
+| **Architecture** | Headless core + DOM renderer + adapters | Monolithic, framework-specific builds | Headless only (BYO rendering) |
+| **Core bundle** | ~35 KB gzipped (tree-shakeable plugins) | ~300 KB+ all-in-one | ~15 KB (no rendering included) |
+| **Rendering** | DOM-based virtual scroll | DOM / Canvas hybrid | You build your own |
+| **Theming** | CSS custom properties, runtime-switchable | SASS themes, compile-time | N/A |
+| **Row grouping** | Free (community plugin) | Enterprise license required | You implement your own |
+| **Accessibility** | Built-in ARIA, keyboard nav, high-contrast | Good ARIA support | You implement your own |
+| **Plugin system** | First-class with dependency resolution | Feature modules (enterprise-gated) | No plugin concept |
+| **TypeScript** | Strict mode, full generics | TypeScript with some gaps | Excellent TypeScript |
+| **Maturity** | New -- actively developing | 10+ years, battle-tested | Mature, widely adopted |
+| **Ecosystem** | Growing | Extensive (charts, pivoting, server-side) | Large community |
+
+GridStorm occupies the middle ground: it provides the rendering, theming, and accessibility that TanStack Table leaves to you, while keeping the modularity and bundle efficiency that AG Grid's monolithic architecture cannot match.
+
+AG Grid has significant advantages in maturity and ecosystem breadth. If you need server-side row models, integrated charting, or Excel export today, AG Grid remains the safer choice. GridStorm is the right fit when bundle size, theming flexibility, and a free grouping/aggregation layer matter to your project.
+
+## Next Steps
+
+- **[Quick Start](/getting-started/quick-start/)** -- Render a grid in under a minute.
+- **[Architecture](/core-concepts/architecture/)** -- Understand the engine, store, and plugin system.
+- **[Theming](/core-concepts/theming/)** -- Customize every visual property with CSS variables.
+- **[Plugin System](/plugins/plugin-system/)** -- Learn how plugins extend grid functionality.

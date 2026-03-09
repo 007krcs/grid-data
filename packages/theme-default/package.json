@@ -14,8 +14,13 @@
     "./spacious": "./src/density/spacious.css"
   },
   "files": [
-    "src"
+    "src",
+    "LICENSE.md"
   ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "MIT",
   "keywords": [
     "datagrid",
@@ -26,11 +31,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/gridstorm/gridstorm.git",
+    "url": "https://github.com/007krcs/grid-data.git",
     "directory": "packages/theme-default"
   },
   "bugs": {
-    "url": "https://github.com/gridstorm/gridstorm/issues"
+    "url": "https://github.com/007krcs/grid-data/issues"
   },
   "homepage": "https://gridstorm.dev",
   "author": {

@@ -19,7 +19,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE.md"
   ],
   "scripts": {
     "build": "tsup",
@@ -28,28 +29,33 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@gridstorm/core": "workspace:*"
+    "@gridstorm/core": "workspace:*",
+    "@gridstorm/license": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.2.0",
     "typescript": "^5.5.0"
   },
   "sideEffects": false,
-  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "SEE LICENSE IN LICENSE.md",
   "keywords": [
     "datagrid",
     "pivoting",
     "pivot-table",
     "plugin",
-    "gridstorm"
+    "gridstorm",
+    "enterprise"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/gridstorm/gridstorm.git",
+    "url": "https://github.com/007krcs/grid-data.git",
     "directory": "packages/plugin-pivoting"
   },
   "bugs": {
-    "url": "https://github.com/gridstorm/gridstorm/issues"
+    "url": "https://github.com/007krcs/grid-data/issues"
   },
   "homepage": "https://gridstorm.dev",
   "author": {

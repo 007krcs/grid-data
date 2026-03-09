@@ -1,0 +1,27 @@
+{
+  "name": "@gridstorm/benchmarks",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bench": "tsx src/run-all.ts",
+    "bench:bundle": "tsx src/runners/bundle-size.ts",
+    "bench:render": "tsx src/runners/render-time.ts",
+    "bench:sort": "tsx src/runners/sort-perf.ts",
+    "bench:filter": "tsx src/runners/filter-perf.ts",
+    "bench:memory": "tsx src/runners/memory.ts",
+    "bench:report": "tsx src/reports/generate-report.ts"
+  },
+  "dependencies": {
+    "@gridstorm/core": "workspace:*",
+    "@gridstorm/plugin-sorting": "workspace:*",
+    "@gridstorm/plugin-filtering": "workspace:*",
+    "@gridstorm/plugin-selection": "workspace:*",
+    "@gridstorm/plugin-grouping": "workspace:*",
+    "@gridstorm/plugin-aggregation": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  }
+}

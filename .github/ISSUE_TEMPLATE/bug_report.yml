@@ -1,0 +1,145 @@
+name: Bug Report
+description: Report a bug in GridStorm
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      description: Which package is affected?
+      options:
+        - "@gridstorm/core"
+        - "@gridstorm/dom-renderer"
+        - "@gridstorm/react"
+        - "@gridstorm/theme-default"
+        - "@gridstorm/plugin-sorting"
+        - "@gridstorm/plugin-filtering"
+        - "@gridstorm/plugin-selection"
+        - "@gridstorm/plugin-editing"
+        - "@gridstorm/plugin-pagination"
+        - "@gridstorm/plugin-column-pinning"
+        - "@gridstorm/plugin-column-resize"
+        - "@gridstorm/plugin-column-reorder"
+        - "@gridstorm/plugin-context-menu"
+        - "@gridstorm/plugin-grouping"
+        - "@gridstorm/plugin-aggregation"
+        - "@gridstorm/plugin-pivoting"
+        - "@gridstorm/plugin-clipboard"
+        - "@gridstorm/plugin-tree-data"
+        - "@gridstorm/plugin-ssrm"
+        - "@gridstorm/i18n"
+        - "@gridstorm/license"
+        - "@gridstorm/codemod"
+        - "Other / Unknown"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe the bug...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Provide the steps to reproduce the behavior.
+      placeholder: |
+        1. Create a grid with these column definitions...
+        2. Set row data to...
+        3. Click on the column header...
+        4. See error in console...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Describe what you expected...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Describe what actually happened...
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: GridStorm Version
+      description: What version of the affected package are you using?
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      description: Which browser(s) are affected?
+      multiple: true
+      options:
+        - Chrome
+        - Firefox
+        - Safari
+        - Edge
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: Which OS are you running?
+      multiple: true
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: framework
+    attributes:
+      label: Framework
+      description: Which framework adapter are you using?
+      options:
+        - React
+        - Vanilla JS (no framework)
+        - Other
+    validations:
+      required: false
+
+  - type: textarea
+    id: reproduction-link
+    attributes:
+      label: Reproduction Link
+      description: |
+        Provide a link to a minimal reproduction (StackBlitz, CodeSandbox, or GitHub repo).
+        A minimal reproduction helps us investigate faster.
+      placeholder: https://stackblitz.com/edit/...
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context, screenshots, or console errors that would help.
+    validations:
+      required: false

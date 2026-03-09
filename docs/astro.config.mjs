@@ -67,6 +67,14 @@ export default defineConfig({
             { label: 'Row Nodes', slug: 'api/row-nodes' },
           ],
         },
+        {
+          label: 'Blog',
+          items: [
+            { label: 'Plugin-First Architecture', slug: 'blog/architecture-deep-dive' },
+            { label: 'GridStorm vs AG Grid', slug: 'blog/gridstorm-vs-ag-grid' },
+            { label: 'CSS Variable Theming', slug: 'blog/css-variable-theming' },
+          ],
+        },
       ],
     }),
   ],

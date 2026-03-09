@@ -5,10 +5,10 @@
   "description": "Next-generation, framework-agnostic data grid platform",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gridstorm/gridstorm.git"
+    "url": "https://github.com/007krcs/grid-data.git"
   },
   "bugs": {
-    "url": "https://github.com/gridstorm/gridstorm/issues"
+    "url": "https://github.com/007krcs/grid-data/issues"
   },
   "homepage": "https://gridstorm.dev",
   "author": {
@@ -26,7 +26,11 @@
     "test:run": "vitest run",
     "lint": "eslint packages/*/src --ext .ts,.tsx",
     "typecheck": "pnpm -r run typecheck",
-    "clean": "pnpm -r run clean && rm -rf node_modules"
+    "clean": "pnpm -r run clean && rm -rf node_modules",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "publish": "pnpm -r --filter='./packages/*' run build && changeset publish",
+    "publish:alpha": "pnpm -r --filter='./packages/*' run build && changeset publish --tag alpha"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",

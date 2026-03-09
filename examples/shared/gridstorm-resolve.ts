@@ -5,17 +5,22 @@
  *
  * Works by scanning ../../packages/* for package.json files, mapping each
  * @gridstorm/* package name to its src/index.ts (or src/index.css) entry.
+ *
+ * Uses Vite's configResolved hook to derive the packages directory from the
+ * project root — this is reliable across all environments (local, CI, Vercel)
+ * unlike __dirname which breaks when Vite bundles config into a temp file.
  */
-import { Plugin } from 'vite';
+import type { Plugin, ResolvedConfig } from 'vite';
 import path from 'path';
 import fs from 'fs';
 
 export function gridstormResolve(): Plugin {
-  // Build the alias map once at startup
-  const packagesDir = path.resolve(__dirname, '..', '..', 'packages');
-  const aliasMap: Record<string, string> = {};
+  let aliasMap: Record<string, string> = {};
 
-  if (fs.existsSync(packagesDir)) {
+  function buildAliasMap(packagesDir: string) {
+    aliasMap = {};
+    if (!fs.existsSync(packagesDir)) return;
+
     for (const dir of fs.readdirSync(packagesDir)) {
       const pkgJsonPath = path.join(packagesDir, dir, 'package.json');
       if (!fs.existsSync(pkgJsonPath)) continue;
@@ -41,6 +46,15 @@ export function gridstormResolve(): Plugin {
   return {
     name: 'gridstorm-source-resolve',
     enforce: 'pre',
+
+    configResolved(config: ResolvedConfig) {
+      // config.root is the absolute path to the Vite project root
+      // (e.g., /path/to/grid-data/examples/playground)
+      // Go up two levels to the monorepo root, then into packages/
+      const packagesDir = path.resolve(config.root, '..', '..', 'packages');
+      buildAliasMap(packagesDir);
+    },
+
     resolveId(source) {
       // Handle exact package imports like '@gridstorm/core'
       if (aliasMap[source]) {

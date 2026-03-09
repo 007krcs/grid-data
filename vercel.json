@@ -3,12 +3,5 @@
   "installCommand": "pnpm install",
   "buildCommand": "bash examples/build-all.sh",
   "outputDirectory": "examples/dist",
-  "framework": null,
-  "rewrites": [
-    { "source": "/playground/(.*)", "destination": "/playground/index.html" },
-    { "source": "/react-demo/(.*)", "destination": "/react-demo/index.html" },
-    { "source": "/financial-trading/(.*)", "destination": "/financial-trading/index.html" },
-    { "source": "/spreadsheet/(.*)", "destination": "/spreadsheet/index.html" },
-    { "source": "/analytics-explorer/(.*)", "destination": "/analytics-explorer/index.html" }
-  ]
+  "framework": null
 }

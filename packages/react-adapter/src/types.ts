@@ -205,6 +205,30 @@ export interface EditorPortalState {
 
 // ── GridStorm Props ──
 
+// ── Renderer Config Props ──
+
+/** Options forwarded to the DomRenderer for Tier 1 feature rendering. */
+export interface RendererConfigProps {
+  /** Enable inline cell editing overlay. Default: auto-detect EditingPlugin. */
+  enableCellEditing?: boolean;
+  /** Enable row grouping visual (chevron, indent, group label). Default: auto-detect GroupingPlugin. */
+  enableGrouping?: boolean;
+  /** Indentation per group level in pixels. Default: 24. */
+  groupIndent?: number;
+  /** Show checkbox selection column as the first column. Default: false. */
+  checkboxSelection?: boolean;
+  /** Width of the checkbox column in pixels. Default: 48. */
+  checkboxColumnWidth?: number;
+  /** Show floating filter inputs below the header. Default: false. */
+  floatingFilter?: boolean;
+  /** Debounce delay for filter input in ms. Default: 300. */
+  floatingFilterDebounce?: number;
+  /** Show pagination bar below the grid. Default: auto-detect PaginationPlugin. */
+  enablePagination?: boolean;
+  /** Available page size options for the page size selector. Default: [25, 50, 100, 250]. */
+  pageSizeOptions?: number[];
+}
+
 /** Full props interface for the <GridStorm> component. */
 export interface GridStormProps<TData = any>
   extends Omit<
@@ -218,7 +242,8 @@ export interface GridStormProps<TData = any>
       | 'onCellValueChanged'
     >,
     ControlledStateProps<TData>,
-    GridStormEventProps<TData> {
+    GridStormEventProps<TData>,
+    RendererConfigProps {
   /** Column definitions (supports React component renderers). */
   columns: ReactColumnDef<TData>[];
   /** Container height. Default: 400. */

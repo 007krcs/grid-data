@@ -18,6 +18,27 @@ export interface DomRendererConfig {
   engine: GridEngine;
   /** CSS class prefix. Default: 'gs'. */
   classPrefix?: string;
+
+  // ── Tier 1 Feature Options ──
+
+  /** Enable inline cell editing overlay. Default: auto-detect EditingPlugin. */
+  enableCellEditing?: boolean;
+  /** Enable row grouping visual (chevron, indent, group label). Default: auto-detect GroupingPlugin. */
+  enableGrouping?: boolean;
+  /** Indentation per group level in pixels. Default: 24. */
+  groupIndent?: number;
+  /** Show checkbox selection column as the first column. Default: false. */
+  checkboxSelection?: boolean;
+  /** Width of the checkbox column in pixels. Default: 48. */
+  checkboxColumnWidth?: number;
+  /** Show floating filter inputs below the header. Default: false. */
+  floatingFilter?: boolean;
+  /** Debounce delay for filter input in ms. Default: 300. */
+  floatingFilterDebounce?: number;
+  /** Show pagination bar below the grid. Default: auto-detect PaginationPlugin. */
+  enablePagination?: boolean;
+  /** Available page size options for the page size selector. Default: [25, 50, 100, 250]. */
+  pageSizeOptions?: number[];
 }
 
 interface RowDomEntry {
@@ -38,6 +59,46 @@ export class DomRenderer {
   private bodyContainer: HTMLElement | null = null;
   private heightSpacer: HTMLElement | null = null;
   private liveRegion: HTMLElement | null = null;
+
+  // Tier 1 Feature DOM elements
+  private floatingFilterContainer: HTMLElement | null = null;
+  private paginationBar: HTMLElement | null = null;
+  private paginationLabel: HTMLElement | null = null;
+  private paginationPageInfo: HTMLElement | null = null;
+  private paginationPageSizeSelect: HTMLSelectElement | null = null;
+
+  // Tier 1 Feature config
+  private enableCellEditing: boolean;
+  private enableGrouping: boolean;
+  private groupIndent: number;
+  private checkboxSelection: boolean;
+  private checkboxColumnWidth: number;
+  private floatingFilter: boolean;
+  private floatingFilterDebounce: number;
+  private enablePagination: boolean;
+  private pageSizeOptions: number[];
+
+  // Tier 1 Feature state
+  private headerCheckbox: HTMLInputElement | null = null;
+  private filterInputs = new Map<string, HTMLInputElement>();
+  private filterDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private activeEditor: {
+    element: HTMLElement;
+    cellElement: HTMLElement;
+    rowId: string;
+    colId: string;
+  } | null = null;
+
+  // Custom double-click detection via click events.
+  // Native dblclick is unreliable because SelectionPlugin bumps node.version
+  // on every click, causing updateRowContent() to destroy and recreate cells
+  // synchronously. The browser's dblclick fires on the detached cell element
+  // and never bubbles through the live DOM tree.
+  private _lastCellClick: {
+    time: number;
+    rowId: string;
+    colId: string;
+  } | null = null;
 
   // Virtualization
   private scroller = new VirtualScroller();
@@ -65,6 +126,18 @@ export class DomRenderer {
     this.engine = config.engine;
     this.container = config.container;
     this.prefix = config.classPrefix ?? 'gs';
+
+    // Tier 1 feature config with smart defaults (auto-detect plugins)
+    this.enableCellEditing = config.enableCellEditing ?? false;
+    this.enableGrouping = config.enableGrouping ?? false;
+    this.groupIndent = config.groupIndent ?? 24;
+    this.checkboxSelection = config.checkboxSelection ?? false;
+    this.checkboxColumnWidth = config.checkboxColumnWidth ?? 48;
+    this.floatingFilter = config.floatingFilter ?? false;
+    this.floatingFilterDebounce = config.floatingFilterDebounce ?? 300;
+    this.enablePagination = config.enablePagination ?? false;
+    this.pageSizeOptions = config.pageSizeOptions ?? [25, 50, 100, 250];
+
   }
 
   /** Mount the grid into the container. No-op when running on the server. */
@@ -80,7 +153,13 @@ export class DomRenderer {
     this.observeContainerAttributes();
     this.subscribeToState();
     this.renderHeader();
+    if (this.floatingFilter) {
+      this.renderFloatingFilterRow();
+    }
     this.renderVisibleRows();
+    if (this.enablePagination) {
+      this.updatePaginationBar();
+    }
   }
 
   /** Unmount and clean up all DOM and subscriptions. Safe to call on the server. */
@@ -93,6 +172,18 @@ export class DomRenderer {
     this.keyboardManager.destroy();
     this.renderedRows.clear();
     this.rowPool = [];
+
+    // Clean up Tier 1 feature state
+    this.removeEditorOverlay();
+    for (const timer of this.filterDebounceTimers.values()) clearTimeout(timer);
+    this.filterDebounceTimers.clear();
+    this.filterInputs.clear();
+    this.headerCheckbox = null;
+    this.paginationBar = null;
+    this.paginationLabel = null;
+    this.paginationPageInfo = null;
+    this.paginationPageSizeSelect = null;
+    this.floatingFilterContainer = null;
 
     if (this.root && this.container?.contains(this.root)) {
       this.container.removeChild(this.root);
@@ -140,11 +231,32 @@ export class DomRenderer {
     this.bodyViewport.appendChild(this.heightSpacer);
     this.bodyViewport.appendChild(this.bodyContainer);
 
+    // Floating filter row (between header and body)
+    if (this.floatingFilter) {
+      this.floatingFilterContainer = this.el('div', `${p}-floating-filter`);
+      this.floatingFilterContainer.setAttribute('role', 'row');
+      this.floatingFilterContainer.setAttribute('aria-label', 'Column filters');
+      this.floatingFilterContainer.style.cssText =
+        'overflow:hidden;background:var(--gs-color-header-bg,#f8fafc);' +
+        'border-bottom:var(--gs-border-width,1px) solid var(--gs-color-border,#e2e8f0);';
+    }
+
     // Assemble
     const wrapper = this.el('div', `${p}-wrapper`);
     wrapper.style.cssText = 'display:flex;flex-direction:column;height:100%;';
     wrapper.appendChild(this.headerContainer);
+    if (this.floatingFilterContainer) {
+      wrapper.appendChild(this.floatingFilterContainer);
+    }
     wrapper.appendChild(this.bodyViewport);
+
+    // Pagination bar (below body)
+    if (this.enablePagination) {
+      this.createPaginationBar();
+      if (this.paginationBar) {
+        wrapper.appendChild(this.paginationBar);
+      }
+    }
 
     this.root.appendChild(wrapper);
     this.root.appendChild(this.liveRegion!);
@@ -175,6 +287,11 @@ export class DomRenderer {
 
     const headerRow = this.el('div', `${this.prefix}-header-row`);
     headerRow.setAttribute('role', 'row');
+
+    // Checkbox selection header cell
+    if (this.checkboxSelection) {
+      headerRow.appendChild(this.createCheckboxHeaderCell());
+    }
 
     if (this.columnVirtualizer.isVirtualized()) {
       // Use the total width of all columns so the header row is scrollable
@@ -273,6 +390,11 @@ export class DomRenderer {
     // Update total row count for aria
     this.root?.setAttribute('aria-rowcount', String(state.displayedRowIds.length));
     this.root?.setAttribute('aria-colcount', String(allVisibleCols.length));
+
+    // Rebuild floating filter row to match columns
+    if (this.floatingFilter) {
+      this.renderFloatingFilterRow();
+    }
 
     // Notify plugins that header DOM was rebuilt so they can re-inject
     // handles (resize, reorder, context menu, etc.)
@@ -431,6 +553,10 @@ export class DomRenderer {
         if (this.headerContainer) {
           this.headerContainer.scrollLeft = scrollLeft;
         }
+        // Sync floating filter horizontal scroll
+        if (this.floatingFilterContainer) {
+          this.floatingFilterContainer.scrollLeft = scrollLeft;
+        }
 
         // Update store scroll state
         this.engine.store.setState((prev) => ({
@@ -490,6 +616,20 @@ export class DomRenderer {
       this.resizeObserver.observe(this.bodyViewport);
     }
   }
+
+  // ── Custom Double-Click Detection ──
+  // Native dblclick delegation on bodyContainer does NOT work because:
+  //   click #1 → SelectionPlugin → node.version++ → updateRowContent()
+  //   → destroys cell A, creates cell B
+  //   click #2 → fires on cell B → SelectionPlugin → node.version++ →
+  //   updateRowContent() → destroys cell B, creates cell C
+  //   dblclick → fires on cell B (DETACHED from DOM) → never bubbles
+  //
+  // Instead, we detect double-clicks manually in the per-cell click handler
+  // using _lastCellClick state. Since the click handler always fires
+  // (on the current live cell), and we track by rowId/colId (which persist
+  // across cell rebuilds), two clicks within 400ms on the same cell
+  // emit cell:doubleClicked.
 
   // ── Keyboard Navigation ──
 
@@ -563,7 +703,19 @@ export class DomRenderer {
     });
     this.unsubscribers.push(unsubSort);
 
+    // Column structure changes (add/remove/reorder/pin/visibility) require
+    // rebuilding all row cells because the column set changed but row
+    // versions did not. Force-invalidate cached row versions.
+    const forceRowRebuild = () => {
+      for (const [, entry] of this.renderedRows) {
+        entry.version = -1;
+      }
+      this.lastStartIndex = -1;
+      this.lastEndIndex = -1;
+    };
+
     const unsubCols = this.engine.eventBus.on('columns:changed', () => {
+      forceRowRebuild();
       this.configureColumnVirtualizer();
       this.renderHeader();
       this.renderVisibleRows();
@@ -571,6 +723,7 @@ export class DomRenderer {
     this.unsubscribers.push(unsubCols);
 
     const unsubColVisible = this.engine.eventBus.on('column:visible', () => {
+      forceRowRebuild();
       this.configureColumnVirtualizer();
       this.renderHeader();
       this.renderVisibleRows();
@@ -578,11 +731,20 @@ export class DomRenderer {
     this.unsubscribers.push(unsubColVisible);
 
     const unsubColPinned = this.engine.eventBus.on('column:pinned', () => {
+      forceRowRebuild();
       this.configureColumnVirtualizer();
       this.renderHeader();
       this.renderVisibleRows();
     });
     this.unsubscribers.push(unsubColPinned);
+
+    const unsubColMoved = this.engine.eventBus.on('column:moved', () => {
+      forceRowRebuild();
+      this.configureColumnVirtualizer();
+      this.renderHeader();
+      this.renderVisibleRows();
+    });
+    this.unsubscribers.push(unsubColMoved);
 
     // Lightweight column width update on resize — updates CSS in-place
     // without destroying/recreating DOM elements (critical for drag perf)
@@ -602,8 +764,63 @@ export class DomRenderer {
       this.lastEndIndex = -1;
       this.renderHeader();
       this.renderVisibleRows();
+      if (this.enablePagination) this.updatePaginationBar();
     });
     this.unsubscribers.push(unsubRowData);
+
+    // ── Tier 1 Feature Event Listeners ──
+
+    // Checkbox selection: update header checkbox on selection change
+    if (this.checkboxSelection) {
+      const unsubSel = this.engine.eventBus.on('selection:changed', () => {
+        this.updateHeaderCheckboxState();
+      });
+      this.unsubscribers.push(unsubSel);
+    }
+
+    // Inline cell editing: show/hide editor overlay
+    if (this.enableCellEditing) {
+      const unsubEditStart = this.engine.eventBus.on('cell:editingStarted', () => {
+        this.onEditingStateChanged();
+      });
+      this.unsubscribers.push(unsubEditStart);
+
+      const unsubEditStop = this.engine.eventBus.on('cell:editingStopped', () => {
+        this.onEditingStateChanged();
+      });
+      this.unsubscribers.push(unsubEditStop);
+    }
+
+    // Floating filter: sync values on external filter changes
+    if (this.floatingFilter) {
+      const unsubFilter = this.engine.eventBus.on('filter:changed', () => {
+        this.syncFloatingFilterValues();
+        if (this.enablePagination) this.updatePaginationBar();
+      });
+      this.unsubscribers.push(unsubFilter);
+    }
+
+    // Pagination: update bar on page changes
+    if (this.enablePagination) {
+      const unsubPag = this.engine.eventBus.on('pagination:changed', () => {
+        this.updatePaginationBar();
+      });
+      this.unsubscribers.push(unsubPag);
+    }
+
+    // Row grouping: announce expand/collapse for a11y
+    if (this.enableGrouping) {
+      const unsubGroup = this.engine.eventBus.on('row:groupOpened', (e: any) => {
+        const node = e?.node;
+        const expanded = e?.expanded;
+        if (node) {
+          this.announce(
+            `Group ${node.groupValue ?? ''} ${expanded ? 'expanded' : 'collapsed'}`,
+          );
+        }
+      });
+      this.unsubscribers.push(unsubGroup);
+    }
   }
 
   /**
@@ -635,6 +852,23 @@ export class DomRenderer {
         const el = header as HTMLElement;
         const colId = el.getAttribute('data-col-id');
         if (!colId) continue;
+        const col = state.columns.find((c) => c.colId === colId);
+        if (!col) continue;
+        el.style.width = `${col.width}px`;
+        el.style.minWidth = `${col.width}px`;
+        el.style.maxWidth = `${col.width}px`;
+      }
+    }
+
+    // ── Floating filter cell widths ──
+    if (this.floatingFilterContainer) {
+      const filterCells = this.floatingFilterContainer.querySelectorAll(
+        `.${this.prefix}-floating-filter-cell`,
+      );
+      for (const filterCell of filterCells) {
+        const el = filterCell as HTMLElement;
+        const colId = el.getAttribute('data-col-id');
+        if (!colId || colId === '__checkbox') continue;
         const col = state.columns.find((c) => c.colId === colId);
         if (!col) continue;
         el.style.width = `${col.width}px`;
@@ -749,8 +983,24 @@ export class DomRenderer {
         } else {
           existing.element.removeAttribute('aria-selected');
         }
-        // Update content if version changed
-        if (existing.version !== node.version) {
+        // Sync checkbox state
+        if (this.checkboxSelection) {
+          const cb = existing.element.querySelector(`.${this.prefix}-checkbox-cell input`) as HTMLInputElement | null;
+          if (cb) cb.checked = isSelected;
+        }
+        // Update content if version changed, or always for group rows
+        // (group nodes are re-created each cycle with version 0, but
+        //  their expanded state may have changed)
+        // IMPORTANT: Skip content rebuild for the row with an active editor
+        // overlay — updateRowContent() clears all cell children, which would
+        // destroy the editor input element. The editor lifecycle manages its
+        // own cell content (clear on start, restore on stop).
+        // Also protect during the editing:start → cell:editingStarted gap
+        // where activeEditor is null but state.editing already has the rowId.
+        const isEditingThisRow =
+          (this.activeEditor && this.activeEditor.rowId === rowId) ||
+          (state.editing && state.editing.rowId === rowId);
+        if (!isEditingThisRow && (existing.version !== node.version || node.group)) {
           this.updateRowContent(existing.element, node, visibleCols, i);
           existing.version = node.version;
         }
@@ -765,6 +1015,14 @@ export class DomRenderer {
           rowId,
           version: node.version,
         });
+      }
+    }
+
+    // Cancel editing if the edited row scrolled out of viewport
+    if (this.activeEditor) {
+      const editingState = state.editing;
+      if (editingState && !newRowIds.has(editingState.rowId)) {
+        this.engine.commandBus.dispatch('editing:stop', { cancel: true });
       }
     }
   }
@@ -808,6 +1066,17 @@ export class DomRenderer {
     displayIndex: number,
   ): void {
     rowEl.textContent = '';
+
+    // Group row rendering
+    if (this.enableGrouping && node.group) {
+      this.renderGroupRowContent(rowEl, node, columns, displayIndex);
+      return;
+    }
+
+    // Prepend checkbox cell for non-group rows
+    if (this.checkboxSelection) {
+      rowEl.appendChild(this.createCheckboxCell(node, displayIndex));
+    }
 
     const hasPinned = columns.some((c) => c.pinned);
 
@@ -1011,9 +1280,52 @@ export class DomRenderer {
       }
     }
 
-    // Cell click events
+    // Cell click events — includes custom double-click detection.
+    // Native dblclick events are unreliable because SelectionPlugin bumps
+    // node.version on click, causing updateRowContent() to destroy/recreate
+    // cells synchronously. The browser dblclick fires on detached elements.
+    // Instead, we track the last click's time/rowId/colId and detect a
+    // double-click when two clicks hit the same cell within 400ms.
     cell.addEventListener('click', (e) => {
       e.stopPropagation();
+
+      const now = Date.now();
+      const clickRowId = node.id;
+      const clickColId = col.colId;
+
+      // Check for double-click BEFORE emitting cell:clicked / row:clicked.
+      // This way the double-click event fires before SelectionPlugin's
+      // row:clicked handler bumps node.version and triggers a re-render.
+      const last = this._lastCellClick;
+      if (
+        last &&
+        last.rowId === clickRowId &&
+        last.colId === clickColId &&
+        now - last.time < 400
+      ) {
+        // Double-click detected — clear tracking and emit event
+        this._lastCellClick = null;
+
+        // Re-read value in case the first click changed selection/state
+        const currentState = this.engine.store.getState();
+        const currentNode = currentState.rowNodes.get(clickRowId);
+        const currentCol = currentState.columns.find((c) => c.colId === clickColId);
+        const currentValue = currentCol?.field && currentNode
+          ? getValueFromData(currentNode.data, currentCol.field)
+          : value;
+
+        this.engine.eventBus.emit('cell:doubleClicked', {
+          node: currentNode ?? node,
+          colId: clickColId,
+          value: currentValue,
+          event: e,
+        });
+        return; // Skip single-click processing for double-click
+      }
+
+      // Track this click for potential double-click
+      this._lastCellClick = { time: now, rowId: clickRowId, colId: clickColId };
+
       this.engine.eventBus.emit('cell:clicked', {
         node,
         colId: col.colId,
@@ -1025,16 +1337,6 @@ export class DomRenderer {
       // Set focus
       this.engine.commandBus.dispatch('focus:set', {
         position: { rowIndex, colId: col.colId },
-      });
-    });
-
-    cell.addEventListener('dblclick', (e) => {
-      e.stopPropagation();
-      this.engine.eventBus.emit('cell:doubleClicked', {
-        node,
-        colId: col.colId,
-        value,
-        event: e,
       });
     });
 
@@ -1058,6 +1360,667 @@ export class DomRenderer {
     el.removeAttribute('aria-rowindex');
     el.removeAttribute('aria-selected');
     this.rowPool.push(el);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ── Feature 1: Row Grouping Visual ──
+  // ═══════════════════════════════════════════════════════════
+
+  private renderGroupRowContent(
+    rowEl: HTMLElement,
+    node: RowNode,
+    columns: ColumnState[],
+    _displayIndex: number,
+  ): void {
+    rowEl.textContent = '';
+    rowEl.classList.add(`${this.prefix}-group-row`);
+    rowEl.setAttribute('aria-expanded', String(node.expanded));
+    rowEl.setAttribute('aria-level', String(node.level + 1));
+
+    const totalWidth = columns.reduce((sum, c) => sum + c.width, 0);
+    const indent = node.level * this.groupIndent;
+    const cbWidth = this.checkboxSelection ? this.checkboxColumnWidth : 0;
+
+    const groupCell = document.createElement('div');
+    groupCell.setAttribute('role', 'gridcell');
+    groupCell.setAttribute('aria-colspan', String(columns.length + (this.checkboxSelection ? 1 : 0)));
+    groupCell.className = `${this.prefix}-cell ${this.prefix}-group-cell`;
+    groupCell.style.cssText =
+      `width:${totalWidth + cbWidth}px;padding-left:${indent + 12}px;` +
+      'display:flex;align-items:center;gap:8px;' +
+      'font-weight:var(--gs-font-weight-bold,700);cursor:pointer;' +
+      'background:var(--gs-color-group-bg,#f1f5f9);height:100%;';
+
+    // Chevron icon with CSS transition
+    const chevron = document.createElement('span');
+    chevron.className = `${this.prefix}-group-chevron`;
+    chevron.textContent = node.expanded ? '\u25BC' : '\u25B6';
+    chevron.setAttribute('aria-hidden', 'true');
+    chevron.style.cssText =
+      'font-size:10px;flex-shrink:0;transition:transform var(--gs-transition-duration,150ms) var(--gs-transition-easing);' +
+      'color:var(--gs-color-group-chevron,#64748b);';
+
+    // Group label
+    const label = document.createElement('span');
+    label.className = `${this.prefix}-group-label`;
+    const fieldName = node.groupField ?? '';
+    const colDef = this.engine.store.getState().columns.find((c) => c.field === fieldName);
+    const displayField = colDef?.headerName ?? fieldName;
+    label.textContent = `${displayField}: ${node.groupValue ?? ''} (${node.leafChildrenCount})`;
+
+    // Count badge
+    const badge = document.createElement('span');
+    badge.className = `${this.prefix}-group-count`;
+    badge.textContent = String(node.leafChildrenCount);
+    badge.style.cssText =
+      'font-size:var(--gs-font-size-small,11px);color:var(--gs-color-muted,#94a3b8);' +
+      'font-weight:var(--gs-font-weight-normal,400);margin-left:4px;';
+
+    groupCell.appendChild(chevron);
+    groupCell.appendChild(label);
+
+    // Click to expand/collapse via pointer events (touch + mouse)
+    // Read current expanded state from the store at click time to avoid stale closures.
+    const nodeId = node.id;
+    groupCell.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const currentNode = this.engine.store.getState().rowNodes.get(nodeId);
+      const cmd = currentNode?.expanded ? 'group:collapse' : 'group:expand';
+      this.engine.commandBus.dispatch(cmd, { rowId: nodeId });
+    });
+
+    rowEl.appendChild(groupCell);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ── Feature 2: Checkbox Selection Column ──
+  // ═══════════════════════════════════════════════════════════
+
+  private createCheckboxHeaderCell(): HTMLElement {
+    const cell = this.el('div', `${this.prefix}-header-cell ${this.prefix}-checkbox-header`);
+    cell.setAttribute('role', 'columnheader');
+    cell.setAttribute('data-col-id', '__checkbox');
+    cell.style.cssText =
+      `width:${this.checkboxColumnWidth}px;min-width:${this.checkboxColumnWidth}px;` +
+      `max-width:${this.checkboxColumnWidth}px;` +
+      'display:flex;align-items:center;justify-content:center;' +
+      'border-right:var(--gs-border-width,1px) solid var(--gs-color-border,#e0e0e0);';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = `${this.prefix}-checkbox`;
+    checkbox.setAttribute('aria-label', 'Select all rows');
+    checkbox.style.cssText =
+      'width:var(--gs-size-checkbox,16px);height:var(--gs-size-checkbox,16px);cursor:pointer;' +
+      'accent-color:var(--gs-color-accent,#3b82f6);';
+
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) {
+        this.engine.commandBus.dispatch('selection:selectAll', {});
+      } else {
+        this.engine.commandBus.dispatch('selection:deselectAll', {});
+      }
+    });
+
+    this.headerCheckbox = checkbox;
+    cell.appendChild(checkbox);
+
+    // Initial state sync
+    this.updateHeaderCheckboxState();
+
+    return cell;
+  }
+
+  private createCheckboxCell(node: RowNode, displayIndex: number): HTMLElement {
+    const cell = document.createElement('div');
+    cell.setAttribute('role', 'gridcell');
+    cell.setAttribute('data-col-id', '__checkbox');
+    cell.className = `${this.prefix}-cell ${this.prefix}-checkbox-cell`;
+    cell.style.cssText =
+      `width:${this.checkboxColumnWidth}px;min-width:${this.checkboxColumnWidth}px;` +
+      `max-width:${this.checkboxColumnWidth}px;` +
+      'display:flex;align-items:center;justify-content:center;' +
+      'border-right:var(--gs-border-width,1px) solid var(--gs-color-border,#e0e0e0);';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = node.selected;
+    checkbox.className = `${this.prefix}-checkbox`;
+    checkbox.setAttribute('aria-label', `Select row ${displayIndex + 1}`);
+    checkbox.style.cssText =
+      'width:var(--gs-size-checkbox,16px);height:var(--gs-size-checkbox,16px);cursor:pointer;' +
+      'accent-color:var(--gs-color-accent,#3b82f6);';
+
+    // Stop propagation to prevent row click selection conflict
+    checkbox.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    checkbox.addEventListener('change', () => {
+      this.engine.commandBus.dispatch('selection:select', {
+        rowId: node.id,
+        multiSelect: true,
+        source: 'checkbox',
+      });
+    });
+
+    cell.appendChild(checkbox);
+    return cell;
+  }
+
+  private updateHeaderCheckboxState(): void {
+    if (!this.headerCheckbox) return;
+    const state = this.engine.store.getState();
+    const totalDisplayed = state.displayedRowIds.length;
+    const selectedCount = state.selection.selectedRowIds.size;
+
+    this.headerCheckbox.checked = selectedCount > 0 && selectedCount >= totalDisplayed;
+    this.headerCheckbox.indeterminate = selectedCount > 0 && selectedCount < totalDisplayed;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ── Feature 3: Inline Cell Editing ──
+  // ═══════════════════════════════════════════════════════════
+
+  private onEditingStateChanged(): void {
+    const state = this.engine.store.getState();
+
+    if (state.editing && !this.activeEditor) {
+      this.startEditorOverlay();
+    } else if (!state.editing && this.activeEditor) {
+      this.removeEditorOverlay();
+    }
+  }
+
+  private startEditorOverlay(): void {
+    const state = this.engine.store.getState();
+    if (!state.editing) return;
+
+    const { rowId, colId, value } = state.editing;
+    const node = state.rowNodes.get(rowId);
+    if (!node) return;
+
+    const col = state.columns.find((c) => c.colId === colId);
+    if (!col) return;
+
+    // Find cell DOM element
+    const rowEl = this.bodyContainer?.querySelector(`[data-row-id="${rowId}"]`);
+    if (!rowEl) return;
+    const cellEl = rowEl.querySelector(`[data-col-id="${colId}"]`) as HTMLElement | null;
+    if (!cellEl) return;
+
+    // Clear cell content and prepare for editor
+    cellEl.textContent = '';
+    cellEl.classList.add(`${this.prefix}-cell-editing`);
+    cellEl.style.position = 'relative';
+    cellEl.style.padding = '0';
+    cellEl.style.overflow = 'visible';
+
+    // Determine editor type
+    const editorType = col.originalDef.cellEditor ?? 'text';
+    const editorParams = col.originalDef.cellEditorParams as Record<string, any> | undefined;
+
+    let editorEl: HTMLElement;
+
+    if (editorType === 'select' && editorParams?.values) {
+      // Select editor
+      const select = document.createElement('select');
+      select.className = `${this.prefix}-cell-editor ${this.prefix}-cell-editor-select`;
+      select.style.cssText =
+        'width:100%;height:100%;box-sizing:border-box;' +
+        'border:2px solid var(--gs-color-cell-editing-border,#3b82f6);' +
+        'outline:none;padding:0 4px;font:inherit;' +
+        'background:var(--gs-color-cell-editing-bg,#ffffff);';
+
+      for (const optVal of editorParams.values as string[]) {
+        const opt = document.createElement('option');
+        opt.value = optVal;
+        opt.textContent = optVal;
+        if (optVal === String(value)) opt.selected = true;
+        select.appendChild(opt);
+      }
+
+      select.addEventListener('change', () => {
+        this.engine.commandBus.dispatch('editing:setValue', { value: select.value });
+      });
+
+      select.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
+        else if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: true }); }
+      });
+
+      editorEl = select;
+    } else if (editorType === 'number') {
+      // Number editor
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.value = value != null ? String(value) : '';
+      input.className = `${this.prefix}-cell-editor ${this.prefix}-cell-editor-number`;
+      input.style.cssText =
+        'width:100%;height:100%;box-sizing:border-box;' +
+        'border:2px solid var(--gs-color-cell-editing-border,#3b82f6);' +
+        'outline:none;padding:0 8px;font:inherit;' +
+        'background:var(--gs-color-cell-editing-bg,#ffffff);';
+
+      input.addEventListener('input', () => {
+        this.engine.commandBus.dispatch('editing:setValue', { value: input.valueAsNumber });
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
+        else if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: true }); }
+        else if (e.key === 'Tab') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
+      });
+
+      editorEl = input;
+    } else {
+      // Text editor (default)
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = value != null ? String(value) : '';
+      input.className = `${this.prefix}-cell-editor ${this.prefix}-cell-editor-text`;
+      input.style.cssText =
+        'width:100%;height:100%;box-sizing:border-box;' +
+        'border:2px solid var(--gs-color-cell-editing-border,#3b82f6);' +
+        'outline:none;padding:0 8px;font:inherit;' +
+        'background:var(--gs-color-cell-editing-bg,#ffffff);';
+
+      input.addEventListener('input', () => {
+        this.engine.commandBus.dispatch('editing:setValue', { value: input.value });
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
+        else if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: true }); }
+        else if (e.key === 'Tab') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
+      });
+
+      editorEl = input;
+    }
+
+    cellEl.appendChild(editorEl);
+
+    // Store reference
+    this.activeEditor = {
+      element: editorEl,
+      cellElement: cellEl,
+      rowId,
+      colId,
+    };
+
+    // Focus and select after DOM insertion
+    requestAnimationFrame(() => {
+      if (editorEl instanceof HTMLInputElement) {
+        editorEl.focus();
+        editorEl.select();
+      } else if (editorEl instanceof HTMLSelectElement) {
+        editorEl.focus();
+      }
+    });
+  }
+
+  private removeEditorOverlay(): void {
+    if (!this.activeEditor) return;
+
+    const { cellElement, rowId } = this.activeEditor;
+
+    // Remove editing class
+    cellElement.classList.remove(`${this.prefix}-cell-editing`);
+    cellElement.style.padding = '';
+    cellElement.style.overflow = '';
+
+    this.activeEditor = null;
+
+    // Re-render the row to restore cell content
+    const state = this.engine.store.getState();
+    const node = state.rowNodes.get(rowId);
+    if (node) {
+      const entry = this.renderedRows.get(rowId);
+      if (entry) {
+        const scrollLeft = this.bodyViewport?.scrollLeft ?? 0;
+        const { columns: visibleCols } = this.getVisibleColumnsForRender(scrollLeft);
+        this.updateRowContent(entry.element, node, visibleCols, node.displayIndex);
+        entry.version = node.version;
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ── Feature 4: Floating Filter Row ──
+  // ═══════════════════════════════════════════════════════════
+
+  private renderFloatingFilterRow(): void {
+    if (!this.floatingFilterContainer) return;
+    this.floatingFilterContainer.textContent = '';
+    this.filterInputs.clear();
+
+    const state = this.engine.store.getState();
+    const scrollLeft = this.bodyViewport?.scrollLeft ?? 0;
+    const { columns: renderCols } = this.getVisibleColumnsForRender(scrollLeft);
+    const filterHeight = 36;
+
+    const filterRow = this.el('div', `${this.prefix}-floating-filter-row`);
+    filterRow.style.cssText = `display:flex;height:${filterHeight}px;align-items:center;`;
+
+    // Checkbox spacer
+    if (this.checkboxSelection) {
+      const spacer = document.createElement('div');
+      spacer.setAttribute('data-col-id', '__checkbox');
+      spacer.className = `${this.prefix}-floating-filter-cell`;
+      spacer.style.cssText =
+        `width:${this.checkboxColumnWidth}px;min-width:${this.checkboxColumnWidth}px;` +
+        `max-width:${this.checkboxColumnWidth}px;` +
+        'border-right:var(--gs-border-width,1px) solid var(--gs-color-border,#e0e0e0);';
+      filterRow.appendChild(spacer);
+    }
+
+    // Check for pinned columns
+    const hasPinned = renderCols.some((c) => c.pinned);
+
+    if (hasPinned) {
+      // Pinned-left filter cells
+      let pinnedLeftOffset = 0;
+      for (const col of renderCols.filter((c) => c.pinned === 'left')) {
+        const cell = this.createFilterCell(col, state);
+        cell.style.position = 'sticky';
+        cell.style.left = `${pinnedLeftOffset + (this.checkboxSelection ? this.checkboxColumnWidth : 0)}px`;
+        cell.style.zIndex = '1';
+        cell.style.background = 'var(--gs-color-header-bg,#f8fafc)';
+        pinnedLeftOffset += col.width;
+        filterRow.appendChild(cell);
+      }
+
+      // Unpinned filter cells
+      for (const col of renderCols.filter((c) => !c.pinned)) {
+        filterRow.appendChild(this.createFilterCell(col, state));
+      }
+
+      // Pinned-right filter cells
+      let pinnedRightOffset = 0;
+      const pinnedRightCols = renderCols.filter((c) => c.pinned === 'right');
+      for (let i = pinnedRightCols.length - 1; i >= 0; i--) {
+        const col = pinnedRightCols[i]!;
+        const cell = this.createFilterCell(col, state);
+        cell.style.position = 'sticky';
+        cell.style.right = `${pinnedRightOffset}px`;
+        cell.style.zIndex = '1';
+        cell.style.background = 'var(--gs-color-header-bg,#f8fafc)';
+        pinnedRightOffset += col.width;
+        filterRow.appendChild(cell);
+      }
+
+      // Set total width for scrolling
+      const totalWidth = renderCols.reduce((sum, c) => sum + c.width, 0) +
+        (this.checkboxSelection ? this.checkboxColumnWidth : 0);
+      filterRow.style.width = `${totalWidth}px`;
+    } else {
+      for (const col of renderCols) {
+        filterRow.appendChild(this.createFilterCell(col, state));
+      }
+    }
+
+    this.floatingFilterContainer.appendChild(filterRow);
+  }
+
+  private createFilterCell(col: ColumnState, state: GridState): HTMLElement {
+    const cell = document.createElement('div');
+    cell.className = `${this.prefix}-floating-filter-cell`;
+    cell.setAttribute('data-col-id', col.colId);
+    cell.style.cssText =
+      `width:${col.width}px;min-width:${col.width}px;max-width:${col.width}px;` +
+      'padding:4px;box-sizing:border-box;' +
+      'border-right:var(--gs-border-width,1px) solid var(--gs-color-border,#e0e0e0);';
+
+    // Only add input for filterable columns
+    if (!col.filterable && !col.originalDef.filter) {
+      return cell;
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'position:relative;width:100%;';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = `Filter...`;
+    input.className = `${this.prefix}-floating-filter-input`;
+    input.setAttribute('aria-label', `Filter ${col.headerName}`);
+    input.style.cssText =
+      'width:100%;box-sizing:border-box;padding:4px 24px 4px 8px;' +
+      'border:var(--gs-border-width,1px) solid var(--gs-color-border,#e2e8f0);' +
+      'border-radius:4px;font:inherit;font-size:var(--gs-font-size-small,11px);' +
+      'outline:none;background:var(--gs-color-background,#fff);' +
+      'color:var(--gs-color-foreground,#1a1a1a);';
+
+    // Sync current filter value
+    const currentFilter = state.filterModel[col.colId];
+    if (currentFilter?.filter != null) {
+      input.value = String(currentFilter.filter);
+    }
+
+    // Clear button
+    const clearBtn = document.createElement('span');
+    clearBtn.className = `${this.prefix}-floating-filter-clear`;
+    clearBtn.textContent = '\u00D7'; // ×
+    clearBtn.setAttribute('aria-label', `Clear filter for ${col.headerName}`);
+    clearBtn.setAttribute('role', 'button');
+    clearBtn.setAttribute('tabindex', '0');
+    clearBtn.style.cssText =
+      'position:absolute;right:6px;top:50%;transform:translateY(-50%);' +
+      'cursor:pointer;font-size:14px;line-height:1;' +
+      'color:var(--gs-color-muted,#94a3b8);' +
+      `display:${currentFilter?.filter ? 'block' : 'none'};`;
+
+    // Debounced input handler
+    input.addEventListener('input', () => {
+      const existingTimer = this.filterDebounceTimers.get(col.colId);
+      if (existingTimer) clearTimeout(existingTimer);
+
+      const timer = setTimeout(() => {
+        const val = input.value.trim();
+        if (val) {
+          this.engine.commandBus.dispatch('filter:setColumn', {
+            colId: col.colId,
+            model: { filterType: 'text', type: 'contains', filter: val },
+          });
+        } else {
+          this.engine.commandBus.dispatch('filter:removeColumn', { colId: col.colId });
+        }
+        clearBtn.style.display = val ? 'block' : 'none';
+      }, this.floatingFilterDebounce);
+
+      this.filterDebounceTimers.set(col.colId, timer);
+    });
+
+    // Focus ring
+    input.addEventListener('focus', () => {
+      input.style.borderColor = 'var(--gs-color-accent,#3b82f6)';
+      input.style.boxShadow = 'var(--gs-shadow-focus-ring)';
+    });
+    input.addEventListener('blur', () => {
+      input.style.borderColor = 'var(--gs-color-border,#e2e8f0)';
+      input.style.boxShadow = 'none';
+    });
+
+    // Clear button click
+    clearBtn.addEventListener('click', () => {
+      input.value = '';
+      this.engine.commandBus.dispatch('filter:removeColumn', { colId: col.colId });
+      clearBtn.style.display = 'none';
+      input.focus();
+    });
+
+    // Clear button keyboard support
+    clearBtn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        clearBtn.click();
+      }
+    });
+
+    this.filterInputs.set(col.colId, input);
+
+    wrapper.appendChild(input);
+    wrapper.appendChild(clearBtn);
+    cell.appendChild(wrapper);
+    return cell;
+  }
+
+  private syncFloatingFilterValues(): void {
+    const state = this.engine.store.getState();
+    for (const [colId, input] of this.filterInputs) {
+      const filter = state.filterModel[colId];
+      const filterValue = filter?.filter != null ? String(filter.filter) : '';
+
+      // Only update if the value changed externally (not from user input)
+      if (document.activeElement !== input) {
+        input.value = filterValue;
+      }
+
+      // Sync clear button visibility
+      const clearBtn = input.parentElement?.querySelector(`.${this.prefix}-floating-filter-clear`) as HTMLElement | null;
+      if (clearBtn) {
+        clearBtn.style.display = filterValue ? 'block' : 'none';
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ── Feature 5: Pagination Bar ──
+  // ═══════════════════════════════════════════════════════════
+
+  private createPaginationBar(): void {
+    const p = this.prefix;
+    this.paginationBar = this.el('div', `${p}-pagination`);
+    this.paginationBar.setAttribute('role', 'navigation');
+    this.paginationBar.setAttribute('aria-label', 'Pagination controls');
+    this.paginationBar.style.cssText =
+      'display:flex;align-items:center;justify-content:space-between;' +
+      'padding:8px 12px;' +
+      'border-top:var(--gs-border-width,1px) solid var(--gs-color-border,#e2e8f0);' +
+      'background:var(--gs-color-header-bg,#f8fafc);' +
+      'font-size:var(--gs-font-size-small,11px);' +
+      'color:var(--gs-color-header-fg,#475569);' +
+      'gap:12px;flex-shrink:0;';
+
+    // Left: Row info label
+    this.paginationLabel = this.el('span', `${p}-pagination-label`);
+    this.paginationLabel.setAttribute('aria-live', 'polite');
+    this.paginationLabel.textContent = 'Rows 0-0 of 0';
+
+    // Center: Navigation buttons
+    const nav = this.el('div', `${p}-pagination-nav`);
+    nav.style.cssText = 'display:flex;align-items:center;gap:4px;';
+
+    const firstBtn = this.createPaginationButton('First page', '\u00AB', 'pagination:firstPage');
+    const prevBtn = this.createPaginationButton('Previous page', '\u2039', 'pagination:prevPage');
+
+    this.paginationPageInfo = this.el('span', `${p}-pagination-pages`);
+    this.paginationPageInfo.style.cssText = 'padding:0 8px;white-space:nowrap;';
+    this.paginationPageInfo.textContent = 'Page 1 of 1';
+
+    const nextBtn = this.createPaginationButton('Next page', '\u203A', 'pagination:nextPage');
+    const lastBtn = this.createPaginationButton('Last page', '\u00BB', 'pagination:lastPage');
+
+    nav.appendChild(firstBtn);
+    nav.appendChild(prevBtn);
+    nav.appendChild(this.paginationPageInfo);
+    nav.appendChild(nextBtn);
+    nav.appendChild(lastBtn);
+
+    // Right: Page size selector
+    const sizeContainer = this.el('div', `${p}-pagination-size`);
+    sizeContainer.style.cssText = 'display:flex;align-items:center;gap:6px;';
+
+    const sizeLabel = document.createElement('span');
+    sizeLabel.textContent = 'Rows per page:';
+
+    this.paginationPageSizeSelect = document.createElement('select');
+    this.paginationPageSizeSelect.className = `${p}-pagination-select`;
+    this.paginationPageSizeSelect.setAttribute('aria-label', 'Rows per page');
+    this.paginationPageSizeSelect.style.cssText =
+      'border:var(--gs-border-width,1px) solid var(--gs-color-border,#e2e8f0);' +
+      'border-radius:4px;padding:2px 6px;font:inherit;' +
+      'background:var(--gs-color-background,#fff);' +
+      'color:var(--gs-color-foreground,#1a1a1a);cursor:pointer;';
+
+    for (const size of this.pageSizeOptions) {
+      const opt = document.createElement('option');
+      opt.value = String(size);
+      opt.textContent = String(size);
+      this.paginationPageSizeSelect.appendChild(opt);
+    }
+
+    this.paginationPageSizeSelect.addEventListener('change', () => {
+      const newSize = Number(this.paginationPageSizeSelect!.value);
+      this.engine.commandBus.dispatch('pagination:setPageSize', { pageSize: newSize });
+    });
+
+    sizeContainer.appendChild(sizeLabel);
+    sizeContainer.appendChild(this.paginationPageSizeSelect);
+
+    // Assemble
+    this.paginationBar.appendChild(this.paginationLabel);
+    this.paginationBar.appendChild(nav);
+    this.paginationBar.appendChild(sizeContainer);
+  }
+
+  private createPaginationButton(label: string, text: string, command: string): HTMLElement {
+    const btn = document.createElement('button');
+    btn.className = `${this.prefix}-pagination-btn`;
+    btn.textContent = text;
+    btn.setAttribute('aria-label', label);
+    btn.setAttribute('title', label);
+    btn.style.cssText =
+      'border:var(--gs-border-width,1px) solid var(--gs-color-border,#e2e8f0);' +
+      'background:var(--gs-color-background,#fff);' +
+      'color:var(--gs-color-foreground,#1a1a1a);' +
+      'border-radius:4px;padding:4px 8px;cursor:pointer;' +
+      'font-size:var(--gs-font-size,13px);line-height:1;' +
+      'min-width:28px;text-align:center;' +
+      'transition:background var(--gs-transition-duration,150ms) var(--gs-transition-easing);';
+
+    btn.addEventListener('click', () => {
+      this.engine.commandBus.dispatch(command, {});
+    });
+
+    return btn;
+  }
+
+  private updatePaginationBar(): void {
+    if (!this.paginationBar) return;
+
+    const state = this.engine.store.getState();
+    const { currentPage, pageSize, totalRows } = state.pagination;
+    const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+
+    // Update row info label
+    if (this.paginationLabel) {
+      const start = totalRows > 0 ? currentPage * pageSize + 1 : 0;
+      const end = Math.min((currentPage + 1) * pageSize, totalRows);
+      this.paginationLabel.textContent = `Rows ${start}\u2013${end} of ${totalRows}`;
+    }
+
+    // Update page info
+    if (this.paginationPageInfo) {
+      this.paginationPageInfo.textContent = `Page ${currentPage + 1} of ${totalPages}`;
+    }
+
+    // Update button disabled states
+    const buttons = this.paginationBar.querySelectorAll(`.${this.prefix}-pagination-btn`);
+    if (buttons.length >= 4) {
+      // First, Prev
+      (buttons[0] as HTMLButtonElement).disabled = currentPage === 0;
+      (buttons[1] as HTMLButtonElement).disabled = currentPage === 0;
+      // Next, Last
+      (buttons[2] as HTMLButtonElement).disabled = currentPage >= totalPages - 1;
+      (buttons[3] as HTMLButtonElement).disabled = currentPage >= totalPages - 1;
+    }
+
+    // Sync page size select
+    if (this.paginationPageSizeSelect) {
+      this.paginationPageSizeSelect.value = String(pageSize);
+    }
   }
 
   // ── Utilities ──

@@ -195,3 +195,170 @@
   z-index: 1;
   position: relative;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Tier 1 Feature Styles
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Group Row ── */
+.gs-group-row {
+  cursor: pointer;
+}
+
+.gs-group-row:hover .gs-group-cell {
+  background-color: var(--gs-color-group-bg-hover, #e2e8f0);
+}
+
+.gs-group-cell {
+  font-weight: var(--gs-font-weight-bold);
+  background-color: var(--gs-color-group-bg, #f1f5f9);
+  transition: background-color var(--gs-transition-duration) var(--gs-transition-easing);
+}
+
+.gs-group-chevron {
+  font-size: 10px;
+  flex-shrink: 0;
+  transition: transform var(--gs-transition-duration) var(--gs-transition-easing);
+  color: var(--gs-color-group-chevron, #64748b);
+}
+
+.gs-group-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Checkbox Column ── */
+.gs-checkbox-header,
+.gs-checkbox-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gs-checkbox {
+  width: var(--gs-size-checkbox);
+  height: var(--gs-size-checkbox);
+  cursor: pointer;
+  accent-color: var(--gs-color-accent);
+}
+
+/* ── Cell Editing ── */
+.gs-cell-editing {
+  position: relative;
+  padding: 0;
+  overflow: visible;
+}
+
+.gs-cell-editor {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border: 2px solid var(--gs-color-cell-editing-border, #3b82f6);
+  outline: none;
+  font: inherit;
+  background: var(--gs-color-cell-editing-bg, #ffffff);
+  color: var(--gs-color-foreground);
+}
+
+.gs-cell-editor:focus {
+  box-shadow: 0 0 0 1px var(--gs-color-cell-editing-border, #3b82f6);
+}
+
+/* ── Floating Filter ── */
+.gs-floating-filter {
+  overflow: hidden;
+  background: var(--gs-color-filter-bg, var(--gs-color-header-bg));
+  border-bottom: var(--gs-border-width) solid var(--gs-color-border);
+}
+
+.gs-floating-filter-row {
+  display: flex;
+  align-items: center;
+}
+
+.gs-floating-filter-cell {
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.gs-floating-filter-input {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: var(--gs-font-size-small);
+  border: var(--gs-border-width) solid var(--gs-color-filter-input-border, var(--gs-color-border));
+  border-radius: 4px;
+  padding: 4px 24px 4px 8px;
+  outline: none;
+  background: var(--gs-color-background);
+  color: var(--gs-color-foreground);
+  transition: border-color var(--gs-transition-duration) var(--gs-transition-easing),
+              box-shadow var(--gs-transition-duration) var(--gs-transition-easing);
+}
+
+.gs-floating-filter-input:focus {
+  border-color: var(--gs-color-filter-input-focus, var(--gs-color-accent));
+  box-shadow: var(--gs-shadow-focus-ring);
+}
+
+.gs-floating-filter-clear {
+  cursor: pointer;
+  color: var(--gs-color-muted);
+  transition: color var(--gs-transition-duration) var(--gs-transition-easing);
+}
+
+.gs-floating-filter-clear:hover {
+  color: var(--gs-color-foreground);
+}
+
+/* ── Pagination ── */
+.gs-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-top: var(--gs-border-width) solid var(--gs-color-border);
+  background: var(--gs-color-pagination-bg, var(--gs-color-header-bg));
+  font-size: var(--gs-font-size-small);
+  color: var(--gs-color-header-fg);
+}
+
+.gs-pagination-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gs-pagination-btn {
+  border: var(--gs-border-width) solid var(--gs-color-border);
+  background: var(--gs-color-background);
+  color: var(--gs-color-foreground);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  min-width: 28px;
+  text-align: center;
+  font-size: var(--gs-font-size);
+  line-height: 1;
+  transition: background var(--gs-transition-duration) var(--gs-transition-easing);
+}
+
+.gs-pagination-btn:hover:not(:disabled) {
+  background: var(--gs-color-pagination-btn-hover, var(--gs-color-header-hover));
+}
+
+.gs-pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.gs-pagination-select {
+  border: var(--gs-border-width) solid var(--gs-color-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font: inherit;
+  background: var(--gs-color-background);
+  color: var(--gs-color-foreground);
+  cursor: pointer;
+}

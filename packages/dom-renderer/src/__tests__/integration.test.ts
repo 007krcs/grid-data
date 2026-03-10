@@ -464,10 +464,15 @@ describe('Integration: Core + Plugins + DomRenderer', () => {
     const spy = vi.fn();
     engine.eventBus.on('cell:editingStarted', spy);
 
-    // Find a cell and double-click it
+    // Double-click is detected via two rapid click events (not native dblclick)
+    // because SelectionPlugin rebuilds cells between clicks, causing native
+    // dblclick to fire on detached DOM elements.
     const cell = container.querySelector('[data-col-id="name"][role="gridcell"]');
     expect(cell).toBeTruthy();
-    cell!.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    cell!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    // Get fresh cell after first click (may have been rebuilt by SelectionPlugin)
+    const freshCell = container.querySelector('[data-col-id="name"][role="gridcell"]');
+    freshCell!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
     expect(spy).toHaveBeenCalledTimes(1);
     expect(spy).toHaveBeenCalledWith(

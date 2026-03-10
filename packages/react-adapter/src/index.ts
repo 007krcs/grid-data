@@ -35,6 +35,7 @@ export type {
   ReactColumnDef,
   ControlledStateProps,
   GridStormEventProps,
+  RendererConfigProps,
   GridStormProps,
 } from './types';
 

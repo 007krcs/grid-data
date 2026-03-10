@@ -80,7 +80,20 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
   // ── Row processing pipeline ──
   function reprocessRows(): void {
     const state = store.getState();
-    let nodes = [...state.rowNodes.values()].filter((n) => n.rowPinned === null);
+
+    // If the grouping plugin is active with group columns, delegate to it.
+    // The GroupingPlugin manages its own displayedRowIds including filter/sort.
+    const groupingState = state.pluginState?.grouping as
+      | { groupColumns: string[] }
+      | undefined;
+    if (groupingState && groupingState.groupColumns.length > 0) {
+      commandBus.dispatch('grouping:reprocess', {});
+      return;
+    }
+
+    let nodes = [...state.rowNodes.values()].filter(
+      (n) => n.rowPinned === null && !n.group,
+    );
 
     // Filter
     nodes = filterRowNodes(nodes, state.filterModel, state.columns, state.quickFilterText);
@@ -205,14 +218,23 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
     },
 
     moveColumn(colId, toIndex) {
+      const prevCols = store.getState().columns;
+      const fromIndex = prevCols.findIndex((c) => c.colId === colId);
+      if (fromIndex < 0) return;
+
       store.setState((prev) => {
         const cols = [...prev.columns];
-        const fromIndex = cols.findIndex((c) => c.colId === colId);
-        if (fromIndex < 0) return prev;
-        const [col] = cols.splice(fromIndex, 1);
+        const fi = cols.findIndex((c) => c.colId === colId);
+        if (fi < 0) return prev;
+        const [col] = cols.splice(fi, 1);
         cols.splice(toIndex, 0, col!);
         return { ...prev, columns: cols };
       });
+
+      const movedCol = findColumn(store.getState().columns, colId);
+      if (movedCol) {
+        eventBus.emit('column:moved', { column: movedCol, fromIndex, toIndex });
+      }
     },
 
     autoSizeColumn(_colId) {
@@ -348,6 +370,14 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
       store.setState((prev) => ({ ...prev, editing: null }));
 
       if (node) {
+        // Write the new value back to the row data when not cancelled
+        if (!cancel && value !== originalValue && node.data != null) {
+          const col = state.columns.find((c) => c.colId === colId);
+          const field = col?.field ?? colId;
+          (node.data as any)[field] = value;
+          node.version++;
+        }
+
         eventBus.emit('cell:editingStopped', {
           node,
           colId,

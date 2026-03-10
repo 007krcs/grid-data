@@ -97,7 +97,10 @@ export class KeyboardManager {
         break;
       case 'Enter':
       case 'F2':
-        if (focused) {
+        // Only start editing if not already editing — the editor input's
+        // keydown handler stops propagation, but this guard protects against
+        // edge cases where the event still reaches the root.
+        if (focused && !state.editing) {
           e.preventDefault();
           const rowId = state.displayedRowIds[focused.rowIndex];
           if (rowId) {

@@ -10,6 +10,10 @@ import type { ColumnVirtualResult } from './column-virtualizer';
 import { ScrollManager } from './scroll-manager';
 import { KeyboardManager } from './keyboard-manager';
 import { isServer, safeResizeObserver } from './ssr';
+import type { RendererExtension, RendererContext } from './extensions/types';
+import { FloatingFilterRenderer } from './extensions/floating-filter-renderer';
+import { PaginationRenderer } from './extensions/pagination-renderer';
+import { SidebarRenderer } from './extensions/sidebar-renderer';
 
 export interface DomRendererConfig {
   /** Container element to mount the grid into. */
@@ -48,6 +52,11 @@ export interface DomRendererConfig {
   enableColumnSidebar?: boolean;
   /** Width of the column sidebar panel in pixels. Default: 220. */
   sidebarWidth?: number;
+
+  // ── Extension System ──
+
+  /** Additional renderer extensions to mount. */
+  extensions?: RendererExtension[];
 }
 
 interface RowDomEntry {
@@ -69,37 +78,22 @@ export class DomRenderer {
   private heightSpacer: HTMLElement | null = null;
   private liveRegion: HTMLElement | null = null;
 
-  // Tier 1 Feature DOM elements
-  private floatingFilterContainer: HTMLElement | null = null;
-  private paginationBar: HTMLElement | null = null;
-  private paginationLabel: HTMLElement | null = null;
-  private paginationPageInfo: HTMLElement | null = null;
-  private paginationPageSizeSelect: HTMLSelectElement | null = null;
-
-  // Tier 1 Feature config
+  // Feature config
   private enableCellEditing: boolean;
   private enableGrouping: boolean;
   private groupIndent: number;
   private checkboxSelection: boolean;
   private checkboxColumnWidth: number;
-  private floatingFilter: boolean;
-  private floatingFilterDebounce: number;
-  private enablePagination: boolean;
-  private pageSizeOptions: number[];
-
-  // Tier 2 Feature config
   private groupHeaderHeight: number | null;
-  private enableColumnSidebar: boolean;
-  private sidebarWidth: number;
 
-  // Tier 2 Feature state
-  private sidebarElement: HTMLElement | null = null;
-  private sidebarOpen = false;
+  // Extension system
+  private extensions: RendererExtension[] = [];
+  private extFloatingFilter: FloatingFilterRenderer | null = null;
+  private extPagination: PaginationRenderer | null = null;
+  private extSidebar: SidebarRenderer | null = null;
 
-  // Tier 1 Feature state
+  // Feature state
   private headerCheckbox: HTMLInputElement | null = null;
-  private filterInputs = new Map<string, HTMLInputElement>();
-  private filterDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private activeEditor: {
     element: HTMLElement;
     cellElement: HTMLElement;
@@ -145,23 +139,58 @@ export class DomRenderer {
     this.container = config.container;
     this.prefix = config.classPrefix ?? 'gs';
 
-    // Tier 1 feature config with smart defaults (auto-detect plugins)
+    // Feature config with smart defaults (auto-detect plugins)
     const hasPlugin = (id: string) => !!this.engine.pluginManager.getPlugin(id);
     this.enableCellEditing = config.enableCellEditing ?? hasPlugin('editing');
     this.enableGrouping = config.enableGrouping ?? hasPlugin('grouping');
     this.groupIndent = config.groupIndent ?? 24;
     this.checkboxSelection = config.checkboxSelection ?? false;
     this.checkboxColumnWidth = config.checkboxColumnWidth ?? 48;
-    this.floatingFilter = config.floatingFilter ?? false;
-    this.floatingFilterDebounce = config.floatingFilterDebounce ?? 300;
-    this.enablePagination = config.enablePagination ?? hasPlugin('pagination');
-    this.pageSizeOptions = config.pageSizeOptions ?? [25, 50, 100, 250];
-
-    // Tier 2 feature config
     this.groupHeaderHeight = config.groupHeaderHeight ?? null;
-    this.enableColumnSidebar = config.enableColumnSidebar ?? false;
-    this.sidebarWidth = config.sidebarWidth ?? 220;
 
+    // Initialize built-in extensions based on config
+    const floatingFilter = config.floatingFilter ?? false;
+    const floatingFilterDebounce = config.floatingFilterDebounce ?? 300;
+    const enablePagination = config.enablePagination ?? hasPlugin('pagination');
+    const pageSizeOptions = config.pageSizeOptions ?? [25, 50, 100, 250];
+    const enableColumnSidebar = config.enableColumnSidebar ?? false;
+    const sidebarWidth = config.sidebarWidth ?? 220;
+
+    if (floatingFilter) {
+      this.extFloatingFilter = new FloatingFilterRenderer({ debounce: floatingFilterDebounce });
+      this.extensions.push(this.extFloatingFilter);
+    }
+    if (enablePagination) {
+      this.extPagination = new PaginationRenderer({ pageSizeOptions });
+      this.extensions.push(this.extPagination);
+    }
+    if (enableColumnSidebar) {
+      this.extSidebar = new SidebarRenderer({ width: sidebarWidth });
+      this.extensions.push(this.extSidebar);
+    }
+
+    // Add user-provided extensions
+    if (config.extensions) {
+      this.extensions.push(...config.extensions);
+    }
+  }
+
+  /** Build a RendererContext for extensions. */
+  private buildContext(): RendererContext {
+    return {
+      engine: this.engine,
+      prefix: this.prefix,
+      root: this.root!,
+      headerContainer: this.headerContainer!,
+      bodyViewport: this.bodyViewport!,
+      wrapper: this.root!.querySelector(`.${this.prefix}-wrapper`) as HTMLElement,
+      getState: () => this.engine.store.getState(),
+      api: this.engine.api,
+      getVisibleColumns: (scrollLeft: number) => this.getVisibleColumnsForRender(scrollLeft),
+      checkboxSelection: this.checkboxSelection,
+      checkboxColumnWidth: this.checkboxColumnWidth,
+      el: (tag: string, className: string) => this.el(tag, className),
+    };
   }
 
   /** Mount the grid into the container. No-op when running on the server. */
@@ -177,15 +206,21 @@ export class DomRenderer {
     this.observeContainerAttributes();
     this.subscribeToState();
     this.renderHeader();
-    if (this.floatingFilter) {
-      this.renderFloatingFilterRow();
-    }
     this.renderVisibleRows();
-    if (this.enablePagination) {
-      this.updatePaginationBar();
-    }
-    if (this.enableColumnSidebar) {
-      this.createColumnSidebar();
+
+    // Mount all extensions (floating filter, pagination, sidebar, user-provided)
+    if (this.root) {
+      const ctx = this.buildContext();
+      for (const ext of this.extensions) {
+        ext.mount(ctx);
+      }
+      // Wire sidebar callback so it can trigger re-render
+      if (this.extSidebar) {
+        this.extSidebar.onColumnVisibilityChanged = () => {
+          this.renderHeader();
+          this.renderVisibleRows();
+        };
+      }
     }
   }
 
@@ -200,21 +235,14 @@ export class DomRenderer {
     this.renderedRows.clear();
     this.rowPool = [];
 
-    // Clean up Tier 1 feature state
+    // Clean up feature state
     this.removeEditorOverlay();
-    for (const timer of this.filterDebounceTimers.values()) clearTimeout(timer);
-    this.filterDebounceTimers.clear();
-    this.filterInputs.clear();
     this.headerCheckbox = null;
-    this.paginationBar = null;
-    this.paginationLabel = null;
-    this.paginationPageInfo = null;
-    this.paginationPageSizeSelect = null;
 
-    // Clean up Tier 2 feature state
-    this.sidebarElement = null;
-    this.sidebarOpen = false;
-    this.floatingFilterContainer = null;
+    // Clean up extensions
+    for (const ext of this.extensions) {
+      ext.destroy();
+    }
 
     if (this.root && this.container?.contains(this.root)) {
       this.container.removeChild(this.root);
@@ -262,32 +290,11 @@ export class DomRenderer {
     this.bodyViewport.appendChild(this.heightSpacer);
     this.bodyViewport.appendChild(this.bodyContainer);
 
-    // Floating filter row (between header and body)
-    if (this.floatingFilter) {
-      this.floatingFilterContainer = this.el('div', `${p}-floating-filter`);
-      this.floatingFilterContainer.setAttribute('role', 'row');
-      this.floatingFilterContainer.setAttribute('aria-label', 'Column filters');
-      this.floatingFilterContainer.style.cssText =
-        'overflow:hidden;background:var(--gs-color-header-bg,#f8fafc);' +
-        'border-bottom:var(--gs-border-width,1px) solid var(--gs-color-border,#e2e8f0);';
-    }
-
-    // Assemble
+    // Assemble wrapper (extensions inject their DOM in mount phase)
     const wrapper = this.el('div', `${p}-wrapper`);
     wrapper.style.cssText = 'display:flex;flex-direction:column;height:100%;';
     wrapper.appendChild(this.headerContainer);
-    if (this.floatingFilterContainer) {
-      wrapper.appendChild(this.floatingFilterContainer);
-    }
     wrapper.appendChild(this.bodyViewport);
-
-    // Pagination bar (below body)
-    if (this.enablePagination) {
-      this.createPaginationBar();
-      if (this.paginationBar) {
-        wrapper.appendChild(this.paginationBar);
-      }
-    }
 
     this.root.appendChild(wrapper);
     this.root.appendChild(this.liveRegion!);
@@ -427,9 +434,9 @@ export class DomRenderer {
     this.root?.setAttribute('aria-rowcount', String(state.displayedRowIds.length));
     this.root?.setAttribute('aria-colcount', String(allVisibleCols.length));
 
-    // Rebuild floating filter row to match columns
-    if (this.floatingFilter) {
-      this.renderFloatingFilterRow();
+    // Rebuild floating filter row to match columns (via extension)
+    if (this.extFloatingFilter) {
+      this.extFloatingFilter.rerender(this.buildContext());
     }
 
     // Notify plugins that header DOM was rebuilt so they can re-inject
@@ -636,148 +643,6 @@ export class DomRenderer {
     return cell;
   }
 
-  // ── Column Sidebar ──
-
-  private createColumnSidebar(): void {
-    if (!this.enableColumnSidebar || !this.root) return;
-
-    // Toggle button in the header area
-    const toggleBtn = this.el('button', `${this.prefix}-sidebar-toggle`);
-    toggleBtn.setAttribute('aria-label', 'Toggle column panel');
-    toggleBtn.setAttribute('aria-expanded', 'false');
-    toggleBtn.textContent = '☰';
-    toggleBtn.style.cssText = `
-      position:absolute;top:4px;right:4px;z-index:3;
-      width:28px;height:28px;border:1px solid var(--gs-color-border,#e2e8f0);
-      border-radius:4px;background:var(--gs-color-header-bg,#f8fafc);
-      cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;
-      color:var(--gs-color-header-fg,#475569);
-    `;
-    toggleBtn.addEventListener('click', () => this.toggleSidebar());
-    this.root.appendChild(toggleBtn);
-
-    // Sidebar panel
-    this.sidebarElement = this.el('div', `${this.prefix}-sidebar`);
-    this.sidebarElement.setAttribute('role', 'dialog');
-    this.sidebarElement.setAttribute('aria-label', 'Column visibility panel');
-    this.sidebarElement.style.cssText = `
-      position:absolute;top:0;right:0;bottom:0;
-      width:${this.sidebarWidth}px;
-      background:var(--gs-sidebar-bg,var(--gs-color-background,#fff));
-      border-left:1px solid var(--gs-sidebar-border,var(--gs-color-border,#e2e8f0));
-      box-shadow:-4px 0 12px rgba(0,0,0,0.08);
-      z-index:5;overflow-y:auto;
-      transform:translateX(100%);transition:transform 0.2s ease;
-      padding:0;
-    `;
-
-    // Header
-    const header = document.createElement('div');
-    header.style.cssText = `
-      display:flex;align-items:center;justify-content:space-between;
-      padding:12px 16px;border-bottom:1px solid var(--gs-color-border,#e2e8f0);
-      font-weight:600;font-size:14px;
-    `;
-    const titleSpan = document.createElement('span');
-    titleSpan.textContent = 'Columns';
-    header.appendChild(titleSpan);
-
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = '×';
-    closeBtn.setAttribute('aria-label', 'Close column panel');
-    closeBtn.style.cssText = `
-      border:none;background:none;cursor:pointer;font-size:18px;
-      color:var(--gs-color-muted,#94a3b8);padding:0 4px;
-    `;
-    closeBtn.addEventListener('click', () => this.toggleSidebar());
-    header.appendChild(closeBtn);
-    this.sidebarElement.appendChild(header);
-
-    // Search input
-    const searchBox = document.createElement('div');
-    searchBox.style.cssText = 'padding:8px 12px;';
-    const searchInput = document.createElement('input');
-    searchInput.type = 'text';
-    searchInput.placeholder = 'Search columns...';
-    searchInput.setAttribute('aria-label', 'Search columns');
-    searchInput.style.cssText = `
-      width:100%;padding:6px 10px;border:1px solid var(--gs-color-border,#e2e8f0);
-      border-radius:4px;font-size:13px;box-sizing:border-box;
-      outline:none;background:var(--gs-color-background,#fff);
-      color:var(--gs-color-foreground,#1a1a1a);
-    `;
-    searchInput.addEventListener('input', () => {
-      this.updateSidebarList(searchInput.value.toLowerCase());
-    });
-    searchBox.appendChild(searchInput);
-    this.sidebarElement.appendChild(searchBox);
-
-    // Column list container
-    const listContainer = document.createElement('div');
-    listContainer.className = `${this.prefix}-sidebar-list`;
-    listContainer.style.cssText = 'padding:4px 12px;';
-    this.sidebarElement.appendChild(listContainer);
-
-    // Escape to close
-    this.sidebarElement.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') this.toggleSidebar();
-    });
-
-    this.root.appendChild(this.sidebarElement);
-    this.updateSidebarList('');
-  }
-
-  private toggleSidebar(): void {
-    this.sidebarOpen = !this.sidebarOpen;
-    if (this.sidebarElement) {
-      this.sidebarElement.style.transform = this.sidebarOpen ? 'translateX(0)' : 'translateX(100%)';
-    }
-    const toggle = this.root?.querySelector(`.${this.prefix}-sidebar-toggle`);
-    toggle?.setAttribute('aria-expanded', String(this.sidebarOpen));
-  }
-
-  private updateSidebarList(filter: string): void {
-    if (!this.sidebarElement) return;
-    const listContainer = this.sidebarElement.querySelector(`.${this.prefix}-sidebar-list`);
-    if (!listContainer) return;
-    listContainer.textContent = '';
-
-    const state = this.engine.store.getState();
-    for (const col of state.columns) {
-      // Skip columns marked as suppressColumnsToolPanel
-      if ((col.originalDef as any).suppressColumnsToolPanel) continue;
-
-      // Filter by search
-      if (filter && !col.headerName.toLowerCase().includes(filter)) continue;
-
-      const item = document.createElement('label');
-      item.style.cssText = `
-        display:flex;align-items:center;gap:8px;padding:6px 4px;
-        cursor:pointer;font-size:13px;
-        color:var(--gs-color-foreground,#1a1a1a);
-      `;
-
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.checked = !col.hide;
-      checkbox.style.cssText = 'cursor:pointer;';
-      checkbox.addEventListener('change', () => {
-        this.engine.api.setColumnVisible(col.colId, checkbox.checked);
-        // Re-render header after column visibility change
-        this.renderHeader();
-        this.renderVisibleRows();
-      });
-
-      const labelText = document.createElement('span');
-      labelText.textContent = col.headerName;
-      labelText.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
-
-      item.appendChild(checkbox);
-      item.appendChild(labelText);
-      listContainer.appendChild(item);
-    }
-  }
-
   // ── Virtual Scrolling Setup ──
 
   private setupVirtualScroller(): void {
@@ -860,9 +725,9 @@ export class DomRenderer {
         if (this.headerContainer) {
           this.headerContainer.scrollLeft = scrollLeft;
         }
-        // Sync floating filter horizontal scroll
-        if (this.floatingFilterContainer) {
-          this.floatingFilterContainer.scrollLeft = scrollLeft;
+        // Sync floating filter horizontal scroll (via extension)
+        if (this.extFloatingFilter) {
+          this.extFloatingFilter.syncScroll(scrollLeft);
         }
 
         // Update store scroll state
@@ -1071,7 +936,7 @@ export class DomRenderer {
       this.lastEndIndex = -1;
       this.renderHeader();
       this.renderVisibleRows();
-      if (this.enablePagination) this.updatePaginationBar();
+      // Pagination update handled by extensions via onStateChanged()
     });
     this.unsubscribers.push(unsubRowData);
 
@@ -1098,22 +963,9 @@ export class DomRenderer {
       this.unsubscribers.push(unsubEditStop);
     }
 
-    // Floating filter: sync values on external filter changes
-    if (this.floatingFilter) {
-      const unsubFilter = this.engine.eventBus.on('filter:changed', () => {
-        this.syncFloatingFilterValues();
-        if (this.enablePagination) this.updatePaginationBar();
-      });
-      this.unsubscribers.push(unsubFilter);
-    }
-
-    // Pagination: update bar on page changes
-    if (this.enablePagination) {
-      const unsubPag = this.engine.eventBus.on('pagination:changed', () => {
-        this.updatePaginationBar();
-      });
-      this.unsubscribers.push(unsubPag);
-    }
+    // Note: floating filter sync and pagination updates are handled by
+    // extensions via onStateChanged() → ext.update(ctx), so no separate
+    // event listeners are needed for filter:changed and pagination:changed.
 
     // Row grouping: announce expand/collapse for a11y
     if (this.enableGrouping) {
@@ -1167,21 +1019,9 @@ export class DomRenderer {
       }
     }
 
-    // ── Floating filter cell widths ──
-    if (this.floatingFilterContainer) {
-      const filterCells = this.floatingFilterContainer.querySelectorAll(
-        `.${this.prefix}-floating-filter-cell`,
-      );
-      for (const filterCell of filterCells) {
-        const el = filterCell as HTMLElement;
-        const colId = el.getAttribute('data-col-id');
-        if (!colId || colId === '__checkbox') continue;
-        const col = state.columns.find((c) => c.colId === colId);
-        if (!col) continue;
-        el.style.width = `${col.width}px`;
-        el.style.minWidth = `${col.width}px`;
-        el.style.maxWidth = `${col.width}px`;
-      }
+    // ── Floating filter cell widths (via extension) ──
+    if (this.extFloatingFilter) {
+      this.extFloatingFilter.updateWidths(this.buildContext());
     }
 
     // ── Body row widths + cell widths ──
@@ -1227,6 +1067,14 @@ export class DomRenderer {
     this.lastEndIndex = -1;
 
     this.renderVisibleRows();
+
+    // Update extensions
+    if (this.root) {
+      const ctx = this.buildContext();
+      for (const ext of this.extensions) {
+        ext.update(ctx);
+      }
+    }
   }
 
   // ── Row Rendering ──
@@ -1990,343 +1838,6 @@ export class DomRenderer {
         this.updateRowContent(entry.element, node, visibleCols, node.displayIndex);
         entry.version = node.version;
       }
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // ── Feature 4: Floating Filter Row ──
-  // ═══════════════════════════════════════════════════════════
-
-  private renderFloatingFilterRow(): void {
-    if (!this.floatingFilterContainer) return;
-    this.floatingFilterContainer.textContent = '';
-    this.filterInputs.clear();
-
-    const state = this.engine.store.getState();
-    const scrollLeft = this.bodyViewport?.scrollLeft ?? 0;
-    const { columns: renderCols } = this.getVisibleColumnsForRender(scrollLeft);
-    const filterHeight = 36;
-
-    const filterRow = this.el('div', `${this.prefix}-floating-filter-row`);
-    filterRow.style.cssText = `display:flex;height:${filterHeight}px;align-items:center;`;
-
-    // Checkbox spacer
-    if (this.checkboxSelection) {
-      const spacer = document.createElement('div');
-      spacer.setAttribute('data-col-id', '__checkbox');
-      spacer.className = `${this.prefix}-floating-filter-cell`;
-      spacer.style.cssText =
-        `width:${this.checkboxColumnWidth}px;min-width:${this.checkboxColumnWidth}px;` +
-        `max-width:${this.checkboxColumnWidth}px;` +
-        'border-right:var(--gs-border-width,1px) solid var(--gs-color-border,#e0e0e0);';
-      filterRow.appendChild(spacer);
-    }
-
-    // Check for pinned columns
-    const hasPinned = renderCols.some((c) => c.pinned);
-
-    if (hasPinned) {
-      // Pinned-left filter cells
-      let pinnedLeftOffset = 0;
-      for (const col of renderCols.filter((c) => c.pinned === 'left')) {
-        const cell = this.createFilterCell(col, state);
-        cell.style.position = 'sticky';
-        cell.style.left = `${pinnedLeftOffset + (this.checkboxSelection ? this.checkboxColumnWidth : 0)}px`;
-        cell.style.zIndex = '1';
-        cell.style.background = 'var(--gs-color-header-bg,#f8fafc)';
-        pinnedLeftOffset += col.width;
-        filterRow.appendChild(cell);
-      }
-
-      // Unpinned filter cells
-      for (const col of renderCols.filter((c) => !c.pinned)) {
-        filterRow.appendChild(this.createFilterCell(col, state));
-      }
-
-      // Pinned-right filter cells
-      let pinnedRightOffset = 0;
-      const pinnedRightCols = renderCols.filter((c) => c.pinned === 'right');
-      for (let i = pinnedRightCols.length - 1; i >= 0; i--) {
-        const col = pinnedRightCols[i]!;
-        const cell = this.createFilterCell(col, state);
-        cell.style.position = 'sticky';
-        cell.style.right = `${pinnedRightOffset}px`;
-        cell.style.zIndex = '1';
-        cell.style.background = 'var(--gs-color-header-bg,#f8fafc)';
-        pinnedRightOffset += col.width;
-        filterRow.appendChild(cell);
-      }
-
-      // Set total width for scrolling
-      const totalWidth = renderCols.reduce((sum, c) => sum + c.width, 0) +
-        (this.checkboxSelection ? this.checkboxColumnWidth : 0);
-      filterRow.style.width = `${totalWidth}px`;
-    } else {
-      for (const col of renderCols) {
-        filterRow.appendChild(this.createFilterCell(col, state));
-      }
-    }
-
-    this.floatingFilterContainer.appendChild(filterRow);
-  }
-
-  private createFilterCell(col: ColumnState, state: GridState): HTMLElement {
-    const cell = document.createElement('div');
-    cell.className = `${this.prefix}-floating-filter-cell`;
-    cell.setAttribute('data-col-id', col.colId);
-    cell.style.cssText =
-      `width:${col.width}px;min-width:${col.width}px;max-width:${col.width}px;` +
-      'padding:4px;box-sizing:border-box;' +
-      'border-right:var(--gs-border-width,1px) solid var(--gs-color-border,#e0e0e0);';
-
-    // Only add input for filterable columns
-    if (!col.filterable && !col.originalDef.filter) {
-      return cell;
-    }
-
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'position:relative;width:100%;';
-
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = `Filter...`;
-    input.className = `${this.prefix}-floating-filter-input`;
-    input.setAttribute('aria-label', `Filter ${col.headerName}`);
-    input.style.cssText =
-      'width:100%;box-sizing:border-box;padding:4px 24px 4px 8px;' +
-      'border:var(--gs-border-width,1px) solid var(--gs-color-border,#e2e8f0);' +
-      'border-radius:4px;font:inherit;font-size:var(--gs-font-size-small,11px);' +
-      'outline:none;background:var(--gs-color-background,#fff);' +
-      'color:var(--gs-color-foreground,#1a1a1a);';
-
-    // Sync current filter value
-    const currentFilter = state.filterModel[col.colId];
-    if (currentFilter?.filter != null) {
-      input.value = String(currentFilter.filter);
-    }
-
-    // Clear button
-    const clearBtn = document.createElement('span');
-    clearBtn.className = `${this.prefix}-floating-filter-clear`;
-    clearBtn.textContent = '\u00D7'; // ×
-    clearBtn.setAttribute('aria-label', `Clear filter for ${col.headerName}`);
-    clearBtn.setAttribute('role', 'button');
-    clearBtn.setAttribute('tabindex', '0');
-    clearBtn.style.cssText =
-      'position:absolute;right:6px;top:50%;transform:translateY(-50%);' +
-      'cursor:pointer;font-size:14px;line-height:1;' +
-      'color:var(--gs-color-muted,#94a3b8);' +
-      `display:${currentFilter?.filter ? 'block' : 'none'};`;
-
-    // Debounced input handler
-    input.addEventListener('input', () => {
-      const existingTimer = this.filterDebounceTimers.get(col.colId);
-      if (existingTimer) clearTimeout(existingTimer);
-
-      const timer = setTimeout(() => {
-        const val = input.value.trim();
-        if (val) {
-          this.engine.commandBus.dispatch('filter:setColumn', {
-            colId: col.colId,
-            model: { filterType: 'text', type: 'contains', filter: val },
-          });
-        } else {
-          this.engine.commandBus.dispatch('filter:removeColumn', { colId: col.colId });
-        }
-        clearBtn.style.display = val ? 'block' : 'none';
-      }, this.floatingFilterDebounce);
-
-      this.filterDebounceTimers.set(col.colId, timer);
-    });
-
-    // Focus ring
-    input.addEventListener('focus', () => {
-      input.style.borderColor = 'var(--gs-color-accent,#3b82f6)';
-      input.style.boxShadow = 'var(--gs-shadow-focus-ring)';
-    });
-    input.addEventListener('blur', () => {
-      input.style.borderColor = 'var(--gs-color-border,#e2e8f0)';
-      input.style.boxShadow = 'none';
-    });
-
-    // Clear button click
-    clearBtn.addEventListener('click', () => {
-      input.value = '';
-      this.engine.commandBus.dispatch('filter:removeColumn', { colId: col.colId });
-      clearBtn.style.display = 'none';
-      input.focus();
-    });
-
-    // Clear button keyboard support
-    clearBtn.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        clearBtn.click();
-      }
-    });
-
-    this.filterInputs.set(col.colId, input);
-
-    wrapper.appendChild(input);
-    wrapper.appendChild(clearBtn);
-    cell.appendChild(wrapper);
-    return cell;
-  }
-
-  private syncFloatingFilterValues(): void {
-    const state = this.engine.store.getState();
-    for (const [colId, input] of this.filterInputs) {
-      const filter = state.filterModel[colId];
-      const filterValue = filter?.filter != null ? String(filter.filter) : '';
-
-      // Only update if the value changed externally (not from user input)
-      if (document.activeElement !== input) {
-        input.value = filterValue;
-      }
-
-      // Sync clear button visibility
-      const clearBtn = input.parentElement?.querySelector(`.${this.prefix}-floating-filter-clear`) as HTMLElement | null;
-      if (clearBtn) {
-        clearBtn.style.display = filterValue ? 'block' : 'none';
-      }
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // ── Feature 5: Pagination Bar ──
-  // ═══════════════════════════════════════════════════════════
-
-  private createPaginationBar(): void {
-    const p = this.prefix;
-    this.paginationBar = this.el('div', `${p}-pagination`);
-    this.paginationBar.setAttribute('role', 'navigation');
-    this.paginationBar.setAttribute('aria-label', 'Pagination controls');
-    this.paginationBar.style.cssText =
-      'display:flex;align-items:center;justify-content:space-between;' +
-      'padding:8px 12px;' +
-      'border-top:var(--gs-border-width,1px) solid var(--gs-color-border,#e2e8f0);' +
-      'background:var(--gs-color-header-bg,#f8fafc);' +
-      'font-size:var(--gs-font-size-small,11px);' +
-      'color:var(--gs-color-header-fg,#475569);' +
-      'gap:12px;flex-shrink:0;';
-
-    // Left: Row info label
-    this.paginationLabel = this.el('span', `${p}-pagination-label`);
-    this.paginationLabel.setAttribute('aria-live', 'polite');
-    this.paginationLabel.textContent = 'Rows 0-0 of 0';
-
-    // Center: Navigation buttons
-    const nav = this.el('div', `${p}-pagination-nav`);
-    nav.style.cssText = 'display:flex;align-items:center;gap:4px;';
-
-    const firstBtn = this.createPaginationButton('First page', '\u00AB', 'pagination:firstPage');
-    const prevBtn = this.createPaginationButton('Previous page', '\u2039', 'pagination:prevPage');
-
-    this.paginationPageInfo = this.el('span', `${p}-pagination-pages`);
-    this.paginationPageInfo.style.cssText = 'padding:0 8px;white-space:nowrap;';
-    this.paginationPageInfo.textContent = 'Page 1 of 1';
-
-    const nextBtn = this.createPaginationButton('Next page', '\u203A', 'pagination:nextPage');
-    const lastBtn = this.createPaginationButton('Last page', '\u00BB', 'pagination:lastPage');
-
-    nav.appendChild(firstBtn);
-    nav.appendChild(prevBtn);
-    nav.appendChild(this.paginationPageInfo);
-    nav.appendChild(nextBtn);
-    nav.appendChild(lastBtn);
-
-    // Right: Page size selector
-    const sizeContainer = this.el('div', `${p}-pagination-size`);
-    sizeContainer.style.cssText = 'display:flex;align-items:center;gap:6px;';
-
-    const sizeLabel = document.createElement('span');
-    sizeLabel.textContent = 'Rows per page:';
-
-    this.paginationPageSizeSelect = document.createElement('select');
-    this.paginationPageSizeSelect.className = `${p}-pagination-select`;
-    this.paginationPageSizeSelect.setAttribute('aria-label', 'Rows per page');
-    this.paginationPageSizeSelect.style.cssText =
-      'border:var(--gs-border-width,1px) solid var(--gs-color-border,#e2e8f0);' +
-      'border-radius:4px;padding:2px 6px;font:inherit;' +
-      'background:var(--gs-color-background,#fff);' +
-      'color:var(--gs-color-foreground,#1a1a1a);cursor:pointer;';
-
-    for (const size of this.pageSizeOptions) {
-      const opt = document.createElement('option');
-      opt.value = String(size);
-      opt.textContent = String(size);
-      this.paginationPageSizeSelect.appendChild(opt);
-    }
-
-    this.paginationPageSizeSelect.addEventListener('change', () => {
-      const newSize = Number(this.paginationPageSizeSelect!.value);
-      this.engine.commandBus.dispatch('pagination:setPageSize', { pageSize: newSize });
-    });
-
-    sizeContainer.appendChild(sizeLabel);
-    sizeContainer.appendChild(this.paginationPageSizeSelect);
-
-    // Assemble
-    this.paginationBar.appendChild(this.paginationLabel);
-    this.paginationBar.appendChild(nav);
-    this.paginationBar.appendChild(sizeContainer);
-  }
-
-  private createPaginationButton(label: string, text: string, command: string): HTMLElement {
-    const btn = document.createElement('button');
-    btn.className = `${this.prefix}-pagination-btn`;
-    btn.textContent = text;
-    btn.setAttribute('aria-label', label);
-    btn.setAttribute('title', label);
-    btn.style.cssText =
-      'border:var(--gs-border-width,1px) solid var(--gs-color-border,#e2e8f0);' +
-      'background:var(--gs-color-background,#fff);' +
-      'color:var(--gs-color-foreground,#1a1a1a);' +
-      'border-radius:4px;padding:4px 8px;cursor:pointer;' +
-      'font-size:var(--gs-font-size,13px);line-height:1;' +
-      'min-width:28px;text-align:center;' +
-      'transition:background var(--gs-transition-duration,150ms) var(--gs-transition-easing);';
-
-    btn.addEventListener('click', () => {
-      this.engine.commandBus.dispatch(command, {});
-    });
-
-    return btn;
-  }
-
-  private updatePaginationBar(): void {
-    if (!this.paginationBar) return;
-
-    const state = this.engine.store.getState();
-    const { currentPage, pageSize, totalRows } = state.pagination;
-    const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
-
-    // Update row info label
-    if (this.paginationLabel) {
-      const start = totalRows > 0 ? currentPage * pageSize + 1 : 0;
-      const end = Math.min((currentPage + 1) * pageSize, totalRows);
-      this.paginationLabel.textContent = `Rows ${start}\u2013${end} of ${totalRows}`;
-    }
-
-    // Update page info
-    if (this.paginationPageInfo) {
-      this.paginationPageInfo.textContent = `Page ${currentPage + 1} of ${totalPages}`;
-    }
-
-    // Update button disabled states
-    const buttons = this.paginationBar.querySelectorAll(`.${this.prefix}-pagination-btn`);
-    if (buttons.length >= 4) {
-      // First, Prev
-      (buttons[0] as HTMLButtonElement).disabled = currentPage === 0;
-      (buttons[1] as HTMLButtonElement).disabled = currentPage === 0;
-      // Next, Last
-      (buttons[2] as HTMLButtonElement).disabled = currentPage >= totalPages - 1;
-      (buttons[3] as HTMLButtonElement).disabled = currentPage >= totalPages - 1;
-    }
-
-    // Sync page size select
-    if (this.paginationPageSizeSelect) {
-      this.paginationPageSizeSelect.value = String(pageSize);
     }
   }
 

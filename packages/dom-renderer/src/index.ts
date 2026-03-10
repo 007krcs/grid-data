@@ -24,3 +24,12 @@ export {
   safeResizeObserver,
   NoopRenderer,
 } from './ssr';
+
+// Renderer extensions
+export type { RendererExtension, RendererContext } from './extensions/types';
+export { FloatingFilterRenderer } from './extensions/floating-filter-renderer';
+export type { FloatingFilterConfig } from './extensions/floating-filter-renderer';
+export { PaginationRenderer } from './extensions/pagination-renderer';
+export type { PaginationConfig } from './extensions/pagination-renderer';
+export { SidebarRenderer } from './extensions/sidebar-renderer';
+export type { SidebarConfig } from './extensions/sidebar-renderer';

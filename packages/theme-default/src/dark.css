@@ -56,4 +56,16 @@
   /* ── Pagination ── */
   --gs-color-pagination-bg: #1e293b;
   --gs-color-pagination-btn-hover: #293548;
+
+  /* ── Column Groups ── */
+  --gs-color-group-header-bg: #1e293b;
+  --gs-color-group-header-border: #334155;
+
+  /* ── Context Menu ── */
+  --gs-color-menu-item-disabled: #64748b;
+
+  /* ── Column Sidebar ── */
+  --gs-color-sidebar-bg: #1e293b;
+  --gs-color-sidebar-border: #334155;
+  --gs-color-sidebar-toggle-bg: #1e293b;
 }

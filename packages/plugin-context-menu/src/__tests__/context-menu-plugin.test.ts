@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createGrid } from '@gridstorm/core';
 import { ContextMenuPlugin } from '../context-menu-plugin';
-import { getDefaultItems } from '../default-items';
 
 function createMenuGrid(pluginOptions = {}) {
   return createGrid({
@@ -117,11 +116,11 @@ describe('ContextMenuPlugin', () => {
     const menuEl = document.querySelector('.gs-context-menu');
     expect(menuEl).not.toBeNull();
 
-    // Default items include 'Copy Cell Value', 'Copy Row', separator, 'Export as CSV'
-    const defaultItems = getDefaultItems();
-    const nonSeparatorItems = defaultItems.filter((item) => !item.separator);
+    // Default items are context-aware: with no column context,
+    // sort/pin/group items are hidden, only copy + export appear.
     const buttons = menuEl!.querySelectorAll('button.gs-context-menu-item');
-    expect(buttons.length).toBe(nonSeparatorItems.length);
+    // Copy Cell Value, Copy Row, Export as CSV = 3 buttons (no sort/pin/group when colId is null)
+    expect(buttons.length).toBe(3);
 
     engine.commandBus.dispatch('contextMenu:hide', {});
     engine.destroy();

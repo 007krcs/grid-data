@@ -31,4 +31,6 @@ export interface MenuItemParams {
   value: any;
   api: GridApi;
   column: ColumnState | null;
+  /** Dispatch a command on the grid's command bus. */
+  dispatch: (command: string, payload?: any) => void;
 }

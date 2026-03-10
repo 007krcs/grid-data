@@ -12,7 +12,7 @@ import { Store } from '../state/store';
 import { EventBus } from '../events/event-bus';
 import { CommandBus } from '../events/command-bus';
 import { PluginManager } from '../plugins/plugin-manager';
-import { resolveColumns, updateColumn, findColumn } from './column-model';
+import { resolveColumns, resolveColumnGroups, updateColumn, findColumn } from './column-model';
 import {
   createRowNodes,
   sortRowNodes,
@@ -34,6 +34,7 @@ export interface GridEngine<TData = any> {
 export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<TData> {
   // ── Resolve initial state ──
   const columns = resolveColumns(config.columns, config.defaultColDef);
+  const { groups: columnGroups, maxDepth: columnGroupDepth } = resolveColumnGroups(config.columns);
   const rowHeight =
     typeof config.rowHeight === 'number' ? config.rowHeight : DEFAULT_ROW_HEIGHT;
 
@@ -69,6 +70,8 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
       totalRows: initialRowNodes.length,
     },
     quickFilterText: '',
+    columnGroups,
+    columnGroupDepth,
     pluginState: {},
   };
 
@@ -170,7 +173,13 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
     // Columns
     setColumnDefs(defs) {
       const newColumns = resolveColumns(defs, config.defaultColDef);
-      store.setState((prev) => ({ ...prev, columns: newColumns }));
+      const { groups: newGroups, maxDepth: newDepth } = resolveColumnGroups(defs);
+      store.setState((prev) => ({
+        ...prev,
+        columns: newColumns,
+        columnGroups: newGroups,
+        columnGroupDepth: newDepth,
+      }));
       eventBus.emit('columns:changed', { columns: newColumns });
     },
 

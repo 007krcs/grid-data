@@ -475,6 +475,12 @@ export interface GridState<TData = any> {
   /** Text used for quick-filter matching across all columns. */
   quickFilterText: string;
 
+  /** Column group hierarchy for multi-level headers. Empty when no groups are defined. */
+  columnGroups: import('../engine/column-model').ColumnGroupInfo[];
+
+  /** Max depth of column group nesting. 0 when no groups exist. */
+  columnGroupDepth: number;
+
   /**
    * Plugin-managed state slices keyed by a unique string.
    *

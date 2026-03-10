@@ -44,6 +44,7 @@ const FEATURES: FeatureDemo[] = [
   { id: 'aggregation', title: 'Aggregation', description: 'Sum, avg, min, max, count functions on grouped data', category: 'enterprise' },
   { id: 'clipboard', title: 'Clipboard', description: 'Copy/Cut/Paste cells with Ctrl+C/X/V', category: 'enterprise' },
   { id: 'infinite-scroll', title: 'Infinite Scroll', description: 'Scroll through 100K rows seamlessly', category: 'data' },
+  { id: 'status-badges', title: 'Status Badges', description: 'Professional cell renderers with badges, progress bars, and icons', category: 'interaction' },
   { id: 'full-featured', title: 'Full Featured', description: 'All features combined in one grid', category: 'enterprise' },
 ];
 
@@ -334,20 +335,28 @@ function AggregationDemo() {
 
 function ContextMenuDemo() {
   const [lastAction, setLastAction] = useState('');
-  const plugins = useMemo(() => [ContextMenuPlugin(), SortingPlugin(), SelectionPlugin({ mode: 'multiple' }), ColumnResizePlugin()], []);
+  const plugins = useMemo(() => [
+    ContextMenuPlugin(),
+    SortingPlugin({ multiSort: true }),
+    SelectionPlugin({ mode: 'multiple' }),
+    ColumnResizePlugin(),
+    ColumnPinningPlugin(),
+    GroupingPlugin(),
+  ], []);
   const columns: ColumnDef[] = useMemo(() => [
-    { field: 'id', headerName: 'ID', width: 70 },
+    { field: 'id', headerName: 'ID', width: 70, sortable: true },
     { field: 'name', headerName: 'Name', width: 180, sortable: true },
     { field: 'department', headerName: 'Department', width: 140, sortable: true },
-    { field: 'salary', headerName: 'Salary', width: 120,
+    { field: 'salary', headerName: 'Salary', width: 120, sortable: true,
       valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
-    { field: 'city', headerName: 'City', width: 130 },
+    { field: 'city', headerName: 'City', width: 130, sortable: true },
   ], []);
   return (
     <>
-      <p style={hintStyle}>Right-click any cell to open the context menu. {lastAction && <span>Last action: <strong>{lastAction}</strong></span>}</p>
+      <p style={hintStyle}>Right-click any cell for the rich context menu: sort, pin, group by, copy, and export. {lastAction && <span>Last action: <strong>{lastAction}</strong></span>}</p>
       <GridStorm columns={columns} rowData={EMPLOYEES_50} plugins={plugins}
         rowHeight={40} headerHeight={44} height={GRID_HEIGHT} ariaLabel="Context Menu Demo"
+        enableGrouping
         onCellClicked={(e: any) => setLastAction(`Clicked: ${e.colId} = ${e.value}`)} />
     </>
   );
@@ -500,6 +509,165 @@ function InfiniteScrollDemo() {
   );
 }
 
+function StatusBadgesDemo() {
+  const plugins = useMemo(() => [SortingPlugin(), ColumnResizePlugin()], []);
+
+  const data = useMemo(() => {
+    const names = [
+      'Alice Johnson', 'Bob Smith', 'Carol Williams', 'David Brown', 'Emma Davis',
+      'Frank Miller', 'Grace Wilson', 'Henry Moore', 'Iris Taylor', 'Jack Anderson',
+      'Karen Thomas', 'Liam Jackson', 'Mia White', 'Noah Harris', 'Olivia Martin',
+      'Paul Garcia', 'Quinn Robinson', 'Rachel Clark', 'Sam Lewis', 'Tina Walker',
+      'Uma Hall', 'Victor Young', 'Wendy King', 'Xavier Wright', 'Yara Scott',
+    ];
+    const statuses = ['Active', 'Inactive', 'Pending'];
+    const priorities = ['High', 'Medium', 'Low'];
+    return Array.from({ length: 25 }, (_, i) => ({
+      id: i + 1,
+      name: names[i],
+      status: statuses[i % 3],
+      priority: priorities[i % 3],
+      progress: Math.round((Math.sin(i * 0.7) + 1) * 50),
+      rating: (i % 5) + 1,
+      verified: i % 3 !== 1,
+      change: parseFloat(((Math.sin(i * 1.3) * 15)).toFixed(2)),
+    }));
+  }, []);
+
+  const columns: ColumnDef[] = useMemo(() => [
+    // 7. Avatar + name — Colored circle with initials + name text
+    { field: 'name', headerName: 'Employee', width: 200,
+      cellRenderer: (p: any) => {
+        const name = String(p.value || '');
+        const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
+        const hue = name.charCodeAt(0) * 7 % 360;
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'display:flex;align-items:center;gap:10px';
+
+        const avatar = document.createElement('div');
+        avatar.style.cssText = `width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;background:hsl(${hue},60%,50%)`;
+        avatar.textContent = initials;
+
+        const label = document.createElement('span');
+        label.style.cssText = 'font-weight:500';
+        label.textContent = name;
+
+        wrapper.appendChild(avatar);
+        wrapper.appendChild(label);
+        return wrapper;
+      }},
+    // 1. Status pills — "Active" (green), "Inactive" (red), "Pending" (amber)
+    { field: 'status', headerName: 'Status', width: 130, sortable: true,
+      cellRenderer: (p: any) => {
+        const colors: Record<string, string> = { Active: '#22c55e', Inactive: '#ef4444', Pending: '#f59e0b' };
+        const color = colors[p.value] || '#94a3b8';
+
+        const pill = document.createElement('span');
+        pill.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;background:${color}20;color:${color}`;
+
+        const dot = document.createElement('span');
+        dot.style.cssText = `width:6px;height:6px;border-radius:50%;background:${color}`;
+        pill.appendChild(dot);
+        pill.appendChild(document.createTextNode(p.value));
+        return pill;
+      }},
+    // 2. Priority flags — "High" / "Medium" / "Low" with colored left border
+    { field: 'priority', headerName: 'Priority', width: 120, sortable: true,
+      cellRenderer: (p: any) => {
+        const colors: Record<string, string> = { High: '#ef4444', Medium: '#f59e0b', Low: '#22c55e' };
+        const color = colors[p.value] || '#94a3b8';
+
+        const flag = document.createElement('span');
+        flag.style.cssText = `display:inline-block;padding:3px 10px;border-left:3px solid ${color};background:${color}10;font-size:12px;font-weight:600;color:${color};border-radius:0 4px 4px 0`;
+        flag.textContent = p.value;
+        return flag;
+      }},
+    // 3. Progress bars — width based on percentage value
+    { field: 'progress', headerName: 'Progress', width: 200, sortable: true,
+      cellRenderer: (p: any) => {
+        const pct = Math.max(0, Math.min(100, Number(p.value) || 0));
+        const hue = pct > 66 ? 142 : pct > 33 ? 45 : 0; // green/yellow/red
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'display:flex;align-items:center;gap:8px;width:100%';
+
+        const track = document.createElement('div');
+        track.style.cssText = 'flex:1;height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden';
+
+        const bar = document.createElement('div');
+        bar.style.cssText = `width:${pct}%;height:100%;border-radius:4px;background:hsl(${hue},72%,50%);transition:width 0.3s ease`;
+        track.appendChild(bar);
+
+        const label = document.createElement('span');
+        label.style.cssText = 'font-size:11px;font-family:monospace;min-width:32px;text-align:right';
+        label.textContent = `${pct}%`;
+
+        wrapper.appendChild(track);
+        wrapper.appendChild(label);
+        return wrapper;
+      }},
+    // 4. Star ratings — ★★★☆☆
+    { field: 'rating', headerName: 'Rating', width: 140, sortable: true,
+      cellRenderer: (p: any) => {
+        const rating = Math.max(0, Math.min(5, Number(p.value) || 0));
+
+        const wrapper = document.createElement('span');
+        wrapper.style.cssText = 'font-size:16px;letter-spacing:2px';
+
+        for (let i = 1; i <= 5; i++) {
+          const star = document.createElement('span');
+          star.textContent = '\u2605';
+          star.style.color = i <= rating ? '#f59e0b' : '#d1d5db';
+          wrapper.appendChild(star);
+        }
+        return wrapper;
+      }},
+    // 5. Boolean toggles — ✓ (green) / ✗ (red)
+    { field: 'verified', headerName: 'Verified', width: 100, sortable: true,
+      cellRenderer: (p: any) => {
+        const yes = !!p.value;
+        const badge = document.createElement('span');
+        badge.style.cssText = `display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:14px;font-weight:700;background:${yes ? '#22c55e' : '#ef4444'}15;color:${yes ? '#22c55e' : '#ef4444'}`;
+        badge.textContent = yes ? '\u2713' : '\u2717';
+        return badge;
+      }},
+    // 6. Trend arrows — ▲ (green) / ▼ (red) / — (gray)
+    { field: 'change', headerName: 'Change %', width: 130, sortable: true,
+      cellRenderer: (p: any) => {
+        const val = Number(p.value) || 0;
+        const icon = val > 0 ? '\u25B2' : val < 0 ? '\u25BC' : '\u2014';
+        const color = val > 0 ? '#22c55e' : val < 0 ? '#ef4444' : '#94a3b8';
+
+        const wrapper = document.createElement('span');
+        wrapper.style.cssText = `display:inline-flex;align-items:center;gap:4px;font-weight:600;color:${color}`;
+
+        const arrow = document.createElement('span');
+        arrow.textContent = icon;
+        arrow.style.fontSize = '10px';
+
+        const num = document.createElement('span');
+        num.style.cssText = 'font-size:12px;font-family:monospace';
+        num.textContent = `${val > 0 ? '+' : ''}${val.toFixed(2)}%`;
+
+        wrapper.appendChild(arrow);
+        wrapper.appendChild(num);
+        return wrapper;
+      }},
+  ], []);
+
+  return (
+    <>
+      <p style={hintStyle}>
+        7 professional cell renderer patterns: avatar, status pills, priority flags, progress bars, star ratings, boolean toggles, and trend arrows.
+        All renderers return DOM elements (not innerHTML strings) for CSP safety.
+      </p>
+      <GridStorm columns={columns} rowData={data} plugins={plugins}
+        rowHeight={44} headerHeight={44} height={GRID_HEIGHT} ariaLabel="Status Badges Demo" />
+    </>
+  );
+}
+
 function FullFeaturedDemo() {
   const [filterText, setFilterText] = useState('');
   const [selectedCount, setSelectedCount] = useState(0);
@@ -518,13 +686,19 @@ function FullFeaturedDemo() {
     ClipboardPlugin(),
   ], []);
   const columns: ColumnDef[] = useMemo(() => [
-    { field: 'id', headerName: 'ID', width: 70, sortable: true, pinned: 'left' as const, filterable: true },
-    { field: 'name', headerName: 'Name', width: 180, sortable: true, resizable: true, editable: true, filterable: true, cellEditor: 'text' },
-    { field: 'email', headerName: 'Email', width: 240, sortable: true, resizable: true, filterable: true },
-    { field: 'department', headerName: 'Department', width: 150, sortable: true, resizable: true, filterable: true },
-    { field: 'role', headerName: 'Role', width: 160, sortable: true, resizable: true, editable: true, filterable: true, cellEditor: 'text' },
-    { field: 'salary', headerName: 'Salary', width: 130, sortable: true, resizable: true, editable: true, filterable: true, cellEditor: 'number',
-      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+    { headerName: 'Employee', children: [
+      { field: 'id', headerName: 'ID', width: 70, sortable: true, pinned: 'left' as const, filterable: true },
+      { field: 'name', headerName: 'Name', width: 180, sortable: true, resizable: true, editable: true, filterable: true, cellEditor: 'text' },
+    ]} as any,
+    { headerName: 'Contact', children: [
+      { field: 'email', headerName: 'Email', width: 240, sortable: true, resizable: true, filterable: true },
+    ]} as any,
+    { headerName: 'Work', children: [
+      { field: 'department', headerName: 'Department', width: 150, sortable: true, resizable: true, filterable: true },
+      { field: 'role', headerName: 'Role', width: 160, sortable: true, resizable: true, editable: true, filterable: true, cellEditor: 'text' },
+      { field: 'salary', headerName: 'Salary', width: 130, sortable: true, resizable: true, editable: true, filterable: true, cellEditor: 'number',
+        valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+    ]} as any,
     { field: 'city', headerName: 'City', width: 130, sortable: true, resizable: true, filterable: true },
     { field: 'startDate', headerName: 'Start Date', width: 130, sortable: true, resizable: true },
     { field: 'status', headerName: 'Status', width: 120, pinned: 'right' as const, filterable: true,
@@ -577,6 +751,7 @@ const DEMO_MAP: Record<string, () => JSX.Element> = {
   'value-formatters': ValueFormattersDemo,
   'custom-renderers': CustomRenderersDemo,
   'infinite-scroll': InfiniteScrollDemo,
+  'status-badges': StatusBadgesDemo,
   'full-featured': FullFeaturedDemo,
 };
 

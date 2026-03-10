@@ -199,6 +199,15 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
     const root = containerRef.current.querySelector<HTMLElement>('.gs-root');
     setRootElement(root);
 
+    // Re-emit grid:ready now that the DOM renderer has mounted.
+    // Plugins like column-resize, column-reorder, and context-menu
+    // use requestAnimationFrame on grid:ready to inject DOM elements.
+    // The original grid:ready fires during createGrid() before the
+    // renderer exists, so those rAF callbacks find no DOM to work with.
+    requestAnimationFrame(() => {
+      engine.eventBus.emit('grid:ready', { api: engine.api });
+    });
+
     return () => {
       renderer.destroy();
       rendererRef.current = null;

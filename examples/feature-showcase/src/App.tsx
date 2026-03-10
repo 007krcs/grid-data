@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { GridStorm, useGridApi } from '@gridstorm/react';
+import { useState, useMemo, useCallback, useRef } from 'react';
+import { GridStorm } from '@gridstorm/react';
 import type { ColumnDef, GridPlugin, GridApi } from '@gridstorm/core';
 import { SortingPlugin } from '@gridstorm/plugin-sorting';
 import { FilteringPlugin } from '@gridstorm/plugin-filtering';
@@ -15,7 +15,7 @@ import { ContextMenuPlugin } from '@gridstorm/plugin-context-menu';
 import { ClipboardPlugin } from '@gridstorm/plugin-clipboard';
 import '@gridstorm/theme-default';
 import { generateEmployees, generateProducts } from './data';
-import type { Employee, Product } from './data';
+// Types from data generators used by demos
 
 // ── Feature Demos ──
 
@@ -85,12 +85,12 @@ function FilteringDemo() {
   const apiRef = useRef<GridApi | null>(null);
   const plugins = useMemo(() => [SortingPlugin(), FilteringPlugin({ caseSensitive: false }), ColumnResizePlugin()], []);
   const columns: ColumnDef[] = useMemo(() => [
-    { field: 'id', headerName: 'ID', width: 70, sortable: true },
-    { field: 'name', headerName: 'Name', width: 180, sortable: true },
-    { field: 'department', headerName: 'Department', width: 140, sortable: true },
-    { field: 'email', headerName: 'Email', width: 220 },
-    { field: 'city', headerName: 'City', width: 130 },
-    { field: 'status', headerName: 'Status', width: 100 },
+    { field: 'id', headerName: 'ID', width: 70, sortable: true, filterable: true },
+    { field: 'name', headerName: 'Name', width: 180, sortable: true, filterable: true },
+    { field: 'department', headerName: 'Department', width: 140, sortable: true, filterable: true },
+    { field: 'email', headerName: 'Email', width: 220, filterable: true },
+    { field: 'city', headerName: 'City', width: 130, filterable: true },
+    { field: 'status', headerName: 'Status', width: 100, filterable: true },
   ], []);
 
   const onGridReady = useCallback((api: GridApi) => { apiRef.current = api; }, []);
@@ -102,15 +102,17 @@ function FilteringDemo() {
 
   return (
     <>
-      <p style={hintStyle}>Type in the search box to filter across all columns. The grid updates in real-time.</p>
+      <p style={hintStyle}>Per-column floating filter inputs below the header. Also supports quick-filter search across all columns.</p>
       <div style={{ marginBottom: 8 }}>
         <input
-          type="text" placeholder="Search employees..." value={filterText} onChange={handleFilter}
+          type="text" placeholder="Quick filter across all columns..." value={filterText} onChange={handleFilter}
           style={inputStyle}
         />
       </div>
       <GridStorm columns={columns} rowData={EMPLOYEES_200} plugins={plugins}
-        rowHeight={40} headerHeight={44} height={GRID_HEIGHT} onGridReady={onGridReady} ariaLabel="Filtering Demo" />
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+        floatingFilter floatingFilterDebounce={200}
+        onGridReady={onGridReady} ariaLabel="Filtering Demo" />
     </>
   );
 }
@@ -135,74 +137,68 @@ function SelectionDemo() {
 
   return (
     <>
-      <p style={hintStyle}>Click rows to select. Ctrl+Click to toggle. Shift+Click for range. Selected: <strong>{selectedCount}</strong></p>
+      <p style={hintStyle}>Checkbox column with select-all header. Click checkboxes or rows. Ctrl+Click to toggle. Selected: <strong>{selectedCount}</strong></p>
       <GridStorm columns={columns} rowData={EMPLOYEES_50} plugins={plugins}
         rowHeight={40} headerHeight={44} height={GRID_HEIGHT} rowSelection="multiple"
-        onSelectionChanged={onSelectionChanged} ariaLabel="Selection Demo" />
+        checkboxSelection onSelectionChanged={onSelectionChanged} ariaLabel="Selection Demo" />
     </>
   );
 }
 
 function EditingDemo() {
   const [data, setData] = useState(() => generateProducts(50));
-  const [editCell, setEditCell] = useState<{ rowId: string; field: string; value: string } | null>(null);
-  const plugins = useMemo(() => [SortingPlugin(), SelectionPlugin({ mode: 'single' }), ColumnResizePlugin()], []);
+  const [lastEdit, setLastEdit] = useState('');
+  const plugins = useMemo(() => [
+    SortingPlugin(),
+    SelectionPlugin({ mode: 'single' }),
+    EditingPlugin(),
+    ColumnResizePlugin(),
+  ], []);
   const columns: ColumnDef[] = useMemo(() => [
-    { field: 'id', headerName: 'ID', width: 60 },
-    { field: 'name', headerName: 'Product', width: 160 },
-    { field: 'category', headerName: 'Category', width: 130 },
-    { field: 'price', headerName: 'Price ($)', width: 100,
+    { field: 'id', headerName: 'ID', width: 60, editable: false },
+    { field: 'name', headerName: 'Product', width: 160, editable: true, cellEditor: 'text' },
+    { field: 'category', headerName: 'Category', width: 130, editable: true, cellEditor: 'select',
+      cellEditorParams: { values: ['Electronics', 'Clothing', 'Home', 'Sports', 'Books', 'Food', 'Toys', 'Office'] } },
+    { field: 'price', headerName: 'Price ($)', width: 100, editable: true, cellEditor: 'number',
       valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
-    { field: 'quantity', headerName: 'Qty', width: 80 },
-    { field: 'supplier', headerName: 'Supplier', width: 130 },
-    { field: 'sku', headerName: 'SKU', width: 120 },
+    { field: 'quantity', headerName: 'Qty', width: 80, editable: true, cellEditor: 'number' },
+    { field: 'supplier', headerName: 'Supplier', width: 130, editable: true, cellEditor: 'text' },
+    { field: 'sku', headerName: 'SKU', width: 120, editable: false },
   ], []);
 
-  const onCellDoubleClicked = useCallback((e: any) => {
-    const field = e.colId;
-    if (field === 'id' || field === 'sku') return; // Non-editable
-    setEditCell({ rowId: e.node.id, field, value: String(e.value ?? '') });
-  }, []);
-
-  const handleEditSave = useCallback(() => {
-    if (!editCell) return;
+  const onCellValueChanged = useCallback((e: any) => {
+    setLastEdit(`${e.colId}: ${e.oldValue} → ${e.newValue}`);
     setData(prev => prev.map(row => {
-      if (String(row.id) === editCell.rowId || `row-${row.id - 1}` === editCell.rowId) {
-        return { ...row, [editCell.field]: editCell.field === 'price' || editCell.field === 'quantity' ? Number(editCell.value) : editCell.value };
+      const rowId = String(row.id);
+      const nodeId = e.node?.id ?? '';
+      if (rowId === nodeId || `row-${row.id - 1}` === nodeId) {
+        return { ...row, [e.colId]: e.newValue };
       }
       return row;
     }));
-    setEditCell(null);
-  }, [editCell]);
+  }, []);
 
   return (
     <>
-      <p style={hintStyle}>Double-click a cell to edit. Press Enter or click Save to commit changes. ID and SKU are read-only.</p>
-      {editCell && (
-        <div style={{ marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: 12, color: '#666' }}>Editing <strong>{editCell.field}</strong>:</span>
-          <input value={editCell.value} onChange={e => setEditCell({ ...editCell, value: e.target.value })}
-            onKeyDown={e => { if (e.key === 'Enter') handleEditSave(); if (e.key === 'Escape') setEditCell(null); }}
-            style={inputStyle} autoFocus />
-          <button onClick={handleEditSave} style={btnStyle}>Save</button>
-          <button onClick={() => setEditCell(null)} style={{ ...btnStyle, background: '#e5e7eb', color: '#333' }}>Cancel</button>
-        </div>
-      )}
+      <p style={hintStyle}>
+        Double-click a cell to edit inline. Enter commits, Escape cancels, Tab moves to next cell.
+        ID and SKU are read-only. Category uses a dropdown editor.
+        {lastEdit && <span> Last edit: <strong>{lastEdit}</strong></span>}
+      </p>
       <GridStorm columns={columns} rowData={data} plugins={plugins}
         rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
-        onCellDoubleClicked={onCellDoubleClicked} ariaLabel="Editing Demo" />
+        enableCellEditing onCellValueChanged={onCellValueChanged}
+        ariaLabel="Editing Demo" />
     </>
   );
 }
 
 function PaginationDemo() {
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(25);
-  const data = EMPLOYEES_1K;
-  const totalPages = Math.ceil(data.length / pageSize);
-  const pageData = useMemo(() => data.slice(page * pageSize, (page + 1) * pageSize), [page, pageSize, data]);
-
-  const plugins = useMemo(() => [SortingPlugin(), ColumnResizePlugin()], []);
+  const plugins = useMemo(() => [
+    SortingPlugin(),
+    PaginationPlugin({ pageSize: 25 }),
+    ColumnResizePlugin(),
+  ], []);
   const columns: ColumnDef[] = useMemo(() => [
     { field: 'id', headerName: 'ID', width: 70, sortable: true },
     { field: 'name', headerName: 'Name', width: 180, sortable: true },
@@ -215,19 +211,11 @@ function PaginationDemo() {
 
   return (
     <>
-      <p style={hintStyle}>Navigate between pages using the controls below. {data.length} rows, {pageSize} per page.</p>
-      <GridStorm columns={columns} rowData={pageData} plugins={plugins}
-        rowHeight={40} headerHeight={44} height={GRID_HEIGHT - 50} ariaLabel="Pagination Demo" />
-      <div style={paginationBarStyle}>
-        <button onClick={() => setPage(0)} disabled={page === 0} style={pgBtnStyle}>First</button>
-        <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} style={pgBtnStyle}>Prev</button>
-        <span style={{ fontSize: 13 }}>Page <strong>{page + 1}</strong> of <strong>{totalPages}</strong></span>
-        <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} style={pgBtnStyle}>Next</button>
-        <button onClick={() => setPage(totalPages - 1)} disabled={page >= totalPages - 1} style={pgBtnStyle}>Last</button>
-        <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(0); }} style={{ fontSize: 12, padding: '3px 6px', borderRadius: 4, border: '1px solid #d1d5db' }}>
-          {[10, 25, 50, 100].map(s => <option key={s} value={s}>{s} / page</option>)}
-        </select>
-      </div>
+      <p style={hintStyle}>Native pagination bar with navigation buttons and page size selector. {EMPLOYEES_1K.length} total rows.</p>
+      <GridStorm columns={columns} rowData={EMPLOYEES_1K} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+        enablePagination pageSizeOptions={[10, 25, 50, 100]}
+        ariaLabel="Pagination Demo" />
     </>
   );
 }
@@ -296,29 +284,14 @@ function ColumnReorderDemo() {
 }
 
 function GroupingDemo() {
-  const grouped = useMemo(() => {
-    const byDept: Record<string, Employee[]> = {};
-    for (const emp of EMPLOYEES_200) {
-      if (!byDept[emp.department]) byDept[emp.department] = [];
-      byDept[emp.department].push(emp);
-    }
-    // Flatten with group headers
-    const rows: any[] = [];
-    for (const [dept, emps] of Object.entries(byDept)) {
-      rows.push({ id: `group-${dept}`, name: `${dept} (${emps.length} employees)`, department: dept, role: '', salary: '', city: '', _isGroup: true });
-      for (const emp of emps) rows.push(emp);
-    }
-    return rows;
-  }, []);
-
-  const plugins = useMemo(() => [SortingPlugin(), ColumnResizePlugin()], []);
+  const plugins = useMemo(() => [
+    SortingPlugin(),
+    GroupingPlugin(),
+    ColumnResizePlugin(),
+  ], []);
   const columns: ColumnDef[] = useMemo(() => [
-    { field: 'name', headerName: 'Employee', width: 250, sortable: true,
-      cellRenderer: (p: any) => p.data?._isGroup
-        ? `<strong style="color:#2563eb">${p.value}</strong>`
-        : p.value,
-      cellStyle: (p: any) => p.data?._isGroup ? { background: '#f0f7ff', fontWeight: '600' } : {} },
-    { field: 'department', headerName: 'Department', width: 150 },
+    { field: 'name', headerName: 'Employee', width: 250, sortable: true },
+    { field: 'department', headerName: 'Department', width: 150, rowGroup: true, rowGroupIndex: 0 },
     { field: 'role', headerName: 'Role', width: 160 },
     { field: 'salary', headerName: 'Salary', width: 130,
       valueFormatter: (p: any) => p.value ? `$${Number(p.value).toLocaleString()}` : '' },
@@ -326,59 +299,35 @@ function GroupingDemo() {
   ], []);
   return (
     <>
-      <p style={hintStyle}>Rows grouped by Department. Group header rows are highlighted in blue. {Object.keys(grouped.filter((r: any) => r._isGroup)).length} groups, {EMPLOYEES_200.length} total employees.</p>
-      <GridStorm columns={columns} rowData={grouped} plugins={plugins}
-        rowHeight={40} headerHeight={44} height={GRID_HEIGHT} ariaLabel="Grouping Demo" />
+      <p style={hintStyle}>Native row grouping by Department. Click chevrons to expand/collapse groups. {EMPLOYEES_200.length} total employees.</p>
+      <GridStorm columns={columns} rowData={EMPLOYEES_200} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+        enableGrouping ariaLabel="Grouping Demo" />
     </>
   );
 }
 
 function AggregationDemo() {
-  const aggregated = useMemo(() => {
-    const byDept: Record<string, Employee[]> = {};
-    for (const emp of EMPLOYEES_200) {
-      if (!byDept[emp.department]) byDept[emp.department] = [];
-      byDept[emp.department].push(emp);
-    }
-    const rows: any[] = [];
-    for (const [dept, emps] of Object.entries(byDept)) {
-      const totalSalary = emps.reduce((s, e) => s + e.salary, 0);
-      const avgRating = emps.reduce((s, e) => s + e.rating, 0) / emps.length;
-      rows.push({
-        id: `agg-${dept}`, department: dept, name: `${dept}`,
-        salary: totalSalary, rating: avgRating, count: emps.length, _isGroup: true,
-      });
-      for (const emp of emps) rows.push({ ...emp, count: '' });
-    }
-    return rows;
-  }, []);
-
-  const plugins = useMemo(() => [SortingPlugin(), ColumnResizePlugin()], []);
+  const plugins = useMemo(() => [
+    SortingPlugin(),
+    GroupingPlugin(),
+    AggregationPlugin(),
+    ColumnResizePlugin(),
+  ], []);
   const columns: ColumnDef[] = useMemo(() => [
-    { field: 'name', headerName: 'Employee / Group', width: 200,
-      cellRenderer: (p: any) => p.data?._isGroup
-        ? `<strong style="color:#7c3aed">${p.value}</strong>`
-        : `&nbsp;&nbsp;&nbsp;&nbsp;${p.value}`,
-      cellStyle: (p: any) => p.data?._isGroup ? { background: '#faf5ff' } : {} },
-    { field: 'department', headerName: 'Department', width: 140 },
-    { field: 'salary', headerName: 'Salary', width: 150,
-      cellRenderer: (p: any) => p.data?._isGroup
-        ? `<strong>Sum: $${Number(p.value).toLocaleString()}</strong>`
-        : `$${Number(p.value).toLocaleString()}` },
-    { field: 'rating', headerName: 'Rating', width: 130,
-      cellRenderer: (p: any) => p.data?._isGroup
-        ? `<strong>Avg: ${Number(p.value).toFixed(1)}</strong>`
-        : String(p.value) },
-    { field: 'count', headerName: 'Count', width: 100,
-      cellRenderer: (p: any) => p.data?._isGroup
-        ? `<strong>${p.value}</strong>`
-        : '' },
+    { field: 'name', headerName: 'Employee', width: 200 },
+    { field: 'department', headerName: 'Department', width: 140, rowGroup: true, rowGroupIndex: 0 },
+    { field: 'salary', headerName: 'Salary', width: 150, aggFunc: 'sum',
+      valueFormatter: (p: any) => p.value != null ? `$${Number(p.value).toLocaleString()}` : '' },
+    { field: 'rating', headerName: 'Rating', width: 130, aggFunc: 'avg' },
+    { field: 'city', headerName: 'City', width: 130 },
   ], []);
   return (
     <>
-      <p style={hintStyle}>Grouped by Department with aggregations: Sum(Salary), Avg(Rating), Count. Group rows in purple.</p>
-      <GridStorm columns={columns} rowData={aggregated} plugins={plugins}
-        rowHeight={40} headerHeight={44} height={GRID_HEIGHT} ariaLabel="Aggregation Demo" />
+      <p style={hintStyle}>Native grouping by Department with aggregations: Sum(Salary), Avg(Rating). Expand groups to see leaf rows.</p>
+      <GridStorm columns={columns} rowData={EMPLOYEES_200} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+        enableGrouping ariaLabel="Aggregation Demo" />
     </>
   );
 }
@@ -560,22 +509,25 @@ function FullFeaturedDemo() {
     SortingPlugin({ multiSort: true }),
     FilteringPlugin(),
     SelectionPlugin({ mode: 'multiple' }),
+    EditingPlugin(),
+    PaginationPlugin({ pageSize: 50 }),
     ColumnResizePlugin(),
     ColumnPinningPlugin(),
+    ColumnReorderPlugin(),
     ContextMenuPlugin(),
     ClipboardPlugin(),
   ], []);
   const columns: ColumnDef[] = useMemo(() => [
-    { field: 'id', headerName: 'ID', width: 70, sortable: true, pinned: 'left' as const },
-    { field: 'name', headerName: 'Name', width: 180, sortable: true, resizable: true },
-    { field: 'email', headerName: 'Email', width: 240, sortable: true, resizable: true },
-    { field: 'department', headerName: 'Department', width: 150, sortable: true, resizable: true },
-    { field: 'role', headerName: 'Role', width: 160, sortable: true, resizable: true },
-    { field: 'salary', headerName: 'Salary', width: 130, sortable: true, resizable: true,
+    { field: 'id', headerName: 'ID', width: 70, sortable: true, pinned: 'left' as const, filterable: true },
+    { field: 'name', headerName: 'Name', width: 180, sortable: true, resizable: true, editable: true, filterable: true, cellEditor: 'text' },
+    { field: 'email', headerName: 'Email', width: 240, sortable: true, resizable: true, filterable: true },
+    { field: 'department', headerName: 'Department', width: 150, sortable: true, resizable: true, filterable: true },
+    { field: 'role', headerName: 'Role', width: 160, sortable: true, resizable: true, editable: true, filterable: true, cellEditor: 'text' },
+    { field: 'salary', headerName: 'Salary', width: 130, sortable: true, resizable: true, editable: true, filterable: true, cellEditor: 'number',
       valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
-    { field: 'city', headerName: 'City', width: 130, sortable: true, resizable: true },
+    { field: 'city', headerName: 'City', width: 130, sortable: true, resizable: true, filterable: true },
     { field: 'startDate', headerName: 'Start Date', width: 130, sortable: true, resizable: true },
-    { field: 'status', headerName: 'Status', width: 120, pinned: 'right' as const,
+    { field: 'status', headerName: 'Status', width: 120, pinned: 'right' as const, filterable: true,
       cellRenderer: (p: any) => {
         const colors: Record<string, string> = { Active: '#22c55e', Inactive: '#ef4444', 'On Leave': '#f59e0b', Probation: '#3b82f6' };
         const c = colors[p.value] || '#888';
@@ -585,14 +537,19 @@ function FullFeaturedDemo() {
 
   return (
     <>
-      <p style={hintStyle}>Sort, filter, select, resize, pin, right-click menu, clipboard. Selected: <strong>{selectedCount}</strong></p>
+      <p style={hintStyle}>
+        All features: sort, filter (per-column + quick), checkbox select, inline edit, paginate, resize, reorder, pin, clipboard.
+        Selected: <strong>{selectedCount}</strong>
+      </p>
       <div style={{ marginBottom: 8 }}>
         <input type="text" placeholder="Quick filter..." value={filterText}
           onChange={e => { setFilterText(e.target.value); apiRef.current?.setQuickFilter(e.target.value); }}
           style={inputStyle} />
       </div>
       <GridStorm columns={columns} rowData={EMPLOYEES_1K} plugins={plugins}
-        rowHeight={40} headerHeight={44} height={GRID_HEIGHT - 40} rowSelection="multiple"
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT} rowSelection="multiple"
+        checkboxSelection floatingFilter enableCellEditing enablePagination
+        pageSizeOptions={[25, 50, 100, 250]}
         onGridReady={(api: any) => { apiRef.current = api; }}
         onSelectionChanged={(e: any) => setSelectedCount(e.selectedNodes?.length ?? 0)}
         ariaLabel="Full Featured Demo" />
@@ -761,33 +718,3 @@ const inputStyle: React.CSSProperties = {
   fontFamily: 'inherit',
 };
 
-const btnStyle: React.CSSProperties = {
-  padding: '5px 14px',
-  fontSize: 12,
-  border: 'none',
-  borderRadius: 6,
-  cursor: 'pointer',
-  fontFamily: 'inherit',
-  fontWeight: 600,
-  background: '#2563eb',
-  color: '#fff',
-};
-
-const paginationBarStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 8,
-  padding: '8px 0',
-  borderTop: '1px solid #e5e7eb',
-  marginTop: 8,
-};
-
-const pgBtnStyle: React.CSSProperties = {
-  padding: '4px 10px',
-  fontSize: 12,
-  border: '1px solid #d1d5db',
-  borderRadius: 4,
-  cursor: 'pointer',
-  background: '#fff',
-  fontFamily: 'inherit',
-};

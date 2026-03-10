@@ -248,6 +248,16 @@ export interface GridEventMap<TData = any> {
    */
   'contextMenu:closed': {};
 
+  // ── DOM Renderer ──
+
+  /**
+   * Fired by the DOM renderer after the header row has been fully
+   * (re-)rendered. Plugins that inject DOM elements into header cells
+   * (e.g., column-resize handles, drag-and-drop handlers) should
+   * listen for this event to re-attach their elements.
+   */
+  'dom:headerRendered': {};
+
   // ── Clipboard ──
 
   /** Fired when data is copied to the clipboard from the grid. */

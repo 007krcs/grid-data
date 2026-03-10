@@ -91,6 +91,7 @@ export function ColumnReorderPlugin(options: ColumnReorderPluginOptions = {}): G
             ctx.commandBus.dispatch('column:dragStart', {
               colId,
               startX: e.clientX,
+              startY: e.clientY,
             });
           });
         }
@@ -107,9 +108,13 @@ export function ColumnReorderPlugin(options: ColumnReorderPluginOptions = {}): G
       });
 
       // ── Drag start (DOM interaction) ──
+      // Uses a movement threshold (5px) before showing the ghost element.
+      // This prevents a visual flash when the user simply clicks a header
+      // (e.g. for sorting) without intending to drag.
+      const DRAG_THRESHOLD = 5;
       const unregDragStart = ctx.commandBus.registerHandler(
         'column:dragStart',
-        (payload: { colId: string; startX: number }) => {
+        (payload: { colId: string; startX: number; startY?: number }) => {
           const state = ctx.store.getState();
           const startIndex = state.columns.findIndex((c: ColumnState) => c.colId === payload.colId);
           if (startIndex === -1) return;
@@ -117,27 +122,46 @@ export function ColumnReorderPlugin(options: ColumnReorderPluginOptions = {}): G
           const col = state.columns[startIndex]!;
           if (col.originalDef.lockPosition) return;
 
-          // Create ghost element
-          const ghost = document.createElement('div');
-          ghost.className = 'gs-column-drag-ghost';
-          ghost.textContent = col.headerName;
-          ghost.style.cssText = `
-            position:fixed;pointer-events:none;z-index:9999;
-            padding:4px 12px;background:var(--gs-color-primary,#1976d2);
-            color:white;border-radius:4px;font-size:13px;opacity:0.9;
-          `;
-          document.body.appendChild(ghost);
+          let ghost: HTMLElement | null = null;
+          let dragging = false;
+          const startX = payload.startX;
+          const startY = payload.startY ?? 0;
 
           const onMouseMove = (e: MouseEvent) => {
-            ghost.style.left = `${e.clientX + 10}px`;
-            ghost.style.top = `${e.clientY + 10}px`;
+            // Don't activate drag until mouse moves beyond threshold
+            if (!dragging) {
+              const dx = e.clientX - startX;
+              const dy = e.clientY - startY;
+              if (Math.sqrt(dx * dx + dy * dy) < DRAG_THRESHOLD) return;
+              dragging = true;
+
+              // Create ghost element now that we know it's a real drag
+              ghost = document.createElement('div');
+              ghost.className = 'gs-column-drag-ghost';
+              ghost.textContent = col.headerName;
+              ghost.style.cssText = `
+                position:fixed;pointer-events:none;z-index:9999;
+                padding:4px 12px;background:var(--gs-color-primary,#1976d2);
+                color:white;border-radius:4px;font-size:13px;opacity:0.9;
+              `;
+              document.body.appendChild(ghost);
+              document.body.style.cursor = 'grabbing';
+            }
+
+            if (ghost) {
+              ghost.style.left = `${e.clientX + 10}px`;
+              ghost.style.top = `${e.clientY + 10}px`;
+            }
           };
 
           const onMouseUp = (e: MouseEvent) => {
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
             document.body.style.cursor = '';
-            ghost.remove();
+            if (ghost) ghost.remove();
+
+            // Only process drop if we actually started dragging
+            if (!dragging) return;
 
             // Find drop target column
             const target = (e.target as HTMLElement).closest<HTMLElement>('.gs-header-cell');
@@ -159,7 +183,6 @@ export function ColumnReorderPlugin(options: ColumnReorderPluginOptions = {}): G
 
           document.addEventListener('mousemove', onMouseMove);
           document.addEventListener('mouseup', onMouseUp);
-          document.body.style.cursor = 'grabbing';
         },
       );
 

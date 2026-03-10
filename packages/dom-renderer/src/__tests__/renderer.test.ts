@@ -629,8 +629,15 @@ describe('DomRenderer', () => {
       const listener = vi.fn();
       engine.eventBus.on('cell:doubleClicked', listener);
 
+      // Double-click is detected via two rapid click events (not native dblclick)
+      // because SelectionPlugin rebuilds cells between clicks, causing native
+      // dblclick to fire on detached DOM elements.
       const firstCell = container.querySelector('.gs-body .gs-row .gs-cell')!;
-      firstCell.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+      firstCell.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+      // After the first click, the cell may be rebuilt. Get the fresh cell.
+      const freshCell = container.querySelector('.gs-body .gs-row .gs-cell')!;
+      freshCell.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(listener).toHaveBeenCalledWith(

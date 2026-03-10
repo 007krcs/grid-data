@@ -129,6 +129,16 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
     onCellEditingStopped,
     onPaginationChanged,
     onColumnResized,
+    // Renderer config props
+    enableCellEditing,
+    enableGrouping,
+    groupIndent,
+    checkboxSelection,
+    checkboxColumnWidth,
+    floatingFilter,
+    floatingFilterDebounce,
+    enablePagination,
+    pageSizeOptions,
     // Component props
     height = 400,
     width = '100%',
@@ -191,6 +201,15 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
     const renderer = new DomRenderer({
       container: containerRef.current,
       engine,
+      enableCellEditing,
+      enableGrouping,
+      groupIndent,
+      checkboxSelection,
+      checkboxColumnWidth,
+      floatingFilter,
+      floatingFilterDebounce,
+      enablePagination,
+      pageSizeOptions,
     });
     renderer.mount();
     rendererRef.current = renderer;

@@ -89,6 +89,26 @@
   --gs-transition-duration: 150ms;
   --gs-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
 
+  /* ── Colors: Grouping ── */
+  --gs-color-group-bg: #f1f5f9;
+  --gs-color-group-bg-hover: #e2e8f0;
+  --gs-color-group-chevron: #64748b;
+
+  /* ── Colors: Floating Filter ── */
+  --gs-color-filter-bg: #f8fafc;
+  --gs-color-filter-input-border: #e2e8f0;
+  --gs-color-filter-input-focus: #3b82f6;
+
+  /* ── Colors: Pagination ── */
+  --gs-color-pagination-bg: #f8fafc;
+  --gs-color-pagination-btn-hover: #f1f5f9;
+
+  /* ── Sizing: Features ── */
+  --gs-size-floating-filter-height: 36px;
+  --gs-size-pagination-height: 40px;
+  --gs-size-group-indent: 24px;
+  --gs-size-checkbox-column: 48px;
+
   /* ── Scrollbar ── */
   --gs-scrollbar-track: transparent;
   --gs-scrollbar-thumb: #cbd5e1;

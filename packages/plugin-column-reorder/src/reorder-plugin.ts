@@ -67,6 +67,45 @@ export function ColumnReorderPlugin(options: ColumnReorderPluginOptions = {}): G
         },
       );
 
+      // ── Inject drag handlers into header cells ──
+      const injectDragHandlers = () => {
+        if (!_enableDragDrop) return;
+        const headers = document.querySelectorAll('.gs-header-cell');
+        for (const header of headers) {
+          const el = header as HTMLElement;
+          const colId = el.getAttribute('data-col-id');
+          if (!colId) continue;
+          // Skip if already has a drag handler
+          if (el.getAttribute('data-gs-draggable')) continue;
+          // Skip locked columns
+          const col = ctx.store.getState().columns.find((c: ColumnState) => c.colId === colId);
+          if (col?.originalDef.lockPosition) continue;
+
+          el.setAttribute('data-gs-draggable', 'true');
+          el.style.cursor = 'grab';
+          el.addEventListener('mousedown', (e: MouseEvent) => {
+            // Ignore right-click and clicks on resize handles
+            if (e.button !== 0) return;
+            if ((e.target as HTMLElement).classList.contains('gs-resize-handle')) return;
+            e.preventDefault();
+            ctx.commandBus.dispatch('column:dragStart', {
+              colId,
+              startX: e.clientX,
+            });
+          });
+        }
+      };
+
+      // Re-inject after every header re-render
+      const unsubHeaderRendered = ctx.eventBus.on('dom:headerRendered', () => {
+        injectDragHandlers();
+      });
+
+      // Also inject on grid ready (fallback for initial mount)
+      const unsubReady = ctx.eventBus.on('grid:ready', () => {
+        requestAnimationFrame(() => injectDragHandlers());
+      });
+
       // ── Drag start (DOM interaction) ──
       const unregDragStart = ctx.commandBus.registerHandler(
         'column:dragStart',
@@ -128,6 +167,8 @@ export function ColumnReorderPlugin(options: ColumnReorderPluginOptions = {}): G
         unregMove();
         unregSwap();
         unregDragStart();
+        unsubHeaderRendered();
+        unsubReady();
       };
     },
   };

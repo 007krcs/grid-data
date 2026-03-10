@@ -113,12 +113,13 @@ export function ColumnResizePlugin(options: ColumnResizePluginOptions = {}): Gri
       );
 
       // ── Inject resize handles into header cells ──
-      // This listens for column changes and adds handles via the DOM
-      const unsubColumns = ctx.eventBus.on('columns:changed', () => {
+      // Listen to dom:headerRendered so handles are re-injected every time
+      // the renderer rebuilds headers (sort, filter, column changes, etc.)
+      const unsubHeaderRendered = ctx.eventBus.on('dom:headerRendered', () => {
         injectResizeHandles(ctx);
       });
 
-      // Also inject on grid ready
+      // Also inject on grid ready (fallback for initial mount)
       const unsubReady = ctx.eventBus.on('grid:ready', () => {
         // Defer to allow DOM to be built
         requestAnimationFrame(() => injectResizeHandles(ctx));
@@ -129,7 +130,7 @@ export function ColumnResizePlugin(options: ColumnResizePluginOptions = {}): Gri
         unregisterResizeStart();
         unregisterAutoSize();
         unregisterAutoSizeAll();
-        unsubColumns();
+        unsubHeaderRendered();
         unsubReady();
       };
     },
@@ -220,8 +221,11 @@ function injectResizeHandles(ctx: PluginContext): void {
       ctx.commandBus.dispatch('column:autoSize', { colId });
     });
 
-    // Make header cell position relative for the absolute handle
-    el.style.position = 'relative';
+    // Make header cell positioned for the absolute handle.
+    // Preserve 'sticky' for pinned columns.
+    if (el.style.position !== 'sticky') {
+      el.style.position = 'relative';
+    }
     el.appendChild(handle);
   }
 }

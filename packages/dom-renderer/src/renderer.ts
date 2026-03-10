@@ -2,7 +2,7 @@
 // Creates and manages the grid DOM structure.
 // Reads state from the core engine and renders rows/cells efficiently.
 
-import type { GridEngine, GridState, ColumnState, RowNode } from '@gridstorm/core';
+import type { GridEngine, GridState, ColumnState, RowNode, ColumnGroupInfo } from '@gridstorm/core';
 import { getValueFromData } from '@gridstorm/core';
 import { VirtualScroller } from './virtual-scroll';
 import { ColumnVirtualizer } from './column-virtualizer';
@@ -39,6 +39,15 @@ export interface DomRendererConfig {
   enablePagination?: boolean;
   /** Available page size options for the page size selector. Default: [25, 50, 100, 250]. */
   pageSizeOptions?: number[];
+
+  // ── Tier 2 Feature Options ──
+
+  /** Height of column group header rows in pixels. Default: same as headerHeight. */
+  groupHeaderHeight?: number;
+  /** Show column sidebar toggle button. Default: false. */
+  enableColumnSidebar?: boolean;
+  /** Width of the column sidebar panel in pixels. Default: 220. */
+  sidebarWidth?: number;
 }
 
 interface RowDomEntry {
@@ -77,6 +86,15 @@ export class DomRenderer {
   private floatingFilterDebounce: number;
   private enablePagination: boolean;
   private pageSizeOptions: number[];
+
+  // Tier 2 Feature config
+  private groupHeaderHeight: number | null;
+  private enableColumnSidebar: boolean;
+  private sidebarWidth: number;
+
+  // Tier 2 Feature state
+  private sidebarElement: HTMLElement | null = null;
+  private sidebarOpen = false;
 
   // Tier 1 Feature state
   private headerCheckbox: HTMLInputElement | null = null;
@@ -139,6 +157,11 @@ export class DomRenderer {
     this.enablePagination = config.enablePagination ?? hasPlugin('pagination');
     this.pageSizeOptions = config.pageSizeOptions ?? [25, 50, 100, 250];
 
+    // Tier 2 feature config
+    this.groupHeaderHeight = config.groupHeaderHeight ?? null;
+    this.enableColumnSidebar = config.enableColumnSidebar ?? false;
+    this.sidebarWidth = config.sidebarWidth ?? 220;
+
   }
 
   /** Mount the grid into the container. No-op when running on the server. */
@@ -160,6 +183,9 @@ export class DomRenderer {
     this.renderVisibleRows();
     if (this.enablePagination) {
       this.updatePaginationBar();
+    }
+    if (this.enableColumnSidebar) {
+      this.createColumnSidebar();
     }
   }
 
@@ -184,6 +210,10 @@ export class DomRenderer {
     this.paginationLabel = null;
     this.paginationPageInfo = null;
     this.paginationPageSizeSelect = null;
+
+    // Clean up Tier 2 feature state
+    this.sidebarElement = null;
+    this.sidebarOpen = false;
     this.floatingFilterContainer = null;
 
     if (this.root && this.container?.contains(this.root)) {
@@ -386,6 +416,11 @@ export class DomRenderer {
       }
     }
 
+    // ── Column Group Header Rows (multi-level headers) ──
+    if (state.columnGroups.length > 0 && state.columnGroupDepth > 0) {
+      this.renderColumnGroupHeaders(state, renderCols, headerHeight);
+    }
+
     this.headerContainer.appendChild(headerRow);
 
     // Update total row count for aria
@@ -470,6 +505,277 @@ export class DomRenderer {
     }
 
     return cell;
+  }
+
+  // ── Column Group Header Rendering ──
+
+  private renderColumnGroupHeaders(
+    state: GridState,
+    _visibleCols: ColumnState[],
+    totalHeaderHeight: number,
+  ): void {
+    if (!this.headerContainer) return;
+    const groups = state.columnGroups;
+    const depth = state.columnGroupDepth;
+    if (depth === 0 || groups.length === 0) return;
+
+    const allVisibleCols = state.columns.filter((c) => !c.hide);
+    const rowHeight = this.groupHeaderHeight ?? Math.round(totalHeaderHeight / (depth + 1));
+
+    // Build a map of colId -> column for quick width lookups
+    const colWidthMap = new Map<string, number>();
+    for (const col of allVisibleCols) {
+      colWidthMap.set(col.colId, col.width);
+    }
+
+    // For each level from 0 (top) to depth-1, render a group header row
+    for (let level = 0; level < depth; level++) {
+      const levelGroups = groups.filter((g) => g.level === level);
+      if (levelGroups.length === 0) continue;
+
+      const groupRow = this.el('div', `${this.prefix}-header-group-row`);
+      groupRow.setAttribute('role', 'row');
+      groupRow.style.cssText = `display:flex;height:${rowHeight}px;align-items:center;`;
+
+      // Track which leaf columns are covered by groups at this level
+      const coveredColIds = new Set<string>();
+      for (const group of levelGroups) {
+        for (const colId of group.leafColIds) {
+          coveredColIds.add(colId);
+        }
+      }
+
+      // Walk through all visible columns in order, emitting group cells or filler cells
+      let i = 0;
+      while (i < allVisibleCols.length) {
+        const col = allVisibleCols[i]!;
+
+        // Find if this column starts a group at this level
+        const group = levelGroups.find((g) => g.leafColIds[0] === col.colId);
+        if (group) {
+          // Calculate total width of all visible leaf columns in this group
+          let spanWidth = 0;
+          let spanCount = 0;
+          for (const leafId of group.leafColIds) {
+            const w = colWidthMap.get(leafId);
+            if (w !== undefined) {
+              spanWidth += w;
+              spanCount++;
+            }
+          }
+
+          if (spanWidth > 0) {
+            const groupCell = this.createGroupHeaderCell(group, spanWidth, rowHeight);
+            groupRow.appendChild(groupCell);
+          }
+
+          // Advance past all columns in this group
+          i += spanCount;
+          continue;
+        }
+
+        // Check if this column is covered by a group (but not at the start)
+        if (coveredColIds.has(col.colId)) {
+          // Already covered by a group cell rendered earlier
+          i++;
+          continue;
+        }
+
+        // Uncovered column at this level — render an empty filler cell
+        const filler = this.el('div', `${this.prefix}-header-group-filler`);
+        filler.style.cssText = `
+          width:${col.width}px;min-width:${col.width}px;max-width:${col.width}px;
+          height:${rowHeight}px;box-sizing:border-box;
+          border-right:var(--gs-border-width,1px) solid var(--gs-color-border,#e2e8f0);
+        `;
+        groupRow.appendChild(filler);
+        i++;
+      }
+
+      this.headerContainer!.appendChild(groupRow);
+    }
+
+    // Adjust the leaf header row height to account for group rows
+    const leafRow = this.headerContainer!.querySelector(`.${this.prefix}-header-row`);
+    if (!leafRow && this.headerContainer!.children.length > 0) {
+      // The leaf row hasn't been added yet - it will be added after this call
+      // Adjust via the headerRow that's about to be appended (handled in renderHeader)
+    }
+  }
+
+  private createGroupHeaderCell(
+    group: ColumnGroupInfo,
+    width: number,
+    height: number,
+  ): HTMLElement {
+    const cell = this.el('div', `${this.prefix}-header-group-cell`);
+    cell.setAttribute('role', 'columnheader');
+    cell.setAttribute('data-group-id', group.groupId);
+    cell.style.cssText = `
+      width:${width}px;min-width:${width}px;max-width:${width}px;
+      height:${height}px;
+      padding:var(--gs-spacing-header-horizontal,12px);
+      box-sizing:border-box;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:var(--gs-font-weight-header,600);
+      font-size:var(--gs-font-size-header,13px);
+      border-right:var(--gs-border-width,1px) solid var(--gs-color-border,#e2e8f0);
+      border-bottom:var(--gs-border-width,1px) solid var(--gs-color-border,#e2e8f0);
+      background:var(--gs-color-group-header-bg,var(--gs-color-header-bg,#f8fafc));
+      user-select:none;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    `;
+
+    const label = document.createElement('span');
+    label.textContent = group.headerName;
+    label.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    cell.appendChild(label);
+
+    return cell;
+  }
+
+  // ── Column Sidebar ──
+
+  private createColumnSidebar(): void {
+    if (!this.enableColumnSidebar || !this.root) return;
+
+    // Toggle button in the header area
+    const toggleBtn = this.el('button', `${this.prefix}-sidebar-toggle`);
+    toggleBtn.setAttribute('aria-label', 'Toggle column panel');
+    toggleBtn.setAttribute('aria-expanded', 'false');
+    toggleBtn.textContent = '☰';
+    toggleBtn.style.cssText = `
+      position:absolute;top:4px;right:4px;z-index:3;
+      width:28px;height:28px;border:1px solid var(--gs-color-border,#e2e8f0);
+      border-radius:4px;background:var(--gs-color-header-bg,#f8fafc);
+      cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;
+      color:var(--gs-color-header-fg,#475569);
+    `;
+    toggleBtn.addEventListener('click', () => this.toggleSidebar());
+    this.root.appendChild(toggleBtn);
+
+    // Sidebar panel
+    this.sidebarElement = this.el('div', `${this.prefix}-sidebar`);
+    this.sidebarElement.setAttribute('role', 'dialog');
+    this.sidebarElement.setAttribute('aria-label', 'Column visibility panel');
+    this.sidebarElement.style.cssText = `
+      position:absolute;top:0;right:0;bottom:0;
+      width:${this.sidebarWidth}px;
+      background:var(--gs-sidebar-bg,var(--gs-color-background,#fff));
+      border-left:1px solid var(--gs-sidebar-border,var(--gs-color-border,#e2e8f0));
+      box-shadow:-4px 0 12px rgba(0,0,0,0.08);
+      z-index:5;overflow-y:auto;
+      transform:translateX(100%);transition:transform 0.2s ease;
+      padding:0;
+    `;
+
+    // Header
+    const header = document.createElement('div');
+    header.style.cssText = `
+      display:flex;align-items:center;justify-content:space-between;
+      padding:12px 16px;border-bottom:1px solid var(--gs-color-border,#e2e8f0);
+      font-weight:600;font-size:14px;
+    `;
+    const titleSpan = document.createElement('span');
+    titleSpan.textContent = 'Columns';
+    header.appendChild(titleSpan);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '×';
+    closeBtn.setAttribute('aria-label', 'Close column panel');
+    closeBtn.style.cssText = `
+      border:none;background:none;cursor:pointer;font-size:18px;
+      color:var(--gs-color-muted,#94a3b8);padding:0 4px;
+    `;
+    closeBtn.addEventListener('click', () => this.toggleSidebar());
+    header.appendChild(closeBtn);
+    this.sidebarElement.appendChild(header);
+
+    // Search input
+    const searchBox = document.createElement('div');
+    searchBox.style.cssText = 'padding:8px 12px;';
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search columns...';
+    searchInput.setAttribute('aria-label', 'Search columns');
+    searchInput.style.cssText = `
+      width:100%;padding:6px 10px;border:1px solid var(--gs-color-border,#e2e8f0);
+      border-radius:4px;font-size:13px;box-sizing:border-box;
+      outline:none;background:var(--gs-color-background,#fff);
+      color:var(--gs-color-foreground,#1a1a1a);
+    `;
+    searchInput.addEventListener('input', () => {
+      this.updateSidebarList(searchInput.value.toLowerCase());
+    });
+    searchBox.appendChild(searchInput);
+    this.sidebarElement.appendChild(searchBox);
+
+    // Column list container
+    const listContainer = document.createElement('div');
+    listContainer.className = `${this.prefix}-sidebar-list`;
+    listContainer.style.cssText = 'padding:4px 12px;';
+    this.sidebarElement.appendChild(listContainer);
+
+    // Escape to close
+    this.sidebarElement.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') this.toggleSidebar();
+    });
+
+    this.root.appendChild(this.sidebarElement);
+    this.updateSidebarList('');
+  }
+
+  private toggleSidebar(): void {
+    this.sidebarOpen = !this.sidebarOpen;
+    if (this.sidebarElement) {
+      this.sidebarElement.style.transform = this.sidebarOpen ? 'translateX(0)' : 'translateX(100%)';
+    }
+    const toggle = this.root?.querySelector(`.${this.prefix}-sidebar-toggle`);
+    toggle?.setAttribute('aria-expanded', String(this.sidebarOpen));
+  }
+
+  private updateSidebarList(filter: string): void {
+    if (!this.sidebarElement) return;
+    const listContainer = this.sidebarElement.querySelector(`.${this.prefix}-sidebar-list`);
+    if (!listContainer) return;
+    listContainer.textContent = '';
+
+    const state = this.engine.store.getState();
+    for (const col of state.columns) {
+      // Skip columns marked as suppressColumnsToolPanel
+      if ((col.originalDef as any).suppressColumnsToolPanel) continue;
+
+      // Filter by search
+      if (filter && !col.headerName.toLowerCase().includes(filter)) continue;
+
+      const item = document.createElement('label');
+      item.style.cssText = `
+        display:flex;align-items:center;gap:8px;padding:6px 4px;
+        cursor:pointer;font-size:13px;
+        color:var(--gs-color-foreground,#1a1a1a);
+      `;
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = !col.hide;
+      checkbox.style.cssText = 'cursor:pointer;';
+      checkbox.addEventListener('change', () => {
+        this.engine.api.setColumnVisible(col.colId, checkbox.checked);
+        // Re-render header after column visibility change
+        this.renderHeader();
+        this.renderVisibleRows();
+      });
+
+      const labelText = document.createElement('span');
+      labelText.textContent = col.headerName;
+      labelText.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+
+      item.appendChild(checkbox);
+      item.appendChild(labelText);
+      listContainer.appendChild(item);
+    }
   }
 
   // ── Virtual Scrolling Setup ──

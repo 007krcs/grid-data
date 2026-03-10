@@ -113,4 +113,19 @@
   --gs-scrollbar-track: transparent;
   --gs-scrollbar-thumb: #cbd5e1;
   --gs-scrollbar-thumb-hover: #94a3b8;
+
+  /* ── Colors: Column Groups ── */
+  --gs-color-group-header-bg: #f1f5f9;
+  --gs-color-group-header-border: #e2e8f0;
+
+  /* ── Colors: Context Menu ── */
+  --gs-color-menu-item-disabled: #94a3b8;
+
+  /* ── Colors: Column Sidebar ── */
+  --gs-color-sidebar-bg: #ffffff;
+  --gs-color-sidebar-border: #e2e8f0;
+  --gs-color-sidebar-toggle-bg: #f8fafc;
+
+  /* ── Sizing: Tier 2 ── */
+  --gs-size-sidebar-width: 220px;
 }

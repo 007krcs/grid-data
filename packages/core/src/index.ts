@@ -15,11 +15,13 @@ export type { CommandContext, CommandMiddleware } from './events/command-bus';
 // Column utilities
 export {
   resolveColumns,
+  resolveColumnGroups,
   applyFlexSizing,
   partitionColumns,
   findColumn,
   updateColumn,
 } from './engine/column-model';
+export type { ColumnGroupInfo } from './engine/column-model';
 
 // Row utilities
 export {

@@ -131,3 +131,100 @@ export function updateColumn(
 ): ColumnState[] {
   return columns.map((col) => (col.colId === colId ? { ...col, ...updates } : col));
 }
+
+// ─── Column Group Resolution ───
+
+/**
+ * Describes a resolved column group for multi-level headers.
+ * Built from ColumnDef.children hierarchy.
+ */
+export interface ColumnGroupInfo {
+  /** Unique group identifier. */
+  groupId: string;
+  /** Display name for the group header. */
+  headerName: string;
+  /** Nesting level: 0 = top-most group. */
+  level: number;
+  /** colIds of direct leaf column children. */
+  children: string[];
+  /** groupIds of direct child groups. */
+  childGroups: string[];
+  /** All leaf colIds under this group (recursive). */
+  leafColIds: string[];
+  /** When true, child columns cannot be separated by reorder. */
+  marryChildren: boolean;
+  /** Reference to the original ColumnDef that defined this group. */
+  originalDef: ColumnDef;
+}
+
+/**
+ * Resolve column group hierarchy from ColumnDef[] tree.
+ * Returns flat list of ColumnGroupInfo and the maximum depth.
+ * Columns without children are not included.
+ */
+export function resolveColumnGroups<TData>(
+  defs: ColumnDef<TData>[],
+): { groups: ColumnGroupInfo[]; maxDepth: number } {
+  const groups: ColumnGroupInfo[] = [];
+  let maxDepth = 0;
+
+  function walk(
+    items: ColumnDef<TData>[],
+    level: number,
+  ): void {
+    for (const def of items) {
+      if (!def.children || def.children.length === 0) continue;
+
+      const groupId = def.groupId ?? def.headerName ?? generateId('grp');
+
+      // Collect direct children info
+      const directLeaves: string[] = [];
+      const directChildGroups: string[] = [];
+      const allLeaves: string[] = [];
+
+      for (const child of def.children) {
+        if (child.children && child.children.length > 0) {
+          const childGroupId = child.groupId ?? child.headerName ?? generateId('grp');
+          directChildGroups.push(childGroupId);
+          // Collect all leaves from child group
+          collectLeaves(child, allLeaves);
+        } else {
+          const colId = child.colId ?? child.field ?? generateId('col');
+          directLeaves.push(colId);
+          allLeaves.push(colId);
+        }
+      }
+
+      groups.push({
+        groupId,
+        headerName: def.headerName ?? groupId,
+        level,
+        children: directLeaves,
+        childGroups: directChildGroups,
+        leafColIds: allLeaves,
+        marryChildren: def.marryChildren ?? false,
+        originalDef: def as ColumnDef,
+      });
+
+      if (level > maxDepth) maxDepth = level;
+
+      // Recurse into child groups
+      walk(def.children, level + 1);
+    }
+  }
+
+  walk(defs, 0);
+
+  return { groups, maxDepth: groups.length > 0 ? maxDepth + 1 : 0 };
+}
+
+/** Recursively collect all leaf colIds from a ColumnDef tree. */
+function collectLeaves<TData>(def: ColumnDef<TData>, result: string[]): void {
+  if (!def.children || def.children.length === 0) {
+    result.push(def.colId ?? def.field ?? '');
+    return;
+  }
+  for (const child of def.children) {
+    collectLeaves(child, result);
+  }
+}

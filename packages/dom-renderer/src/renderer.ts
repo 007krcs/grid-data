@@ -584,6 +584,13 @@ export class DomRenderer {
     });
     this.unsubscribers.push(unsubColPinned);
 
+    // Lightweight column width update on resize — updates CSS in-place
+    // without destroying/recreating DOM elements (critical for drag perf)
+    const unsubResized = this.engine.eventBus.on('column:resized', () => {
+      this.updateColumnWidths();
+    });
+    this.unsubscribers.push(unsubResized);
+
     const unsubRowData = this.engine.eventBus.on('rowData:changed', () => {
       // Clear rendered row cache since row IDs may be reused with different data
       for (const [, entry] of this.renderedRows) {
@@ -597,6 +604,67 @@ export class DomRenderer {
       this.renderVisibleRows();
     });
     this.unsubscribers.push(unsubRowData);
+  }
+
+  /**
+   * Lightweight column width update — patches CSS widths on existing header
+   * and body cells in-place without destroying/recreating DOM.  Used during
+   * column resize drag for smooth 60 fps feedback.
+   */
+  private updateColumnWidths(): void {
+    const state = this.engine.store.getState();
+
+    // ── Header cells ──
+    if (this.headerContainer) {
+      const headerRow = this.headerContainer.querySelector(
+        `.${this.prefix}-header-row`,
+      ) as HTMLElement | null;
+      if (headerRow) {
+        const visibleCols = state.columns.filter((c) => !c.hide);
+        const hasPinned = visibleCols.some((c) => c.pinned);
+        if (hasPinned || this.columnVirtualizer.isVirtualized()) {
+          const totalWidth = visibleCols.reduce((sum, c) => sum + c.width, 0);
+          headerRow.style.width = `${totalWidth}px`;
+        }
+      }
+
+      const headers = this.headerContainer.querySelectorAll(
+        `.${this.prefix}-header-cell`,
+      );
+      for (const header of headers) {
+        const el = header as HTMLElement;
+        const colId = el.getAttribute('data-col-id');
+        if (!colId) continue;
+        const col = state.columns.find((c) => c.colId === colId);
+        if (!col) continue;
+        el.style.width = `${col.width}px`;
+        el.style.minWidth = `${col.width}px`;
+        el.style.maxWidth = `${col.width}px`;
+      }
+    }
+
+    // ── Body row widths + cell widths ──
+    for (const [, entry] of this.renderedRows) {
+      const rowEl = entry.element;
+      const visibleCols = state.columns.filter((c) => !c.hide);
+      const hasPinned = visibleCols.some((c) => c.pinned);
+      if (hasPinned) {
+        const totalWidth = visibleCols.reduce((sum, c) => sum + c.width, 0);
+        rowEl.style.width = `${totalWidth}px`;
+      }
+
+      const cells = rowEl.querySelectorAll(`.${this.prefix}-cell`);
+      for (const cell of cells) {
+        const cellEl = cell as HTMLElement;
+        const colId = cellEl.getAttribute('data-col-id');
+        if (!colId) continue;
+        const col = state.columns.find((c) => c.colId === colId);
+        if (!col) continue;
+        cellEl.style.width = `${col.width}px`;
+        cellEl.style.minWidth = `${col.width}px`;
+        cellEl.style.maxWidth = `${col.width}px`;
+      }
+    }
   }
 
   private onStateChanged(): void {

@@ -228,11 +228,43 @@ export class DomRenderer {
         headerRow.appendChild(cell);
       }
     } else {
-      // No column virtualization — render all visible columns as before
-      headerRow.style.cssText = `display:flex;height:${headerHeight}px;align-items:center;`;
-      for (const col of renderCols) {
-        const cell = this.createHeaderCell(col, state);
-        headerRow.appendChild(cell);
+      // No column virtualization — render all visible columns
+      const hasPinned = renderCols.some((c) => c.pinned);
+      if (hasPinned) {
+        // Set explicit total width so horizontal scroll enables sticky positioning
+        const totalWidth = renderCols.reduce((sum, c) => sum + c.width, 0);
+        headerRow.style.cssText = `display:flex;height:${headerHeight}px;align-items:center;width:${totalWidth}px;position:relative;`;
+
+        let pinnedLeftOffset = 0;
+        for (const col of renderCols.filter((c) => c.pinned === 'left')) {
+          const cell = this.createHeaderCell(col, state);
+          cell.style.position = 'sticky';
+          cell.style.left = `${pinnedLeftOffset}px`;
+          cell.style.zIndex = '1';
+          cell.style.background = 'var(--gs-color-header-bg, #f5f5f5)';
+          pinnedLeftOffset += col.width;
+          headerRow.appendChild(cell);
+        }
+        for (const col of renderCols.filter((c) => !c.pinned)) {
+          headerRow.appendChild(this.createHeaderCell(col, state));
+        }
+        let pinnedRightOffset = 0;
+        const pinnedRightCols = renderCols.filter((c) => c.pinned === 'right');
+        for (let i = pinnedRightCols.length - 1; i >= 0; i--) {
+          const col = pinnedRightCols[i]!;
+          const cell = this.createHeaderCell(col, state);
+          cell.style.position = 'sticky';
+          cell.style.right = `${pinnedRightOffset}px`;
+          cell.style.zIndex = '1';
+          cell.style.background = 'var(--gs-color-header-bg, #f5f5f5)';
+          pinnedRightOffset += col.width;
+          headerRow.appendChild(cell);
+        }
+      } else {
+        headerRow.style.cssText = `display:flex;height:${headerHeight}px;align-items:center;`;
+        for (const col of renderCols) {
+          headerRow.appendChild(this.createHeaderCell(col, state));
+        }
       }
     }
 
@@ -241,6 +273,10 @@ export class DomRenderer {
     // Update total row count for aria
     this.root?.setAttribute('aria-rowcount', String(state.displayedRowIds.length));
     this.root?.setAttribute('aria-colcount', String(allVisibleCols.length));
+
+    // Notify plugins that header DOM was rebuilt so they can re-inject
+    // handles (resize, reorder, context menu, etc.)
+    this.engine.eventBus.emit('dom:headerRendered', {});
   }
 
   private createHeaderCell(col: ColumnState, state: GridState): HTMLElement {
@@ -683,16 +719,16 @@ export class DomRenderer {
       rowEl.setAttribute('aria-selected', 'true');
     }
 
-    rowEl.style.cssText = `
-      position:absolute;
-      top:${top}px;
-      left:0;
-      right:0;
-      height:${height}px;
-      display:flex;
-      align-items:center;
-      border-bottom:var(--gs-border-width,1px) solid var(--gs-color-border,#e0e0e0);
-    `;
+    // When there are pinned columns, set the row width to the total column
+    // width so pinned columns can use position:sticky
+    const hasPinned = columns.some((c) => c.pinned);
+    const totalWidth = hasPinned
+      ? columns.reduce((sum, c) => sum + c.width, 0)
+      : 0;
+
+    rowEl.style.cssText = totalWidth > 0
+      ? `position:absolute;top:${top}px;left:0;width:${totalWidth}px;height:${height}px;display:flex;align-items:center;border-bottom:var(--gs-border-width,1px) solid var(--gs-color-border,#e0e0e0);`
+      : `position:absolute;top:${top}px;left:0;right:0;height:${height}px;display:flex;align-items:center;border-bottom:var(--gs-border-width,1px) solid var(--gs-color-border,#e0e0e0);`;
 
     this.updateRowContent(rowEl, node, columns, displayIndex);
   }
@@ -705,10 +741,73 @@ export class DomRenderer {
   ): void {
     rowEl.textContent = '';
 
-    for (let colIdx = 0; colIdx < columns.length; colIdx++) {
-      const col = columns[colIdx]!;
-      const cell = this.createCell(node, col, displayIndex, colIdx);
-      rowEl.appendChild(cell);
+    const hasPinned = columns.some((c) => c.pinned);
+
+    if (hasPinned) {
+      // Apply sticky positioning for pinned columns
+      let pinnedLeftOffset = 0;
+      for (const col of columns.filter((c) => c.pinned === 'left')) {
+        const cell = this.createCell(node, col, displayIndex, columns.indexOf(col));
+        cell.style.position = 'sticky';
+        cell.style.left = `${pinnedLeftOffset}px`;
+        cell.style.zIndex = '1';
+        cell.style.background = 'var(--gs-color-row-bg, #fff)';
+        pinnedLeftOffset += col.width;
+        rowEl.appendChild(cell);
+      }
+
+      if (this.columnVirtualizer.isVirtualized()) {
+        // Add spacer for virtualized unpinned offset
+        const colResult = this.lastColumnResult;
+        if (colResult && colResult.offsetLeft > 0) {
+          const spacer = document.createElement('div');
+          spacer.style.cssText = `width:${colResult.offsetLeft}px;min-width:${colResult.offsetLeft}px;flex-shrink:0;`;
+          rowEl.appendChild(spacer);
+        }
+      }
+
+      // Unpinned cells
+      for (const col of columns.filter((c) => !c.pinned)) {
+        const cell = this.createCell(node, col, displayIndex, columns.indexOf(col));
+        rowEl.appendChild(cell);
+      }
+
+      if (this.columnVirtualizer.isVirtualized()) {
+        // End spacer for remaining unpinned width
+        const colResult = this.lastColumnResult;
+        if (colResult) {
+          const renderedUnpinnedWidth = columns
+            .filter((c) => !c.pinned)
+            .reduce((sum, c) => sum + c.width, 0);
+          const remainingWidth = colResult.totalWidth - colResult.offsetLeft - renderedUnpinnedWidth;
+          if (remainingWidth > 0) {
+            const endSpacer = document.createElement('div');
+            endSpacer.style.cssText = `width:${remainingWidth}px;min-width:${remainingWidth}px;flex-shrink:0;`;
+            rowEl.appendChild(endSpacer);
+          }
+        }
+      }
+
+      // Pinned-right cells
+      let pinnedRightOffset = 0;
+      const pinnedRightCols = columns.filter((c) => c.pinned === 'right');
+      for (let i = pinnedRightCols.length - 1; i >= 0; i--) {
+        const col = pinnedRightCols[i]!;
+        const cell = this.createCell(node, col, displayIndex, columns.indexOf(col));
+        cell.style.position = 'sticky';
+        cell.style.right = `${pinnedRightOffset}px`;
+        cell.style.zIndex = '1';
+        cell.style.background = 'var(--gs-color-row-bg, #fff)';
+        pinnedRightOffset += col.width;
+        rowEl.appendChild(cell);
+      }
+    } else {
+      // No pinned columns — render all cells normally
+      for (let colIdx = 0; colIdx < columns.length; colIdx++) {
+        const col = columns[colIdx]!;
+        const cell = this.createCell(node, col, displayIndex, colIdx);
+        rowEl.appendChild(cell);
+      }
     }
   }
 

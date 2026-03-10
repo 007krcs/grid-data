@@ -128,14 +128,15 @@ export class DomRenderer {
     this.prefix = config.classPrefix ?? 'gs';
 
     // Tier 1 feature config with smart defaults (auto-detect plugins)
-    this.enableCellEditing = config.enableCellEditing ?? false;
-    this.enableGrouping = config.enableGrouping ?? false;
+    const hasPlugin = (id: string) => !!this.engine.pluginManager.getPlugin(id);
+    this.enableCellEditing = config.enableCellEditing ?? hasPlugin('editing');
+    this.enableGrouping = config.enableGrouping ?? hasPlugin('grouping');
     this.groupIndent = config.groupIndent ?? 24;
     this.checkboxSelection = config.checkboxSelection ?? false;
     this.checkboxColumnWidth = config.checkboxColumnWidth ?? 48;
     this.floatingFilter = config.floatingFilter ?? false;
     this.floatingFilterDebounce = config.floatingFilterDebounce ?? 300;
-    this.enablePagination = config.enablePagination ?? false;
+    this.enablePagination = config.enablePagination ?? hasPlugin('pagination');
     this.pageSizeOptions = config.pageSizeOptions ?? [25, 50, 100, 250];
 
   }

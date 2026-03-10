@@ -400,6 +400,7 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
   return (
     <GridErrorBoundary>
       <GridContext.Provider value={contextValue as GridContextValue}>
+        {children}
         <div
           ref={containerRef}
           className={`gs-container ${containerClass ?? ''}`.trim()}
@@ -412,7 +413,6 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
           rootElement={rootElement}
           contextMenuComponent={contextMenu}
         />
-        {children}
       </GridContext.Provider>
     </GridErrorBoundary>
   );

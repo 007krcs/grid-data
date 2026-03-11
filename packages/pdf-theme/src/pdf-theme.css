@@ -1,0 +1,342 @@
+/* ═══════════════════════════════════════════════════════════
+   GridStorm PDF Design Tokens
+   CSS custom properties for the PDF viewer.
+   Extends GridStorm's --gs-* token system with --gs-pdf-*.
+   ═══════════════════════════════════════════════════════════ */
+
+:root,
+.gs-pdf-viewer {
+  /* ── Colors: Viewer ── */
+  --gs-pdf-bg: #808080;
+  --gs-pdf-page-bg: #ffffff;
+  --gs-pdf-page-shadow: rgba(0, 0, 0, 0.15);
+  --gs-pdf-page-border: #d1d5db;
+
+  /* ── Colors: Toolbar ── */
+  --gs-pdf-toolbar-bg: #f8fafc;
+  --gs-pdf-toolbar-fg: #475569;
+  --gs-pdf-toolbar-border: #e2e8f0;
+  --gs-pdf-toolbar-btn-bg: transparent;
+  --gs-pdf-toolbar-btn-fg: #475569;
+  --gs-pdf-toolbar-btn-hover-bg: #e2e8f0;
+  --gs-pdf-toolbar-btn-active-bg: #cbd5e1;
+  --gs-pdf-toolbar-btn-disabled-fg: #94a3b8;
+
+  /* ── Colors: Text Layer ── */
+  --gs-pdf-text-selection-bg: rgba(59, 130, 246, 0.3);
+  --gs-pdf-text-selection-fg: transparent;
+
+  /* ── Colors: Search ── */
+  --gs-pdf-search-highlight-bg: rgba(255, 235, 59, 0.4);
+  --gs-pdf-search-highlight-active-bg: rgba(255, 152, 0, 0.6);
+  --gs-pdf-search-highlight-border: rgba(255, 152, 0, 0.8);
+
+  /* ── Colors: Annotations ── */
+  --gs-pdf-annotation-selected-border: #3b82f6;
+  --gs-pdf-annotation-selected-shadow: rgba(59, 130, 246, 0.3);
+  --gs-pdf-annotation-handle-fill: #ffffff;
+  --gs-pdf-annotation-handle-stroke: #3b82f6;
+
+  /* ── Colors: Sidebar / Panel ── */
+  --gs-pdf-sidebar-bg: #f8fafc;
+  --gs-pdf-sidebar-border: #e2e8f0;
+  --gs-pdf-thumbnail-border: #d1d5db;
+  --gs-pdf-thumbnail-active-border: #3b82f6;
+
+  /* ── Spacing ── */
+  --gs-pdf-page-gap: 8px;
+  --gs-pdf-toolbar-height: 40px;
+  --gs-pdf-toolbar-padding: 4px 8px;
+  --gs-pdf-sidebar-width: 200px;
+
+  /* ── Typography ── */
+  --gs-pdf-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --gs-pdf-font-size: 13px;
+  --gs-pdf-font-size-small: 11px;
+
+  /* ── Borders & Radius ── */
+  --gs-pdf-border-radius: 4px;
+  --gs-pdf-border-width: 1px;
+
+  /* ── Transitions ── */
+  --gs-pdf-transition-duration: 150ms;
+  --gs-pdf-transition-easing: ease-out;
+
+  /* ── Shadows ── */
+  --gs-pdf-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --gs-pdf-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --gs-pdf-shadow-page: 0 2px 8px rgba(0, 0, 0, 0.12);
+
+  /* ── Z-Index Layers ── */
+  --gs-pdf-z-page: 1;
+  --gs-pdf-z-text-layer: 2;
+  --gs-pdf-z-annotation-layer: 3;
+  --gs-pdf-z-toolbar: 10;
+  --gs-pdf-z-sidebar: 10;
+  --gs-pdf-z-popup: 20;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Dark Mode
+   ═══════════════════════════════════════════════════════════ */
+
+.gs-pdf-dark,
+.gs-pdf-viewer[data-theme="dark"] {
+  --gs-pdf-bg: #1e1e1e;
+  --gs-pdf-page-bg: #2d2d2d;
+  --gs-pdf-page-shadow: rgba(0, 0, 0, 0.4);
+  --gs-pdf-page-border: #404040;
+
+  --gs-pdf-toolbar-bg: #252525;
+  --gs-pdf-toolbar-fg: #d4d4d4;
+  --gs-pdf-toolbar-border: #404040;
+  --gs-pdf-toolbar-btn-fg: #d4d4d4;
+  --gs-pdf-toolbar-btn-hover-bg: #3a3a3a;
+  --gs-pdf-toolbar-btn-active-bg: #4a4a4a;
+  --gs-pdf-toolbar-btn-disabled-fg: #6b6b6b;
+
+  --gs-pdf-text-selection-bg: rgba(59, 130, 246, 0.4);
+
+  --gs-pdf-sidebar-bg: #252525;
+  --gs-pdf-sidebar-border: #404040;
+  --gs-pdf-thumbnail-border: #404040;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   High Contrast Mode
+   ═══════════════════════════════════════════════════════════ */
+
+.gs-pdf-high-contrast,
+.gs-pdf-viewer[data-theme="high-contrast"] {
+  --gs-pdf-bg: #000000;
+  --gs-pdf-page-bg: #ffffff;
+  --gs-pdf-page-shadow: none;
+  --gs-pdf-page-border: #ffffff;
+
+  --gs-pdf-toolbar-bg: #000000;
+  --gs-pdf-toolbar-fg: #ffffff;
+  --gs-pdf-toolbar-border: #ffffff;
+  --gs-pdf-toolbar-btn-fg: #ffffff;
+  --gs-pdf-toolbar-btn-hover-bg: #333333;
+
+  --gs-pdf-annotation-selected-border: #ffff00;
+  --gs-pdf-annotation-selected-shadow: rgba(255, 255, 0, 0.5);
+
+  --gs-pdf-search-highlight-bg: rgba(255, 255, 0, 0.5);
+  --gs-pdf-search-highlight-active-bg: rgba(255, 165, 0, 0.7);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Component Styles
+   ═══════════════════════════════════════════════════════════ */
+
+/* Viewer root */
+.gs-pdf-viewer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--gs-pdf-bg);
+  font-family: var(--gs-pdf-font-family);
+  font-size: var(--gs-pdf-font-size);
+  color: var(--gs-pdf-toolbar-fg);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Toolbar */
+.gs-pdf-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: var(--gs-pdf-toolbar-height);
+  padding: var(--gs-pdf-toolbar-padding);
+  background: var(--gs-pdf-toolbar-bg);
+  border-bottom: var(--gs-pdf-border-width) solid var(--gs-pdf-toolbar-border);
+  z-index: var(--gs-pdf-z-toolbar);
+  flex-shrink: 0;
+}
+
+.gs-pdf-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border: none;
+  border-radius: var(--gs-pdf-border-radius);
+  background: var(--gs-pdf-toolbar-btn-bg);
+  color: var(--gs-pdf-toolbar-btn-fg);
+  cursor: pointer;
+  font-size: var(--gs-pdf-font-size);
+  transition: background var(--gs-pdf-transition-duration) var(--gs-pdf-transition-easing);
+}
+
+.gs-pdf-toolbar-btn:hover {
+  background: var(--gs-pdf-toolbar-btn-hover-bg);
+}
+
+.gs-pdf-toolbar-btn:active {
+  background: var(--gs-pdf-toolbar-btn-active-bg);
+}
+
+.gs-pdf-toolbar-btn:disabled {
+  color: var(--gs-pdf-toolbar-btn-disabled-fg);
+  cursor: default;
+}
+
+.gs-pdf-toolbar-btn:disabled:hover {
+  background: var(--gs-pdf-toolbar-btn-bg);
+}
+
+.gs-pdf-toolbar-indicator {
+  font-size: var(--gs-pdf-font-size-small);
+  padding: 0 8px;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.gs-pdf-toolbar-separator {
+  width: 1px;
+  height: 20px;
+  background: var(--gs-pdf-toolbar-border);
+  margin: 0 4px;
+}
+
+/* Viewport */
+.gs-pdf-viewport {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  background: var(--gs-pdf-bg);
+}
+
+/* Pages container */
+.gs-pdf-pages {
+  position: relative;
+  min-width: 100%;
+}
+
+/* Page wrapper */
+.gs-pdf-page {
+  position: absolute;
+  background: var(--gs-pdf-page-bg);
+  box-shadow: var(--gs-pdf-shadow-page);
+  border: var(--gs-pdf-border-width) solid var(--gs-pdf-page-border);
+}
+
+/* Canvas layer */
+.gs-pdf-page-canvas {
+  display: block;
+}
+
+/* Text layer */
+.gs-pdf-text-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: var(--gs-pdf-z-text-layer);
+  overflow: hidden;
+  opacity: 0.25;
+  line-height: 1;
+}
+
+.gs-pdf-text-layer ::selection {
+  background: var(--gs-pdf-text-selection-bg);
+}
+
+.gs-pdf-text-word {
+  position: absolute;
+  white-space: pre;
+  color: transparent;
+  cursor: text;
+}
+
+/* Annotation layer */
+.gs-pdf-annotation-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: var(--gs-pdf-z-annotation-layer);
+  pointer-events: none;
+}
+
+.gs-pdf-annotation {
+  pointer-events: auto;
+}
+
+.gs-pdf-annotation-selected {
+  outline: 2px solid var(--gs-pdf-annotation-selected-border);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 4px var(--gs-pdf-annotation-selected-shadow);
+}
+
+/* Annotation resize handles */
+.gs-pdf-annotation-handle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gs-pdf-annotation-handle-fill);
+  border: 2px solid var(--gs-pdf-annotation-handle-stroke);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* Search highlights */
+.gs-pdf-search-highlight {
+  position: absolute;
+  background: var(--gs-pdf-search-highlight-bg);
+  pointer-events: none;
+  border-radius: 2px;
+  z-index: var(--gs-pdf-z-text-layer);
+}
+
+.gs-pdf-search-highlight-active {
+  position: absolute;
+  background: var(--gs-pdf-search-highlight-active-bg);
+  border: 1px solid var(--gs-pdf-search-highlight-border);
+  pointer-events: none;
+  border-radius: 2px;
+  z-index: var(--gs-pdf-z-text-layer);
+}
+
+/* Thumbnail sidebar */
+.gs-pdf-sidebar {
+  width: var(--gs-pdf-sidebar-width);
+  background: var(--gs-pdf-sidebar-bg);
+  border-right: var(--gs-pdf-border-width) solid var(--gs-pdf-sidebar-border);
+  overflow-y: auto;
+  flex-shrink: 0;
+  z-index: var(--gs-pdf-z-sidebar);
+}
+
+.gs-pdf-thumbnail {
+  padding: 8px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color var(--gs-pdf-transition-duration) var(--gs-pdf-transition-easing);
+}
+
+.gs-pdf-thumbnail:hover {
+  border-color: var(--gs-pdf-thumbnail-border);
+}
+
+.gs-pdf-thumbnail-active {
+  border-color: var(--gs-pdf-thumbnail-active-border);
+}
+
+.gs-pdf-thumbnail canvas {
+  display: block;
+  width: 100%;
+  border: var(--gs-pdf-border-width) solid var(--gs-pdf-thumbnail-border);
+  box-shadow: var(--gs-pdf-shadow-sm);
+}
+
+.gs-pdf-thumbnail-label {
+  text-align: center;
+  font-size: var(--gs-pdf-font-size-small);
+  margin-top: 4px;
+  color: var(--gs-pdf-toolbar-fg);
+}

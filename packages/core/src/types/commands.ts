@@ -123,6 +123,14 @@ export interface CommandMap {
   /** Refresh a specific detail row. */
   'detail:refreshDetail': { nodeId: string };
 
+  // ── Row Reorder ──
+
+  /** Move a row to a new display index. */
+  'row:move': { rowId: string; toIndex: number };
+
+  /** Swap two rows by their IDs. */
+  'row:swap': { rowIdA: string; rowIdB: string };
+
   // ── Extensibility ──
   // Allow string fallback for custom commands not yet registered
   // in the CommandMap. This ensures backward compatibility with

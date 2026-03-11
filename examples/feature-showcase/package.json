@@ -19,6 +19,7 @@
     "@gridstorm/plugin-column-resize": "workspace:*",
     "@gridstorm/plugin-column-pinning": "workspace:*",
     "@gridstorm/plugin-column-reorder": "workspace:*",
+    "@gridstorm/plugin-row-reorder": "workspace:*",
     "@gridstorm/plugin-pagination": "workspace:*",
     "@gridstorm/plugin-grouping": "workspace:*",
     "@gridstorm/plugin-aggregation": "workspace:*",

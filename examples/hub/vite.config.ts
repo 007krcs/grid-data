@@ -1,0 +1,17 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { gridstormResolve } from '../shared/gridstorm-resolve';
+import path from 'path';
+
+export default defineConfig({
+  plugins: [gridstormResolve(), react()],
+  base: '/',
+  resolve: {
+    alias: {
+      '@docs': path.resolve(__dirname, '../../docs/src/content/docs'),
+    },
+  },
+  build: {
+    assetsDir: 'hub-assets',
+  },
+});

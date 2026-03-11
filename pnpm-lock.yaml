@@ -154,6 +154,9 @@ importers:
       '@gridstorm/plugin-pagination':
         specifier: workspace:*
         version: link:../../packages/plugin-pagination
+      '@gridstorm/plugin-row-reorder':
+        specifier: workspace:*
+        version: link:../../packages/plugin-row-reorder
       '@gridstorm/plugin-selection':
         specifier: workspace:*
         version: link:../../packages/plugin-selection

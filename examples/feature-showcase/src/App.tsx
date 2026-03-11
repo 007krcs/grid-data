@@ -13,6 +13,7 @@ import { GroupingPlugin } from '@gridstorm/plugin-grouping';
 import { AggregationPlugin } from '@gridstorm/plugin-aggregation';
 import { ContextMenuPlugin } from '@gridstorm/plugin-context-menu';
 import { ClipboardPlugin } from '@gridstorm/plugin-clipboard';
+import { RowReorderPlugin } from '@gridstorm/plugin-row-reorder';
 import '@gridstorm/theme-default';
 import { generateEmployees, generateProducts } from './data';
 // Types from data generators used by demos
@@ -38,6 +39,7 @@ const FEATURES: FeatureDemo[] = [
   { id: 'column-resize', title: 'Column Resize', description: 'Drag column borders to resize columns', category: 'column' },
   { id: 'column-pinning', title: 'Column Pinning', description: 'Pin columns to left or right edges while scrolling', category: 'column' },
   { id: 'column-reorder', title: 'Column Reorder', description: 'Drag-and-drop columns to reorder', category: 'column' },
+  { id: 'row-reorder', title: 'Row Reorder', description: 'Drag-and-drop rows to reorder with visual indicators', category: 'interaction' },
   { id: 'editing', title: 'Cell Editing', description: 'Click a cell, then edit values inline', category: 'interaction' },
   { id: 'context-menu', title: 'Context Menu', description: 'Right-click context menus with custom actions', category: 'interaction' },
   { id: 'grouping', title: 'Row Grouping', description: 'Group rows by column values with expand/collapse', category: 'data' },
@@ -280,6 +282,41 @@ function ColumnReorderDemo() {
       <p style={hintStyle}>Drag column headers to reorder them. Drop at the desired position.</p>
       <GridStorm columns={columns} rowData={EMPLOYEES_50} plugins={plugins}
         rowHeight={40} headerHeight={44} height={GRID_HEIGHT} ariaLabel="Column Reorder Demo" />
+    </>
+  );
+}
+
+function RowReorderDemo() {
+  const [lastMove, setLastMove] = useState('');
+  const plugins = useMemo(() => [
+    RowReorderPlugin({ showDragHandle: true }),
+    ColumnResizePlugin(),
+    SelectionPlugin({ mode: 'single' }),
+  ], []);
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 70 },
+    { field: 'name', headerName: 'Name', width: 180 },
+    { field: 'department', headerName: 'Department', width: 140 },
+    { field: 'role', headerName: 'Role', width: 150 },
+    { field: 'salary', headerName: 'Salary', width: 120,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+    { field: 'city', headerName: 'City', width: 130 },
+  ], []);
+
+  const onRowMoved = useCallback((e: any) => {
+    setLastMove(`Row moved from index ${e.fromIndex} to ${e.toIndex}`);
+  }, []);
+
+  return (
+    <>
+      <p style={hintStyle}>
+        Hover over the left edge of any row to see the drag handle. Drag rows to reorder them.
+        {lastMove && <span> <strong>{lastMove}</strong></span>}
+      </p>
+      <GridStorm columns={columns} rowData={EMPLOYEES_50} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+        onRowMoved={onRowMoved}
+        ariaLabel="Row Reorder Demo" />
     </>
   );
 }
@@ -742,6 +779,7 @@ const DEMO_MAP: Record<string, () => JSX.Element> = {
   'column-resize': ColumnResizeDemo,
   'column-pinning': ColumnPinningDemo,
   'column-reorder': ColumnReorderDemo,
+  'row-reorder': RowReorderDemo,
   'grouping': GroupingDemo,
   'aggregation': AggregationDemo,
   'context-menu': ContextMenuDemo,
@@ -788,7 +826,7 @@ export function App() {
             <span style={{ color: '#2563eb' }}>GridStorm</span>{' '}
             <span style={{ fontWeight: 400, color: '#666' }}>Features</span>
           </h1>
-          <p style={{ fontSize: 11, color: '#999', marginTop: 4 }}>18 interactive demos</p>
+          <p style={{ fontSize: 11, color: '#999', marginTop: 4 }}>20 interactive demos</p>
         </div>
         <nav style={{ flex: 1, overflow: 'auto', padding: '8px 0' }}>
           {Object.entries(groupedFeatures).map(([cat, features]) => (

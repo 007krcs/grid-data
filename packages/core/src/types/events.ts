@@ -258,6 +258,17 @@ export interface GridEventMap<TData = any> {
    */
   'dom:headerRendered': {};
 
+  // ── Row Reorder ──
+
+  /** Fired when a row has been moved to a new position. */
+  'row:moved': { rowId: string; fromIndex: number; toIndex: number };
+
+  /** Fired when a drag-and-drop row reorder starts. */
+  'row:dragStarted': { rowId: string };
+
+  /** Fired when a drag-and-drop row reorder ends. */
+  'row:dragEnded': { rowId: string };
+
   // ── Clipboard ──
 
   /** Fired when data is copied to the clipboard from the grid. */

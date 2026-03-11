@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "hub",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["examples/hub/start-preview.cjs"],
+      "port": 4200
+    },
+    {
+      "name": "feature-showcase",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["examples/feature-showcase/start-preview.cjs"],
+      "port": 4201
+    },
+    {
+      "name": "financial-trading",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["examples/financial-trading/start-preview.cjs"],
+      "port": 4203
+    },
+    {
+      "name": "pdf-viewer",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["examples/pdf-viewer/start-preview.cjs"],
+      "port": 4207
+    }
+  ]
+}

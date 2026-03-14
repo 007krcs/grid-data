@@ -56,6 +56,8 @@ export function MasterDetailPlugin(options: MasterDetailOptions): GridPlugin {
 
       // Track the last applied displayedRowIds to prevent infinite loops
       let lastAppliedIds: string[] | null = null;
+      // Re-entrant guard to prevent store subscriber from triggering infinite loops
+      let applyingDetails = false;
 
       // ── Resolve detail row height for a given master row ──
       function getDetailHeight(node: RowNode): number {
@@ -94,50 +96,56 @@ export function MasterDetailPlugin(options: MasterDetailOptions): GridPlugin {
 
       // ── Apply detail rows to the displayed row IDs ──
       function applyDetailRows(): void {
-        const state = ctx.store.getState();
-        const currentIds = state.displayedRowIds;
+        if (applyingDetails) return;
+        applyingDetails = true;
+        try {
+          const state = ctx.store.getState();
+          const currentIds = state.displayedRowIds;
 
-        // Build new displayed IDs by inserting detail rows after expanded masters
-        const newIds: string[] = [];
-        for (const id of currentIds) {
-          // Skip existing detail rows — we'll re-insert fresh ones
-          if (isDetailRowId(id)) continue;
+          // Build new displayed IDs by inserting detail rows after expanded masters
+          const newIds: string[] = [];
+          for (const id of currentIds) {
+            // Skip existing detail rows — we'll re-insert fresh ones
+            if (isDetailRowId(id)) continue;
 
-          newIds.push(id);
+            newIds.push(id);
 
-          if (detailState.expandedMasterIds.has(id)) {
-            const detailId = detailIdFor(id);
+            if (detailState.expandedMasterIds.has(id)) {
+              const detailId = detailIdFor(id);
 
-            // Ensure detail RowNode exists in rowNodes map
-            if (!state.rowNodes.has(detailId)) {
-              const masterNode = state.rowNodes.get(id);
-              if (masterNode) {
-                const detailNode = createDetailRowNode(masterNode);
-                state.rowNodes.set(detailId, detailNode);
+              // Ensure detail RowNode exists in rowNodes map
+              if (!state.rowNodes.has(detailId)) {
+                const masterNode = state.rowNodes.get(id);
+                if (masterNode) {
+                  const detailNode = createDetailRowNode(masterNode);
+                  state.rowNodes.set(detailId, detailNode);
+                }
               }
+
+              newIds.push(detailId);
             }
-
-            newIds.push(detailId);
           }
-        }
 
-        // Recalculate display positions
-        let top = 0;
-        const defaultRowHeight = 40;
-        for (let i = 0; i < newIds.length; i++) {
-          const node = state.rowNodes.get(newIds[i]!);
-          if (node) {
-            node.displayIndex = i;
-            node.rowTop = top;
-            top += node.detail ? getDetailHeight(node.parent ?? node) : (node.rowHeight || defaultRowHeight);
+          // Recalculate display positions
+          let top = 0;
+          const defaultRowHeight = 40;
+          for (let i = 0; i < newIds.length; i++) {
+            const node = state.rowNodes.get(newIds[i]!);
+            if (node) {
+              node.displayIndex = i;
+              node.rowTop = top;
+              top += node.detail ? getDetailHeight(node.parent ?? node) : (node.rowHeight || defaultRowHeight);
+            }
           }
-        }
 
-        lastAppliedIds = newIds;
-        ctx.store.setState((prev) => ({
-          ...prev,
-          displayedRowIds: newIds,
-        }));
+          lastAppliedIds = newIds;
+          ctx.store.setState((prev) => ({
+            ...prev,
+            displayedRowIds: newIds,
+          }));
+        } finally {
+          applyingDetails = false;
+        }
       }
 
       // ── Fetch detail data for a master row ──

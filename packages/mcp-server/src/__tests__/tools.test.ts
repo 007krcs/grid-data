@@ -7,7 +7,15 @@ import {
   createPdfTools,
   createAiTools,
 } from '../index';
-import type { MCPToolRegistry } from '../types';
+import type { MCPToolRegistry, ToolResult } from '../types';
+
+/** Type for synchronous tool handlers used in tests. */
+type SyncHandlers = Record<string, (input: Record<string, any>) => ToolResult>;
+
+/** Helper to get typed synchronous handlers from grid/pdf/ai tools for testing. */
+function getSyncHandlers(toolSet: { handlers: Record<string, any> }): SyncHandlers {
+  return toolSet.handlers as SyncHandlers;
+}
 
 describe('MCP Server', () => {
   describe('createMCPServer', () => {
@@ -89,42 +97,42 @@ describe('MCP Server', () => {
       registry = createMCPServer();
     });
 
-    it('should return success for a valid grid_create call', () => {
-      const result = handleToolCall(registry, 'grid_create', {
+    it('should return success for a valid grid_create call', async () => {
+      const result = await handleToolCall(registry, 'grid_create', {
         columns: [{ field: 'name', headerName: 'Name' }],
         rowData: [{ name: 'Alice' }],
       });
-      expect(result).toEqual({
-        success: true,
-        data: { message: 'Grid created', columns: 1, rows: 1 },
-      });
+      expect(result.success).toBe(true);
+      expect(result.data.message).toBe('Grid created');
+      expect(result.data.columns).toBe(1);
+      expect(result.data.rows).toBe(1);
     });
 
-    it('should return error for an unknown tool', () => {
-      const result = handleToolCall(registry, 'nonexistent_tool', {});
+    it('should return error for an unknown tool', async () => {
+      const result = await handleToolCall(registry, 'nonexistent_tool', {});
       expect(result).toEqual({
         success: false,
         error: 'Unknown tool: nonexistent_tool',
       });
     });
 
-    it('should handle tool errors gracefully', () => {
+    it('should handle tool errors gracefully', async () => {
       // Override a handler to throw
       registry.handlers['grid_create'] = () => {
         throw new Error('Simulated failure');
       };
-      const result = handleToolCall(registry, 'grid_create', {});
+      const result = await handleToolCall(registry, 'grid_create', {});
       expect(result).toEqual({
         success: false,
         error: 'Simulated failure',
       });
     });
 
-    it('should handle non-Error throws gracefully', () => {
+    it('should handle non-Error throws gracefully', async () => {
       registry.handlers['grid_create'] = () => {
         throw 'string error';
       };
-      const result = handleToolCall(registry, 'grid_create', {});
+      const result = await handleToolCall(registry, 'grid_create', {});
       expect(result).toEqual({
         success: false,
         error: 'string error',
@@ -153,19 +161,20 @@ describe('MCP Server', () => {
 
   describe('grid tool handlers — real engine integration', () => {
     it('grid_create should create a real grid engine', () => {
-      const { handlers } = createGridTools();
+      const handlers = getSyncHandlers(createGridTools());
       const result = handlers.grid_create!({
         columns: [{ field: 'a' }, { field: 'b' }, { field: 'c' }],
         rowData: [{ a: 1, b: 2, c: 3 }, { a: 4, b: 5, c: 6 }],
       });
-      expect(result).toEqual({
-        success: true,
-        data: { message: 'Grid created', columns: 3, rows: 2 },
-      });
+      expect(result.success).toBe(true);
+      expect(result.data.message).toBe('Grid created');
+      expect(result.data.columns).toBe(3);
+      expect(result.data.rows).toBe(2);
+      expect(result.data.gridId).toBeDefined();
     });
 
     it('grid_sort should require grid_create first', () => {
-      const { handlers } = createGridTools();
+      const handlers = getSyncHandlers(createGridTools());
       const result = handlers.grid_sort!({ sortModel: [{ colId: 'name', sort: 'asc' }] });
       expect(result).toEqual({
         success: false,
@@ -174,7 +183,7 @@ describe('MCP Server', () => {
     });
 
     it('grid_sort should apply sorting to a real engine', () => {
-      const { handlers } = createGridTools();
+      const handlers = getSyncHandlers(createGridTools());
       handlers.grid_create!({
         columns: [{ field: 'name' }],
         rowData: [{ name: 'Charlie' }, { name: 'Alice' }, { name: 'Bob' }],
@@ -187,7 +196,7 @@ describe('MCP Server', () => {
     });
 
     it('grid_filter should require grid_create first', () => {
-      const { handlers } = createGridTools();
+      const handlers = getSyncHandlers(createGridTools());
       const result = handlers.grid_filter!({ filterModel: {} });
       expect(result).toEqual({
         success: false,
@@ -196,7 +205,7 @@ describe('MCP Server', () => {
     });
 
     it('grid_filter should apply filter model to real engine', () => {
-      const { handlers } = createGridTools();
+      const handlers = getSyncHandlers(createGridTools());
       handlers.grid_create!({
         columns: [{ field: 'name' }],
         rowData: [{ name: 'Alice' }, { name: 'Bob' }, { name: 'Charlie' }],
@@ -211,7 +220,7 @@ describe('MCP Server', () => {
     });
 
     it('grid_get_data should require grid_create first', () => {
-      const { handlers } = createGridTools();
+      const handlers = getSyncHandlers(createGridTools());
       const result = handlers.grid_get_data!({});
       expect(result).toEqual({
         success: false,
@@ -220,7 +229,7 @@ describe('MCP Server', () => {
     });
 
     it('grid_get_data should return actual row data', () => {
-      const { handlers } = createGridTools();
+      const handlers = getSyncHandlers(createGridTools());
       handlers.grid_create!({
         columns: [{ field: 'name' }, { field: 'age' }],
         rowData: [{ name: 'Alice', age: 30 }, { name: 'Bob', age: 25 }],
@@ -235,7 +244,7 @@ describe('MCP Server', () => {
     });
 
     it('grid_get_data should respect pagination', () => {
-      const { handlers } = createGridTools();
+      const handlers = getSyncHandlers(createGridTools());
       handlers.grid_create!({
         columns: [{ field: 'id' }],
         rowData: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }],
@@ -252,7 +261,7 @@ describe('MCP Server', () => {
     });
 
     it('grid_aggregate should require grid_create first', () => {
-      const { handlers } = createGridTools();
+      const handlers = getSyncHandlers(createGridTools());
       const result = handlers.grid_aggregate!({ columnId: 'price', function: 'sum' });
       expect(result).toEqual({
         success: false,
@@ -261,7 +270,7 @@ describe('MCP Server', () => {
     });
 
     it('grid_aggregate should compute sum on real data', () => {
-      const { handlers } = createGridTools();
+      const handlers = getSyncHandlers(createGridTools());
       handlers.grid_create!({
         columns: [{ field: 'price' }],
         rowData: [{ price: 10 }, { price: 20 }, { price: 30 }],
@@ -274,7 +283,7 @@ describe('MCP Server', () => {
     });
 
     it('grid_aggregate should compute avg on real data', () => {
-      const { handlers } = createGridTools();
+      const handlers = getSyncHandlers(createGridTools());
       handlers.grid_create!({
         columns: [{ field: 'score' }],
         rowData: [{ score: 80 }, { score: 90 }, { score: 100 }],
@@ -286,7 +295,7 @@ describe('MCP Server', () => {
     });
 
     it('grid_aggregate should compute min and max', () => {
-      const { handlers } = createGridTools();
+      const handlers = getSyncHandlers(createGridTools());
       handlers.grid_create!({
         columns: [{ field: 'val' }],
         rowData: [{ val: 5 }, { val: 1 }, { val: 9 }, { val: 3 }],
@@ -300,7 +309,7 @@ describe('MCP Server', () => {
     });
 
     it('grid_aggregate should compute count', () => {
-      const { handlers } = createGridTools();
+      const handlers = getSyncHandlers(createGridTools());
       handlers.grid_create!({
         columns: [{ field: 'val' }],
         rowData: [{ val: 5 }, { val: 'text' }, { val: 9 }, { val: null }],
@@ -312,7 +321,7 @@ describe('MCP Server', () => {
     });
 
     it('grid_export_csv should require grid_create first', () => {
-      const { handlers } = createGridTools();
+      const handlers = getSyncHandlers(createGridTools());
       const result = handlers.grid_export_csv!({});
       expect(result).toEqual({
         success: false,
@@ -321,7 +330,7 @@ describe('MCP Server', () => {
     });
 
     it('grid_export_csv should produce real CSV output', () => {
-      const { handlers } = createGridTools();
+      const handlers = getSyncHandlers(createGridTools());
       handlers.grid_create!({
         columns: [{ field: 'name', headerName: 'Name' }, { field: 'age', headerName: 'Age' }],
         rowData: [{ name: 'Alice', age: 30 }, { name: 'Bob', age: 25 }],
@@ -336,7 +345,7 @@ describe('MCP Server', () => {
     });
 
     it('grid_export_csv should use provided fileName', () => {
-      const { handlers } = createGridTools();
+      const handlers = getSyncHandlers(createGridTools());
       handlers.grid_create!({
         columns: [{ field: 'x' }],
         rowData: [{ x: 1 }],
@@ -347,29 +356,32 @@ describe('MCP Server', () => {
     });
 
     it('should allow creating a new grid after destroying old one', () => {
-      const { handlers } = createGridTools();
-      handlers.grid_create!({
+      const handlers = getSyncHandlers(createGridTools());
+      const first = handlers.grid_create!({
         columns: [{ field: 'a' }],
         rowData: [{ a: 1 }],
+        gridId: 'test-grid',
       });
+      expect(first.success).toBe(true);
 
-      // Create a second grid — should replace the first
+      // Create a second grid with the same ID — should replace the first
       const result = handlers.grid_create!({
         columns: [{ field: 'b' }, { field: 'c' }],
         rowData: [{ b: 10, c: 20 }],
+        gridId: 'test-grid',
       });
-      expect(result).toEqual({
-        success: true,
-        data: { message: 'Grid created', columns: 2, rows: 1 },
-      });
+      expect(result.success).toBe(true);
+      expect(result.data.message).toBe('Grid created');
+      expect(result.data.columns).toBe(2);
+      expect(result.data.rows).toBe(1);
 
       // Verify data comes from second grid
-      const getData = handlers.grid_get_data!({});
+      const getData = handlers.grid_get_data!({ gridId: 'test-grid' });
       expect(getData.data.rows[0]).toEqual({ b: 10, c: 20 });
     });
 
     it('end-to-end: create, filter, sort, aggregate, export', () => {
-      const { handlers } = createGridTools();
+      const handlers = getSyncHandlers(createGridTools());
 
       // Create
       handlers.grid_create!({
@@ -406,7 +418,7 @@ describe('MCP Server', () => {
 
   describe('PDF tool handlers — informative stubs', () => {
     it('pdf_load should return error with informative message', () => {
-      const { handlers } = createPdfTools();
+      const handlers = getSyncHandlers(createPdfTools());
       const result = handlers.pdf_load!({ source: '/path/to/file.pdf' });
       expect(result.success).toBe(false);
       expect(result.error).toContain('No PDF parser configured');
@@ -415,7 +427,7 @@ describe('MCP Server', () => {
     });
 
     it('pdf_extract_text should return error with informative message', () => {
-      const { handlers } = createPdfTools();
+      const handlers = getSyncHandlers(createPdfTools());
       const result = handlers.pdf_extract_text!({});
       expect(result.success).toBe(false);
       expect(result.error).toContain('No PDF parser configured');
@@ -423,21 +435,21 @@ describe('MCP Server', () => {
     });
 
     it('pdf_extract_text should pass through provided params', () => {
-      const { handlers } = createPdfTools();
+      const handlers = getSyncHandlers(createPdfTools());
       const result = handlers.pdf_extract_text!({ pageIndex: 3, allPages: true });
       expect(result.data.pageIndex).toBe(3);
       expect(result.data.allPages).toBe(true);
     });
 
     it('pdf_search should return error with query echoed', () => {
-      const { handlers } = createPdfTools();
+      const handlers = getSyncHandlers(createPdfTools());
       const result = handlers.pdf_search!({ query: 'hello' });
       expect(result.success).toBe(false);
       expect(result.data.query).toBe('hello');
     });
 
     it('pdf_annotate should return error with params echoed', () => {
-      const { handlers } = createPdfTools();
+      const handlers = getSyncHandlers(createPdfTools());
       const result = handlers.pdf_annotate!({ pageIndex: 0, type: 'highlight', rect: [10, 20, 100, 40] });
       expect(result.success).toBe(false);
       expect(result.data.pageIndex).toBe(0);
@@ -446,7 +458,7 @@ describe('MCP Server', () => {
     });
 
     it('pdf_redact should return error with params echoed', () => {
-      const { handlers } = createPdfTools();
+      const handlers = getSyncHandlers(createPdfTools());
       const result = handlers.pdf_redact!({ pageIndex: 1, rect: [50, 60, 200, 80] });
       expect(result.success).toBe(false);
       expect(result.data.pageIndex).toBe(1);
@@ -454,14 +466,14 @@ describe('MCP Server', () => {
     });
 
     it('pdf_save should return error with fileName', () => {
-      const { handlers } = createPdfTools();
+      const handlers = getSyncHandlers(createPdfTools());
       const result = handlers.pdf_save!({});
       expect(result.success).toBe(false);
       expect(result.data.fileName).toBe('output.pdf');
     });
 
     it('pdf_get_metadata should return error with hint', () => {
-      const { handlers } = createPdfTools();
+      const handlers = getSyncHandlers(createPdfTools());
       const result = handlers.pdf_get_metadata!({});
       expect(result.success).toBe(false);
       expect(result.data.hint).toBeDefined();
@@ -470,7 +482,7 @@ describe('MCP Server', () => {
 
   describe('AI tool handlers — informative stubs', () => {
     it('pdf_detect_pii should return error with defaults', () => {
-      const { handlers } = createAiTools();
+      const handlers = getSyncHandlers(createAiTools());
       const result = handlers.pdf_detect_pii!({});
       expect(result.success).toBe(false);
       expect(result.error).toContain('AI-powered PDF analysis');
@@ -481,7 +493,7 @@ describe('MCP Server', () => {
     });
 
     it('pdf_detect_pii should use provided settings', () => {
-      const { handlers } = createAiTools();
+      const handlers = getSyncHandlers(createAiTools());
       const result = handlers.pdf_detect_pii!({ pageIndex: 2, types: ['email', 'ssn'], threshold: 0.9 });
       expect(result.data.pageIndex).toBe(2);
       expect(result.data.types).toEqual(['email', 'ssn']);
@@ -489,7 +501,7 @@ describe('MCP Server', () => {
     });
 
     it('pdf_classify should return error with defaults', () => {
-      const { handlers } = createAiTools();
+      const handlers = getSyncHandlers(createAiTools());
       const result = handlers.pdf_classify!({});
       expect(result.success).toBe(false);
       expect(result.data.topN).toBe(3);
@@ -497,13 +509,13 @@ describe('MCP Server', () => {
     });
 
     it('pdf_classify should use provided topN', () => {
-      const { handlers } = createAiTools();
+      const handlers = getSyncHandlers(createAiTools());
       const result = handlers.pdf_classify!({ topN: 5 });
       expect(result.data.topN).toBe(5);
     });
 
     it('pdf_summarize should return error with defaults', () => {
-      const { handlers } = createAiTools();
+      const handlers = getSyncHandlers(createAiTools());
       const result = handlers.pdf_summarize!({});
       expect(result.success).toBe(false);
       expect(result.data.maxLength).toBe(500);
@@ -511,13 +523,13 @@ describe('MCP Server', () => {
     });
 
     it('pdf_summarize should use provided maxLength', () => {
-      const { handlers } = createAiTools();
+      const handlers = getSyncHandlers(createAiTools());
       const result = handlers.pdf_summarize!({ maxLength: 1000 });
       expect(result.data.maxLength).toBe(1000);
     });
 
     it('pdf_extract_fields should return error with defaults', () => {
-      const { handlers } = createAiTools();
+      const handlers = getSyncHandlers(createAiTools());
       const result = handlers.pdf_extract_fields!({});
       expect(result.success).toBe(false);
       expect(result.data.fields).toEqual([]);
@@ -525,7 +537,7 @@ describe('MCP Server', () => {
     });
 
     it('pdf_extract_fields should return provided fields', () => {
-      const { handlers } = createAiTools();
+      const handlers = getSyncHandlers(createAiTools());
       const result = handlers.pdf_extract_fields!({ fields: ['name', 'date', 'amount'] });
       expect(result.data.fields).toEqual(['name', 'date', 'amount']);
     });

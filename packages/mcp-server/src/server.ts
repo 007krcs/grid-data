@@ -29,17 +29,17 @@ export function createMCPServer(config: MCPServerConfig = {}): MCPToolRegistry {
   return { tools, handlers };
 }
 
-export function handleToolCall(
+export async function handleToolCall(
   registry: MCPToolRegistry,
   toolName: string,
   input: Record<string, any>,
-): ToolResult | Promise<ToolResult> {
+): Promise<ToolResult> {
   const handler = registry.handlers[toolName];
   if (!handler) {
     return { success: false, error: `Unknown tool: ${toolName}` };
   }
   try {
-    return handler(input);
+    return await handler(input);
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : String(err) };
   }

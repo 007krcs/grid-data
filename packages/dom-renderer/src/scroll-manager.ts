@@ -78,6 +78,7 @@ export class ScrollManager {
     this.cleanup?.();
     this.cleanup = null;
     this.viewport = null;
+    this.onScrollCallback = null as any;
     this.verticalTargets = [];
     this.horizontalTargets = [];
   }

@@ -1,4 +1,6 @@
 /* ─── Print Styles ─── */
+@page { margin: 1cm; }
+
 @media print {
   .gs-root {
     overflow: visible !important;
@@ -67,10 +69,10 @@
     --gs-color-background: #ffffff;
     --gs-color-foreground: #000000;
     --gs-color-border: #cccccc;
-    --gs-color-header-background: #f0f0f0;
-    --gs-color-header-foreground: #000000;
-    --gs-color-row-hover: transparent;
-    --gs-color-row-stripe: #f8f8f8;
-    --gs-color-selected: transparent;
+    --gs-color-header-bg: #f0f0f0;
+    --gs-color-header-fg: #000000;
+    --gs-color-row-bg-hover: transparent;
+    --gs-color-row-bg-alt: #f8f8f8;
+    --gs-color-row-bg-selected: transparent;
   }
 }

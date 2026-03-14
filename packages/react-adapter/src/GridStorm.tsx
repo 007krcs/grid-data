@@ -31,10 +31,19 @@ function useGridEngine<TData = any>(config: GridConfig<TData>): GridEngine<TData
   const configRef = useRef(config);
   configRef.current = config;
 
+  // Track whether the initial mount has completed so sync effects
+  // don't double-set data that was already applied during createGrid.
+  const rowDataMountedRef = useRef(false);
+  const columnsMountedRef = useRef(false);
+
   // Create engine in useEffect so StrictMode can safely destroy + recreate
   useEffect(() => {
     const eng = createGrid(configRef.current);
     setEngine(eng);
+
+    // Reset mounted flags when engine is (re)created
+    rowDataMountedRef.current = false;
+    columnsMountedRef.current = false;
 
     return () => {
       eng.destroy();
@@ -42,16 +51,26 @@ function useGridEngine<TData = any>(config: GridConfig<TData>): GridEngine<TData
     };
   }, []);
 
-  // Sync rowData changes
+  // Sync rowData changes (skip the first run — createGrid already applied initial data)
   useEffect(() => {
-    if (config.rowData && engine) {
+    if (!engine) return;
+    if (!rowDataMountedRef.current) {
+      rowDataMountedRef.current = true;
+      return;
+    }
+    if (config.rowData) {
       engine.api.setRowData(config.rowData);
     }
   }, [config.rowData, engine]);
 
-  // Sync column changes
+  // Sync column changes (skip the first run — createGrid already applied initial columns)
   useEffect(() => {
-    if (config.columns && engine) {
+    if (!engine) return;
+    if (!columnsMountedRef.current) {
+      columnsMountedRef.current = true;
+      return;
+    }
+    if (config.columns) {
       engine.api.setColumnDefs(config.columns);
     }
   }, [config.columns, engine]);
@@ -294,10 +313,9 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
 
   useEffect(() => {
     if (controlledSelectedRowIds !== undefined && engine) {
-      engine.store.setState((prev) => ({
-        ...prev,
-        selection: { ...prev.selection, selectedRowIds: controlledSelectedRowIds },
-      }));
+      engine.commandBus.dispatch('selection:set', {
+        selectedRowIds: new Set(controlledSelectedRowIds),
+      });
     }
   }, [controlledSelectedRowIds, engine]);
 
@@ -380,13 +398,6 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
     }
   }, [engine]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Sync rowData prop changes ──
-  useEffect(() => {
-    if (rowData && engine) {
-      engine.api.setRowData(rowData);
-    }
-  }, [rowData, engine]);
-
   // ── Container style ──
   const style: CSSProperties = {
     height: typeof height === 'number' ? `${height}px` : height,
@@ -394,8 +405,14 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
     ...containerStyle,
   };
 
+  // ── Context value (stable reference) ──
+  const contextValue = useMemo<GridContextValue<TData> | null>(
+    () => (engine ? { engine, api: engine.api, rootElement } : null),
+    [engine, rootElement],
+  );
+
   // ── Before engine is ready (first render before useEffect), render only the container ──
-  if (!engine) {
+  if (!engine || !contextValue) {
     return (
       <GridErrorBoundary>
         <div
@@ -406,13 +423,6 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
       </GridErrorBoundary>
     );
   }
-
-  // ── Context value (stable reference) ──
-  const contextValue: GridContextValue<TData> = {
-    engine,
-    api: engine.api,
-    rootElement,
-  };
 
   return (
     <GridErrorBoundary>

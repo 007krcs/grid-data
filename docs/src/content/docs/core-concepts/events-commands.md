@@ -1,43 +1,98 @@
 ---
 title: Events & Commands
-description: Subscribe to grid events, dispatch commands, and understand the full event and command reference.
+description: Subscribe to grid events, dispatch commands, write middleware, and reference the complete event and command catalog.
 ---
 
-GridStorm uses two complementary systems for communication: the **EventBus** for notifications (something happened) and the **CommandBus** for mutations (make something happen).
+GridStorm uses two complementary systems for communication: the **EventBus** for notifications (something happened) and the **CommandBus** for mutations (make something happen). Events flow outward to inform you of state changes. Commands flow inward to trigger state changes. Together they enforce a strict unidirectional data flow.
 
-## EventBus
+## Events vs Commands
 
-The EventBus is a typed publish/subscribe system. Events are emitted after state changes occur and are used for reacting to grid behavior.
+| Aspect | Events | Commands |
+|---|---|---|
+| Direction | Outward (grid to your code) | Inward (your code to grid) |
+| Purpose | Notify that something happened | Request that something changes |
+| Timing | Fired after state has changed | Processed immediately when dispatched |
+| Handlers | Multiple listeners, no return value | Multiple handlers, all invoked |
+| Cancellation | Not cancellable | Cancellable via middleware |
 
-### Subscribing to Events
+## Installation
 
-```ts title="Direct subscription"
-const unsub = engine.eventBus.on('column:sort:changed', (event) => {
-  console.log('New sort model:', event.sortModel);
+Both systems are part of `@gridstorm/core` and are created automatically with the grid engine:
+
+```bash title="Install core"
+pnpm add @gridstorm/core
+```
+
+## EventBus API
+
+### on(event, listener)
+
+Subscribe to an event. Returns an unsubscribe function:
+
+```ts title="Subscribe to an event"
+const unsub = engine.eventBus.on('selection:changed', (event) => {
+  console.log('Selected:', event.selectedNodes.length);
+  console.log('Source:', event.source);
 });
 
 // Later: unsubscribe
 unsub();
 ```
 
-### Via the GridApi
+### once(event, listener)
 
-The GridApi provides `addEventListener` and `removeEventListener` methods that delegate to the EventBus:
+Subscribe to an event for a single firing. The listener is automatically removed after it runs:
 
-```ts title="API subscription"
-function onSortChanged(event) {
-  console.log('Sort model:', event.sortModel);
+```ts title="One-time listener"
+engine.eventBus.once('grid:ready', (event) => {
+  console.log('Grid is ready, API:', event.api);
+});
+```
+
+### off(event, listener)
+
+Manually remove a specific listener by reference:
+
+```ts title="Remove a listener"
+function onSort(event) {
+  console.log('Sort changed:', event.sortModel);
 }
 
-api.addEventListener('column:sort:changed', onSortChanged);
+engine.eventBus.on('column:sort:changed', onSort);
 
-// Later: remove
-api.removeEventListener('column:sort:changed', onSortChanged);
+// Later: remove by reference
+engine.eventBus.off('column:sort:changed', onSort);
+```
+
+### emit(event, payload)
+
+Emit an event to all registered listeners. Primarily used by plugins and the engine internals:
+
+```ts title="Emit an event"
+engine.eventBus.emit('row:clicked', {
+  node: rowNode,
+  event: mouseEvent,
+});
+```
+
+Listeners that throw errors are caught and logged without interrupting other listeners.
+
+### Via the GridApi
+
+The `GridApi` wraps the EventBus with `addEventListener` and `removeEventListener`:
+
+```ts title="API subscription"
+const unsub = api.addEventListener('filter:changed', (event) => {
+  console.log('Filters:', event.filterModel);
+});
+
+// The return value is an unsubscribe function
+unsub();
 ```
 
 ### Via React Hooks
 
-In React, use the `useGridEvent` hook which handles subscription lifecycle automatically:
+In React, use the `useGridEvent` hook which handles the subscription lifecycle automatically:
 
 ```tsx title="React hook"
 import { useGridEvent } from '@gridstorm/react';
@@ -59,7 +114,94 @@ Or use event callback props on the `<GridStorm>` component:
 />
 ```
 
-## Event Reference
+## CommandBus API
+
+### registerHandler(commandType, handler)
+
+Register a synchronous handler for a command type. Multiple handlers per type are supported -- all are invoked when the command is dispatched. Returns an unsubscribe function:
+
+```ts title="Register a handler"
+const unregister = engine.commandBus.registerHandler('sort:set', (payload) => {
+  console.log('Sort model set to:', payload.sortModel);
+});
+
+// Later: remove the handler
+unregister();
+```
+
+### registerAsyncHandler(commandType, handler)
+
+Register an asynchronous handler. Async handlers are only invoked via `dispatchAsync()` and run sequentially (each awaited before the next):
+
+```ts title="Async handler"
+engine.commandBus.registerAsyncHandler('ssrm:refresh', async (payload) => {
+  const data = await fetch('/api/rows');
+  engine.store.setState((prev) => ({ ...prev, /* ... */ }));
+});
+```
+
+### dispatch(commandType, payload)
+
+Dispatch a command synchronously. Middleware runs first, then all registered handlers:
+
+```ts title="Dispatch a command"
+engine.commandBus.dispatch('sort:set', {
+  sortModel: [{ colId: 'name', sort: 'asc' }],
+});
+```
+
+If no handler is registered and `__GRIDSTORM_DEV__` is enabled, a warning is logged.
+
+### dispatchAsync(commandType, payload)
+
+Dispatch a command asynchronously. Middleware runs synchronously first. Then sync handlers run, followed by async handlers in sequence:
+
+```ts title="Async dispatch"
+await engine.commandBus.dispatchAsync('ssrm:refresh', {});
+```
+
+## Command Middleware
+
+Middleware intercepts every command before handlers run. Use it for logging, validation, analytics, or cancellation:
+
+```ts title="Logging middleware"
+const removeMiddleware = engine.commandBus.use((context) => {
+  console.log(`[Command] ${context.commandType}`, context.payload);
+});
+
+// Later: remove
+removeMiddleware();
+```
+
+### Cancelling Commands
+
+Call `context.cancel()` to prevent a command from reaching its handlers:
+
+```ts title="Validation middleware"
+engine.commandBus.use((context) => {
+  if (context.commandType === 'editing:start') {
+    const { colId } = context.payload;
+    if (colId === 'id') {
+      console.warn('Cannot edit the ID column');
+      context.cancel();
+    }
+  }
+});
+```
+
+### Middleware Context
+
+The `CommandContext` object passed to middleware contains:
+
+| Property | Type | Description |
+|---|---|---|
+| `commandType` | `string` | The command being dispatched |
+| `payload` | `any` | The command payload |
+| `cancel()` | `() => void` | Call to prevent handler execution |
+
+Middleware functions run in registration order. If any middleware calls `cancel()`, no subsequent middleware or handlers run.
+
+## Complete Event Reference
 
 ### Lifecycle Events
 
@@ -101,7 +243,7 @@ The `source` field indicates what triggered the selection: `'api'`, `'click'`, `
 |---|---|---|
 | `cell:editingStarted` | `{ node, colId, value }` | Cell editing began |
 | `cell:editingStopped` | `{ node, colId, oldValue, newValue, cancelled }` | Cell editing ended |
-| `cell:valueChanged` | `{ node, colId, oldValue, newValue }` | Cell value was committed (not cancelled) |
+| `cell:valueChanged` | `{ node, colId, oldValue, newValue }` | Cell value was committed |
 
 ### Filter Events
 
@@ -159,6 +301,20 @@ The `source` field indicates what triggered the selection: `'api'`, `'click'`, `
 | `contextMenu:opened` | `{ node, colId, x, y }` | Context menu was opened |
 | `contextMenu:closed` | `{}` | Context menu was closed |
 
+### DOM Renderer Events
+
+| Event | Payload | Description |
+|---|---|---|
+| `dom:headerRendered` | `{}` | Header DOM was rebuilt (plugins re-inject handles) |
+
+### Row Reorder Events
+
+| Event | Payload | Description |
+|---|---|---|
+| `row:moved` | `{ rowId, fromIndex, toIndex }` | Row was moved to a new position |
+| `row:dragStarted` | `{ rowId }` | Row drag reorder started |
+| `row:dragEnded` | `{ rowId }` | Row drag reorder ended |
+
 ### Clipboard Events
 
 | Event | Payload | Description |
@@ -167,35 +323,9 @@ The `source` field indicates what triggered the selection: `'api'`, `'click'`, `
 | `clipboard:paste` | `{ data }` | Data was pasted from clipboard |
 | `clipboard:cut` | `{ data }` | Data was cut to clipboard |
 
-## CommandBus
+## Complete Command Reference
 
-The CommandBus is the mutation layer. Dispatching a command invokes all registered handlers for that command type. Commands are the only sanctioned way to change grid state.
-
-### Dispatching Commands
-
-```ts title="Dispatching"
-engine.commandBus.dispatch('sort:toggle', {
-  colId: 'age',
-  multiSort: true,
-});
-```
-
-### Registering Command Handlers
-
-Plugins register command handlers during installation. You can also register custom handlers:
-
-```ts title="Custom handler"
-const unregister = engine.commandBus.registerHandler('myCommand', (payload) => {
-  console.log('Custom command received:', payload);
-});
-
-// Later: unregister
-unregister();
-```
-
-## Command Reference
-
-### Built-in Engine Commands
+### Core Engine Commands
 
 | Command | Payload | Description |
 |---|---|---|
@@ -279,8 +409,8 @@ unregister();
 | `group:addColumn` | `{ colId }` | Add column to grouping |
 | `group:removeColumn` | `{ colId }` | Remove column from grouping |
 | `group:setColumns` | `{ colIds }` | Set all group columns |
-| `group:expand` | `{ rowId }` | Expand a group row |
-| `group:collapse` | `{ rowId }` | Collapse a group row |
+| `group:expand` | `{ groupId }` | Expand a group row |
+| `group:collapse` | `{ groupId }` | Collapse a group row |
 | `group:expandAll` | `{}` | Expand all groups |
 | `group:collapseAll` | `{}` | Collapse all groups |
 | `group:expandToLevel` | `{ level }` | Expand groups to a depth |
@@ -310,8 +440,68 @@ unregister();
 | `clipboard:paste` | `{}` | Paste from clipboard |
 | `clipboard:copyRange` | `{ startRow, endRow, startCol, endCol }` | Copy a specific range |
 
+### Row Reorder Commands
+
+| Command | Payload | Description |
+|---|---|---|
+| `row:move` | `{ rowId, toIndex }` | Move a row to a new display index |
+| `row:swap` | `{ rowIdA, rowIdB }` | Swap two rows by their IDs |
+
+### Tree Commands
+
+| Command | Payload | Description |
+|---|---|---|
+| `tree:toggle` | `{ nodeId }` | Toggle a tree node's expanded state |
+| `tree:expand` | `{ nodeId }` | Expand a tree node |
+| `tree:collapse` | `{ nodeId }` | Collapse a tree node |
+| `tree:expandAll` | `{}` | Expand all tree nodes |
+| `tree:collapseAll` | `{}` | Collapse all tree nodes |
+| `tree:getNodeState` | `{ nodeId }` | Get the state of a tree node |
+
+### Server-Side Row Model Commands
+
+| Command | Payload | Description |
+|---|---|---|
+| `ssrm:ensureRows` | `{ startRow, endRow }` | Ensure rows in the given range are loaded |
+| `ssrm:refresh` | `{}` | Refresh server-side data |
+| `ssrm:getCacheInfo` | `{}` | Get cache information |
+
+### Export Commands
+
+| Command | Payload | Description |
+|---|---|---|
+| `excel:exportCsv` | `{}` | Export data as CSV |
+| `excel:exportExcel` | `{}` | Export data as Excel |
+| `excel:exportData` | `{}` | Export raw data |
+
+### Master-Detail Commands
+
+| Command | Payload | Description |
+|---|---|---|
+| `detail:expand` | `{ nodeId }` | Expand a detail row |
+| `detail:collapse` | `{ nodeId }` | Collapse a detail row |
+| `detail:toggle` | `{ nodeId }` | Toggle a detail row's state |
+| `detail:expandAll` | `{}` | Expand all detail rows |
+| `detail:collapseAll` | `{}` | Collapse all detail rows |
+| `detail:refreshDetail` | `{ nodeId }` | Refresh a specific detail row |
+
+### Custom Commands
+
+Plugins can register custom commands via declaration merging:
+
+```ts title="Declare a custom command"
+declare module '@gridstorm/core' {
+  interface CommandMap {
+    'myPlugin:doSomething': { value: string };
+  }
+}
+
+// Now type-safe to dispatch
+engine.commandBus.dispatch('myPlugin:doSomething', { value: 'hello' });
+```
+
 ## Next Steps
 
-- **[Architecture](/core-concepts/architecture/)** -- How the event and command systems fit into the engine.
-- **[Plugin System](/plugins/plugin-system/)** -- Building plugins that register commands and events.
+- **[Store](/core-concepts/store/)** -- How the store reacts to commands and notifies subscribers.
+- **[Plugin System](/core-concepts/plugin-system/)** -- Registering command handlers and event listeners in plugins.
 - **[React Guide](/frameworks/react/)** -- Event callback props and hooks.

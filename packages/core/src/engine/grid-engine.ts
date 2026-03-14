@@ -31,7 +31,8 @@ export interface GridEngine<TData = any> {
   destroy(): void;
 }
 
-export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<TData> {
+export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<TData> {
+  let config = _config;
   // ── Resolve initial state ──
   const columns = resolveColumns(config.columns, config.defaultColDef);
   const { groups: columnGroups, maxDepth: columnGroupDepth } = resolveColumnGroups(config.columns);
@@ -167,7 +168,12 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
         reprocessRows();
       });
 
-      eventBus.emit('rowData:changed', { rowData: data });
+      // Pass full current rowData
+      const addedState = store.getState();
+      const allAddedRowData = [...addedState.rowNodes.values()]
+        .filter((n) => n.data != null)
+        .map((n) => n.data!);
+      eventBus.emit('rowData:changed', { rowData: allAddedRowData });
     },
 
     removeRows(rowIds: string[]) {
@@ -191,7 +197,12 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
         reprocessRows();
       });
 
-      eventBus.emit('rowData:changed', { rowData: [] });
+      // Pass full current rowData
+      const removedState = store.getState();
+      const allRemovedRowData = [...removedState.rowNodes.values()]
+        .filter((n) => n.data != null)
+        .map((n) => n.data!);
+      eventBus.emit('rowData:changed', { rowData: allRemovedRowData });
     },
 
     updateRows(updates: Array<{ id: string; data: Partial<TData> }>) {
@@ -202,19 +213,33 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
         for (const update of updates) {
           const node = state.rowNodes.get(update.id);
           if (!node || !node.data) continue;
+          const oldData = { ...node.data } as any;
           Object.assign(node.data as any, update.data);
           node.version++;
-          eventBus.emit('cell:valueChanged', {
-            node,
-            colId: '',
-            oldValue: undefined,
-            newValue: update.data,
-          });
+          // Emit one cell:valueChanged per changed field with correct colId
+          for (const colId of Object.keys(update.data as any)) {
+            eventBus.emit('cell:valueChanged', {
+              node,
+              colId,
+              oldValue: oldData[colId],
+              newValue: (update.data as any)[colId],
+            });
+          }
         }
+        // Create a new Map reference so store subscribers detect the change
+        store.setState((prev) => ({
+          ...prev,
+          rowNodes: new Map(prev.rowNodes),
+        }));
         reprocessRows();
       });
 
-      eventBus.emit('rowData:changed', { rowData: [] });
+      // Pass full current rowData
+      const currentState = store.getState();
+      const allRowData = [...currentState.rowNodes.values()]
+        .filter((n) => n.data != null)
+        .map((n) => n.data!);
+      eventBus.emit('rowData:changed', { rowData: allRowData });
     },
 
     getRowNode(id: string) {
@@ -457,11 +482,11 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
       store.setState((prev) => ({ ...prev, editing: null }));
 
       if (node) {
+        let finalValue = value;
         // Write the new value back to the row data when not cancelled
         if (!cancel && value !== originalValue && node.data != null) {
           const col = state.columns.find((c) => c.colId === colId);
           const field = col?.field ?? colId;
-          let finalValue = value;
 
           // Apply valueParser if defined
           if (col?.originalDef.valueParser) {
@@ -508,7 +533,7 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
             node,
             colId,
             oldValue: originalValue,
-            newValue: value,
+            newValue: finalValue,
           });
         }
       }
@@ -528,22 +553,40 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
     expandAll() {
       const state = store.getState();
       for (const node of state.rowNodes.values()) {
-        if (node.group) node.expanded = true;
+        if (node.group) {
+          node.expanded = true;
+          node.version++;
+        }
       }
+      store.setState((prev) => ({
+        ...prev,
+        rowNodes: new Map(prev.rowNodes),
+      }));
       reprocessRows();
     },
 
     collapseAll() {
       const state = store.getState();
       for (const node of state.rowNodes.values()) {
-        if (node.group) node.expanded = false;
+        if (node.group) {
+          node.expanded = false;
+          node.version++;
+        }
       }
+      store.setState((prev) => ({
+        ...prev,
+        rowNodes: new Map(prev.rowNodes),
+      }));
       reprocessRows();
     },
 
     setRowNodeExpanded(node, expanded) {
       node.expanded = expanded;
       node.version++;
+      store.setState((prev) => ({
+        ...prev,
+        rowNodes: new Map(prev.rowNodes),
+      }));
       reprocessRows();
       eventBus.emit('row:groupOpened', { node, expanded });
     },
@@ -561,7 +604,8 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
     // Pagination
     paginationGoToPage(page) {
       const state = store.getState();
-      const totalPages = Math.ceil(state.pagination.totalRows / state.pagination.pageSize);
+      const pageSize = Math.max(1, state.pagination.pageSize);
+      const totalPages = Math.ceil(state.pagination.totalRows / pageSize);
       const clamped = Math.max(0, Math.min(page, totalPages - 1));
       store.setState((prev) => ({
         ...prev,
@@ -580,17 +624,39 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
 
     paginationGetTotalPages() {
       const { totalRows, pageSize } = store.getState().pagination;
-      return Math.ceil(totalRows / pageSize);
+      return Math.ceil(totalRows / Math.max(1, pageSize));
     },
 
     // Config
     setGridOption(key, value) {
-      (config as any)[key] = value;
+      // Shallow copy config before mutating
+      config = { ...config, [key]: value };
       // Handle specific option changes
       if (key === 'rowData') {
         api.setRowData(value as TData[]);
       } else if (key === 'columns') {
         api.setColumnDefs(value as any);
+      } else if (key === 'rowHeight') {
+        // Update runtime row height for future row creation
+        const newHeight = typeof value === 'number' ? value : DEFAULT_ROW_HEIGHT;
+        const state = store.getState();
+        for (const node of state.rowNodes.values()) {
+          node.rowHeight = newHeight;
+        }
+        store.setState((prev) => ({
+          ...prev,
+          rowNodes: new Map(prev.rowNodes),
+        }));
+        eventBus.emit('viewport:changed', { firstRow: 0, lastRow: api.getDisplayedRowCount() - 1 });
+      } else if (key === 'headerHeight') {
+        eventBus.emit('viewport:changed', { firstRow: 0, lastRow: api.getDisplayedRowCount() - 1 });
+      } else if (key === 'paginationPageSize') {
+        const newPageSize = typeof value === 'number' ? Math.max(1, value) : 100;
+        store.setState((prev) => ({
+          ...prev,
+          pagination: { ...prev.pagination, pageSize: newPageSize, currentPage: 0 },
+        }));
+        reprocessRows();
       }
     },
 
@@ -600,15 +666,15 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
 
     // Lifecycle
     destroy() {
-      pluginManager.destroyAll();
       eventBus.emit('grid:destroyed', {});
+      pluginManager.destroyAll();
       eventBus.removeAllListeners();
       commandBus.clear();
     },
 
     // Events
     addEventListener(event, listener) {
-      eventBus.on(event, listener);
+      return eventBus.on(event, listener);
     },
 
     removeEventListener(event, listener) {
@@ -663,16 +729,7 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
     }
   }
 
-  // Install plugins
-  pluginManager.installAll();
-
-  // ── Initial processing ──
-  reprocessRows();
-
-  // ── Wire up config callbacks ──
-  if (config.onGridReady) {
-    config.onGridReady(api);
-  }
+  // ── Wire up config callbacks (before plugin install so plugins can trigger them) ──
   if (config.onRowDataChanged) {
     eventBus.on('rowData:changed', config.onRowDataChanged);
   }
@@ -687,6 +744,16 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
   }
   if (config.onCellValueChanged) {
     eventBus.on('cell:valueChanged', config.onCellValueChanged);
+  }
+
+  // Install plugins
+  pluginManager.installAll();
+
+  // ── Initial processing ──
+  reprocessRows();
+
+  if (config.onGridReady) {
+    config.onGridReady(api);
   }
 
   eventBus.emit('grid:ready', { api });

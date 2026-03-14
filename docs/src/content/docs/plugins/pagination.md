@@ -1,132 +1,128 @@
 ---
 title: Pagination
-description: Configure client-side pagination with page sizes, navigation commands, and React hooks.
+description: Add client-side pagination with page navigation and configurable page sizes to your GridStorm data grid.
 ---
 
-The Pagination plugin provides client-side pagination, splitting displayed rows into pages with configurable page sizes and full navigation controls.
+The Pagination plugin provides client-side pagination with full page navigation commands, configurable page sizes, and a page size selector. It manages the pagination state slice and resets to page 0 when the page size changes.
 
 ## Installation
 
-```bash
+```bash title="Terminal"
 npm install @gridstorm/plugin-pagination
 ```
 
-```ts title="Setup"
+## Setup
+
+```typescript title="setup.ts"
+import { createGrid } from '@gridstorm/core';
 import { PaginationPlugin } from '@gridstorm/plugin-pagination';
 
-const engine = createGrid({
-  columns: [...],
-  rowData: [...],
-  plugins: [PaginationPlugin({ pageSize: 25 })],
+const grid = createGrid({
+  columns: [
+    { colId: 'name', field: 'name', headerName: 'Name' },
+    { colId: 'email', field: 'email', headerName: 'Email' },
+  ],
+  rowData: [],
+  plugins: [
+    PaginationPlugin({
+      pageSize: 50,
+      pageSizeOptions: [25, 50, 100, 250],
+      showPageSizeSelector: true,
+    }),
+  ],
 });
 ```
 
 ## Plugin Options
 
-```ts title="PaginationPluginOptions"
-interface PaginationPluginOptions {
-  pageSize?: number;              // Rows per page (default: 100)
-  pageSizeOptions?: number[];     // Selectable page sizes (default: [25, 50, 100, 250])
-  showPageSizeSelector?: boolean; // Show size selector (default: true)
-}
-```
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| `pageSize` | `number` | `100` | Number of rows displayed per page. Set on the pagination state during plugin install. |
+| `pageSizeOptions` | `number[]` | `[25, 50, 100, 250]` | Available page size options for the page size selector dropdown. |
+| `showPageSizeSelector` | `boolean` | `true` | Show the page size selector in the pagination bar. |
 
-## Pagination API
+## Usage Examples
 
 ### Navigate Between Pages
 
-```ts
-api.paginationGoToPage(0);       // Go to first page (0-indexed)
-api.paginationGoToPage(3);       // Go to page 4
+All page indices are zero-based. The `nextPage` and `prevPage` commands automatically guard against going out of bounds.
+
+```typescript title="page-navigation.ts"
+// Go to a specific page (zero-based)
+grid.commandBus.dispatch('pagination:goToPage', { page: 2 });
+
+// Go to next / previous page
+grid.commandBus.dispatch('pagination:nextPage', {});
+grid.commandBus.dispatch('pagination:prevPage', {});
+
+// Jump to first / last page
+grid.commandBus.dispatch('pagination:firstPage', {});
+grid.commandBus.dispatch('pagination:lastPage', {});
 ```
 
-### Get Current State
+### Change Page Size
 
-```ts
-const currentPage = api.paginationGetCurrentPage();  // 0-indexed
-const totalPages = api.paginationGetTotalPages();
+Changing the page size resets the current page to 0 and emits a `pagination:changed` event with the new total pages.
+
+```typescript title="page-size.ts"
+grid.commandBus.dispatch('pagination:setPageSize', { pageSize: 25 });
 ```
 
-### Page Navigation Commands
+### Read Current Pagination State
 
-| Command | Payload | Description |
-|---|---|---|
-| `pagination:goToPage` | `{ page }` | Navigate to specific page |
-| `pagination:nextPage` | `{}` | Go to next page |
-| `pagination:prevPage` | `{}` | Go to previous page |
-| `pagination:firstPage` | `{}` | Go to first page |
-| `pagination:lastPage` | `{}` | Go to last page |
-| `pagination:setPageSize` | `{ pageSize }` | Change page size (resets to page 0) |
-
-```ts title="Using commands"
-engine.commandBus.dispatch('pagination:nextPage', {});
-engine.commandBus.dispatch('pagination:setPageSize', { pageSize: 50 });
+```typescript title="read-state.ts"
+const currentPage = grid.api.paginationGetCurrentPage();
+const totalPages = grid.api.paginationGetTotalPages();
+console.log(`Page ${currentPage + 1} of ${totalPages}`);
 ```
+
+## Commands
+
+| Name | Payload | Description |
+| --- | --- | --- |
+| `pagination:goToPage` | `{ page: number }` | Navigate to a specific page (zero-based index). |
+| `pagination:nextPage` | `{}` | Go to the next page. No-op if already on the last page. |
+| `pagination:prevPage` | `{}` | Go to the previous page. No-op if already on the first page. |
+| `pagination:firstPage` | `{}` | Jump to the first page (page 0). |
+| `pagination:lastPage` | `{}` | Jump to the last page. |
+| `pagination:setPageSize` | `{ pageSize: number }` | Change the page size. Resets `currentPage` to 0 and emits `pagination:changed`. |
 
 ## Events
 
-| Event | Payload | Description |
-|---|---|---|
-| `pagination:changed` | `{ currentPage, totalPages, pageSize }` | Pagination state changed |
+| Name | Payload | Description |
+| --- | --- | --- |
+| `pagination:changed` | `{ currentPage: number; totalPages: number; pageSize: number }` | Emitted when the page, page size, or total pages changes. |
 
 ## React Integration
 
-Use the `useGridPagination` hook for reactive pagination state:
+```tsx title="PaginatedGrid.tsx"
+import { GridStorm, useGridApi } from '@gridstorm/react';
+import { PaginationPlugin } from '@gridstorm/plugin-pagination';
 
-```tsx title="useGridPagination"
-import { useGridPagination } from '@gridstorm/react';
+function PaginatedGrid({ rowData, columns }) {
+  const apiRef = useGridApi();
 
-function PaginationBar() {
-  const {
-    currentPage,
-    totalPages,
-    pageSize,
-    totalRows,
-    hasNextPage,
-    hasPreviousPage,
-    goToPage,
-    nextPage,
-    previousPage,
-    firstPage,
-    lastPage,
-  } = useGridPagination();
+  const nextPage = () => apiRef.current?.commandBus.dispatch('pagination:nextPage', {});
+  const prevPage = () => apiRef.current?.commandBus.dispatch('pagination:prevPage', {});
 
   return (
-    <div className="pagination">
-      <button onClick={firstPage} disabled={!hasPreviousPage}>First</button>
-      <button onClick={previousPage} disabled={!hasPreviousPage}>Prev</button>
-      <span>
-        Page {currentPage + 1} of {totalPages}
-        ({totalRows} rows, {pageSize}/page)
-      </span>
-      <button onClick={nextPage} disabled={!hasNextPage}>Next</button>
-      <button onClick={lastPage} disabled={!hasNextPage}>Last</button>
-    </div>
+    <>
+      <div>
+        <button onClick={prevPage}>Previous</button>
+        <button onClick={nextPage}>Next</button>
+      </div>
+      <GridStorm
+        rowData={rowData}
+        columns={columns}
+        plugins={[PaginationPlugin({ pageSize: 50 })]}
+      />
+    </>
   );
 }
 ```
 
-### Controlled Pagination
-
-Control the current page from React state:
-
-```tsx title="Controlled pagination"
-const [page, setPage] = useState(0);
-
-<GridStorm
-  columns={columns}
-  rowData={data}
-  plugins={plugins}
-  currentPage={page}
-  onCurrentPageChange={setPage}
-/>
-```
-
-## Interaction with Sorting and Filtering
-
-Pagination operates on the **displayed** row set. When sorting or filtering changes the displayed rows, the total page count is recalculated and the current page is clamped to a valid range. Filtering reduces the total rows, which may reduce the number of pages.
-
 ## Next Steps
 
-- **[Sorting](/plugins/sorting/)** -- Sorting interacts with pagination.
-- **[Filtering](/plugins/filtering/)** -- Filtering changes the row count for pagination.
+- [Sorting Plugin](/plugins/sorting/) -- sort rows before pagination.
+- [Filtering Plugin](/plugins/filtering/) -- paginate filtered results.
+- [Server-Side Row Model](/plugins/ssrm/) -- for server-side pagination with lazy block loading.

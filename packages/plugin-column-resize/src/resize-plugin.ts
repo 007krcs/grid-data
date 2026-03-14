@@ -34,6 +34,14 @@ export function ColumnResizePlugin(options: ColumnResizePluginOptions = {}): Gri
     version: '0.1.0',
 
     install(ctx: PluginContext) {
+      // Cached root element for scoped DOM queries
+      let cachedRoot: HTMLElement | null = null;
+      const getRoot = (): HTMLElement | null => {
+        if (cachedRoot && cachedRoot.isConnected) return cachedRoot;
+        cachedRoot = document.querySelector<HTMLElement>('.gs-root');
+        return cachedRoot;
+      };
+
       // ── Register column:resize command ──
       const unregisterResize = ctx.commandBus.registerHandler(
         'column:resize',
@@ -96,7 +104,7 @@ export function ColumnResizePlugin(options: ColumnResizePluginOptions = {}): Gri
         'column:autoSize',
         (payload: { colId: string }) => {
           if (!enableAutoSize) return;
-          autoSizeColumn(ctx, payload.colId, globalMinWidth, globalMaxWidth);
+          autoSizeColumn(ctx, payload.colId, globalMinWidth, globalMaxWidth, getRoot());
         },
       );
 
@@ -106,8 +114,9 @@ export function ColumnResizePlugin(options: ColumnResizePluginOptions = {}): Gri
         () => {
           if (!enableAutoSize) return;
           const cols = ctx.store.getState().columns.filter((c: ColumnState) => !c.hide && c.resizable);
+          const root = getRoot();
           for (const col of cols) {
-            autoSizeColumn(ctx, col.colId, globalMinWidth, globalMaxWidth);
+            autoSizeColumn(ctx, col.colId, globalMinWidth, globalMaxWidth, root);
           }
         },
       );
@@ -116,13 +125,13 @@ export function ColumnResizePlugin(options: ColumnResizePluginOptions = {}): Gri
       // Listen to dom:headerRendered so handles are re-injected every time
       // the renderer rebuilds headers (sort, filter, column changes, etc.)
       const unsubHeaderRendered = ctx.eventBus.on('dom:headerRendered', () => {
-        injectResizeHandles(ctx);
+        injectResizeHandles(ctx, getRoot());
       });
 
       // Also inject on grid ready (fallback for initial mount)
       const unsubReady = ctx.eventBus.on('grid:ready', () => {
         // Defer to allow DOM to be built
-        requestAnimationFrame(() => injectResizeHandles(ctx));
+        requestAnimationFrame(() => injectResizeHandles(ctx, getRoot()));
       });
 
       return () => {
@@ -142,13 +151,15 @@ function autoSizeColumn(
   colId: string,
   globalMinWidth: number,
   globalMaxWidth: number,
+  rootEl: HTMLElement | null,
 ): void {
   const col = ctx.store.getState().columns.find((c: ColumnState) => c.colId === colId);
   if (!col || !col.resizable) return;
 
-  // Measure the max content width by scanning visible cells for this column
-  const cells = document.querySelectorAll(`.gs-cell[data-col-id="${colId}"]`);
-  const headerCell = document.querySelector(`.gs-header-cell[data-col-id="${colId}"]`);
+  // Measure the max content width by scanning visible cells for this column (scoped to grid root)
+  const scope = rootEl ?? document;
+  const cells = scope.querySelectorAll(`.gs-cell[data-col-id="${colId}"]`);
+  const headerCell = scope.querySelector(`.gs-header-cell[data-col-id="${colId}"]`);
 
   let maxContentWidth = 0;
 
@@ -183,9 +194,10 @@ function autoSizeColumn(
   ctx.api.setColumnWidth(colId, newWidth);
 }
 
-function injectResizeHandles(ctx: PluginContext): void {
-  // Find all header cells and add resize handles
-  const headers = document.querySelectorAll('.gs-header-cell');
+function injectResizeHandles(ctx: PluginContext, rootEl: HTMLElement | null): void {
+  // Find all header cells and add resize handles (scoped to grid root)
+  const scope = rootEl ?? document;
+  const headers = scope.querySelectorAll('.gs-header-cell');
 
   for (const header of headers) {
     const el = header as HTMLElement;

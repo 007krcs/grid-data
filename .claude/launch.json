@@ -24,6 +24,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["examples/pdf-viewer/start-preview.cjs"],
       "port": 4207
+    },
+    {
+      "name": "cookbook",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["examples/cookbook/start-preview.cjs"],
+      "port": 4210
     }
   ]
 }

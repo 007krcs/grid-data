@@ -1,186 +1,127 @@
 ---
 title: Sorting
-description: Configure column sorting with single sort, multi-sort, custom comparators, and programmatic sort control.
+description: Add single and multi-column sorting to your GridStorm data grid.
 ---
 
-The Sorting plugin enables sorting rows by one or more columns. Users click column headers to cycle through sort directions, and the sort model can be controlled programmatically.
+The Sorting plugin provides single and multi-column sorting through header click interactions. It manages the sort model state and cycles through configurable sort directions (ascending, descending, unsorted).
 
 ## Installation
 
-```bash
+```bash title="Terminal"
 npm install @gridstorm/plugin-sorting
 ```
 
-```ts title="Setup"
+## Setup
+
+```typescript title="setup.ts"
+import { createGrid } from '@gridstorm/core';
 import { SortingPlugin } from '@gridstorm/plugin-sorting';
 
-const engine = createGrid({
+const grid = createGrid({
   columns: [
-    { field: 'name', sortable: true },
-    { field: 'age', sortable: true },
-    { field: 'email', sortable: true },
+    { colId: 'name', field: 'name', headerName: 'Name', sortable: true },
+    { colId: 'age', field: 'age', headerName: 'Age', sortable: true },
+    { colId: 'email', field: 'email', headerName: 'Email', sortable: true },
   ],
-  rowData: [...],
-  plugins: [SortingPlugin()],
+  rowData: [],
+  plugins: [
+    SortingPlugin({
+      multiSort: true,
+      maxSortColumns: 3,
+      sortCycle: ['asc', 'desc', null],
+      autoApply: true,
+    }),
+  ],
 });
 ```
 
-:::note
-Columns must have `sortable: true` to participate in sorting. Use `defaultColDef` to enable sorting on all columns at once.
-:::
-
 ## Plugin Options
 
-```ts title="SortingPluginOptions"
-interface SortingPluginOptions {
-  multiSort?: boolean;         // Allow multi-column sort (default: true)
-  maxSortColumns?: number;     // Max columns in multi-sort (default: Infinity)
-  sortCycle?: SortDirection[];  // Sort cycle order (default: ['asc', 'desc', null])
-  autoApply?: boolean;         // Reprocess rows after sort change (default: true)
-}
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| `multiSort` | `boolean` | `true` | Allow multiple columns to be sorted simultaneously. |
+| `maxSortColumns` | `number` | `Infinity` | Maximum number of columns allowed in multi-sort. |
+| `sortCycle` | `SortDirection[]` | `['asc', 'desc', null]` | Sort cycle order. Each click advances to the next direction. `null` removes the sort. |
+| `autoApply` | `boolean` | `true` | Trigger row reprocessing after a sort change. |
+
+## Usage Examples
+
+### Single-Column Sort
+
+Toggle sorting on a column by dispatching the `sort:toggle` command. When `multiSort` is disabled or the user clicks without holding a modifier key, only one column is sorted at a time.
+
+```typescript title="single-sort.ts"
+// Sort by the "name" column
+grid.commandBus.dispatch('sort:toggle', { colId: 'name' });
+
+// Clicking again cycles to the next direction (desc)
+grid.commandBus.dispatch('sort:toggle', { colId: 'name' });
+
+// A third click removes the sort (null in the cycle)
+grid.commandBus.dispatch('sort:toggle', { colId: 'name' });
 ```
 
-### Multi-Sort
+### Multi-Column Sort
 
-Multi-sort is enabled by default. Users hold Shift and click to add secondary sort columns:
+Pass `multiSort: true` in the payload to add a column to the existing sort model without replacing it. This mirrors the behavior of holding Shift and clicking a header.
 
-```ts
-SortingPlugin({ multiSort: true, maxSortColumns: 3 })
+```typescript title="multi-sort.ts"
+// Sort by name first
+grid.commandBus.dispatch('sort:toggle', { colId: 'name' });
+
+// Then add age as a secondary sort
+grid.commandBus.dispatch('sort:toggle', { colId: 'age', multiSort: true });
 ```
 
-To disable multi-sort and only allow single-column sorting:
+When `maxSortColumns` is reached, the oldest sort entry is removed to make room for the new one.
 
-```ts
-SortingPlugin({ multiSort: false })
+### Clear All Sorting
+
+```typescript title="clear-sort.ts"
+grid.commandBus.dispatch('sort:clear', {});
 ```
-
-### Custom Sort Cycle
-
-The default sort cycle is `asc -> desc -> clear`. Customize it:
-
-```ts title="Two-state cycle (no clear)"
-SortingPlugin({ sortCycle: ['asc', 'desc'] })
-```
-
-```ts title="Descending first"
-SortingPlugin({ sortCycle: ['desc', 'asc', null] })
-```
-
-## Sort Model
-
-The sort model is an array of `SortModelItem` objects:
-
-```ts title="SortModelItem"
-interface SortModelItem {
-  colId: string;
-  sort: 'asc' | 'desc';
-}
-```
-
-### Initial Sort
-
-Set initial sort through column definitions:
-
-```ts title="Pre-sorted column"
-{
-  field: 'name',
-  sortable: true,
-  sort: 'asc',       // Initial sort direction
-  sortIndex: 0,      // Priority in multi-sort
-}
-```
-
-### Get Current Sort Model
-
-```ts
-const model = api.getSortModel();
-// [{ colId: 'name', sort: 'asc' }]
-```
-
-### Set Sort Model Programmatically
-
-```ts title="Programmatic sort"
-api.setSortModel([
-  { colId: 'department', sort: 'asc' },
-  { colId: 'salary', sort: 'desc' },
-]);
-```
-
-### Clear Sort
-
-```ts
-api.setSortModel([]);
-```
-
-Or via command:
-
-```ts
-engine.commandBus.dispatch('sort:clear', {});
-```
-
-## Custom Comparators
-
-Provide a `comparator` function on the column definition for custom sort logic:
-
-```ts title="Custom comparator"
-{
-  field: 'date',
-  sortable: true,
-  comparator: (valueA, valueB, nodeA, nodeB, isDescending) => {
-    const dateA = new Date(valueA).getTime();
-    const dateB = new Date(valueB).getTime();
-    return dateA - dateB;
-  },
-}
-```
-
-The comparator receives:
-
-| Parameter | Type | Description |
-|---|---|---|
-| `valueA` | `TValue` | Value of cell A |
-| `valueB` | `TValue` | Value of cell B |
-| `nodeA` | `RowNode` | Row node for row A |
-| `nodeB` | `RowNode` | Row node for row B |
-| `isDescending` | `boolean` | Whether current sort is descending |
-
-Return a negative number if A should come first, positive if B should come first, or zero if equal.
 
 ## Commands
 
-| Command | Payload | Description |
-|---|---|---|
-| `sort:toggle` | `{ colId, multiSort? }` | Toggle sort on a column (cycles through sortCycle) |
-| `sort:clear` | `{}` | Clear all sort |
+| Name | Payload | Description |
+| --- | --- | --- |
+| `sort:toggle` | `{ colId: string; multiSort?: boolean }` | Toggle the sort direction on a column. Pass `multiSort: true` to add to the existing sort model instead of replacing it. Only sorts columns with `sortable: true`. |
+| `sort:clear` | `{}` | Remove all sort entries and revert to the original row order. |
 
 ## Events
 
-| Event | Payload | Description |
-|---|---|---|
-| `column:sort:changed` | `{ sortModel }` | Sort model changed |
+| Name | Payload | Description |
+| --- | --- | --- |
+| `column:sort:changed` | `{ sortModel: SortModelItem[] }` | Emitted by the core API after the sort model is updated via `api.setSortModel()`. |
 
 ## React Integration
 
-Use the `useGridSort` hook:
+```tsx title="SortableGrid.tsx"
+import { GridStorm, useGridApi } from '@gridstorm/react';
+import { SortingPlugin } from '@gridstorm/plugin-sorting';
 
-```tsx title="useGridSort"
-import { useGridSort } from '@gridstorm/react';
+function SortableGrid({ rowData, columns }) {
+  const apiRef = useGridApi();
 
-function SortControls() {
-  const { sortModel, isSorted, toggleSort, clearSort } = useGridSort();
+  const clearSort = () => {
+    apiRef.current?.commandBus.dispatch('sort:clear', {});
+  };
 
   return (
-    <div>
-      <p>Sorted: {isSorted ? 'Yes' : 'No'}</p>
-      <button onClick={() => toggleSort('name')}>Sort by Name</button>
-      <button onClick={() => toggleSort('age', true)}>Add Age Sort</button>
+    <>
       <button onClick={clearSort}>Clear Sort</button>
-    </div>
+      <GridStorm
+        rowData={rowData}
+        columns={columns}
+        plugins={[SortingPlugin({ multiSort: true, maxSortColumns: 3 })]}
+      />
+    </>
   );
 }
 ```
 
 ## Next Steps
 
-- **[Filtering](/plugins/filtering/)** -- Filter rows by column values.
-- **[Events & Commands](/core-concepts/events-commands/)** -- Full event reference.
+- [Filtering Plugin](/plugins/filtering/) -- combine sorting with column filters.
+- [Grouping Plugin](/plugins/grouping/) -- sorted rows within groups respect the active sort model.
+- [Selection Plugin](/plugins/selection/) -- select sorted rows.

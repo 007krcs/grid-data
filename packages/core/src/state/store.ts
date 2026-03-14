@@ -11,6 +11,8 @@ export class Store<TState> {
   private batchDepth = 0;
   private pendingNotify = false;
   private version = 0;
+  private notifying = false;
+  private pendingUpdates: Array<(prev: TState) => TState> = [];
 
   constructor(initialState: TState) {
     this.state = initialState;
@@ -28,6 +30,13 @@ export class Store<TState> {
 
   /** Update state using an updater function. Notifies listeners unless batched. */
   setState(updater: (prev: TState) => TState): void {
+    // Re-entrancy guard: if we're in the middle of notifying listeners,
+    // queue the update to be applied after the current notification cycle.
+    if (this.notifying) {
+      this.pendingUpdates.push(updater);
+      return;
+    }
+
     const next = updater(this.state);
     if (next === this.state) return;
 
@@ -111,11 +120,49 @@ export class Store<TState> {
   }
 
   private notify(): void {
-    for (const listener of this.listeners) {
+    this.notifying = true;
+    try {
+      for (const listener of [...this.listeners]) {
+        try {
+          listener();
+        } catch (err) {
+          console.error('[GridStorm] Error in store listener:', err);
+        }
+      }
+    } finally {
+      this.notifying = false;
+    }
+
+    // Drain any updates that were queued during notification
+    let drainIterations = 0;
+    while (this.pendingUpdates.length > 0) {
+      drainIterations++;
+      if (drainIterations > 100) {
+        console.error('[GridStorm] Possible infinite state update cycle detected — breaking after 100 iterations.');
+        this.pendingUpdates = [];
+        break;
+      }
+      const queued = this.pendingUpdates;
+      this.pendingUpdates = [];
+      for (const updater of queued) {
+        const next = updater(this.state);
+        if (next !== this.state) {
+          this.state = next;
+          this.version++;
+        }
+      }
+      // Notify again for the queued updates
+      this.notifying = true;
       try {
-        listener();
-      } catch (err) {
-        console.error('[GridStorm] Error in store listener:', err);
+        for (const listener of [...this.listeners]) {
+          try {
+            listener();
+          } catch (err) {
+            console.error('[GridStorm] Error in store listener:', err);
+          }
+        }
+      } finally {
+        this.notifying = false;
       }
     }
   }

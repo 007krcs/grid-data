@@ -1,106 +1,138 @@
 ---
 title: Column Reorder
-description: Drag columns to reorder them, with support for pinned column zones and lock position.
+description: Drag and drop columns to reorder them in your GridStorm data grid, with pin zone protection and lock position support.
 ---
 
-The Column Reorder plugin enables users to rearrange columns by dragging header cells. It supports locking columns in place and preventing columns from being dragged across pin zones.
+The Column Reorder plugin enables column rearrangement by dragging header cells. It supports locking columns in place via `lockPosition`, preventing cross-zone dragging for pinned columns, and swapping columns programmatically. A movement threshold prevents accidental reorders during header clicks.
 
 ## Installation
 
-```bash
+```bash title="Terminal"
 npm install @gridstorm/plugin-column-reorder
 ```
 
-```ts title="Setup"
+## Setup
+
+```typescript title="setup.ts"
+import { createGrid } from '@gridstorm/core';
 import { ColumnReorderPlugin } from '@gridstorm/plugin-column-reorder';
 
-const engine = createGrid({
+const grid = createGrid({
   columns: [
-    { field: 'id', lockPosition: true },   // Cannot be moved
-    { field: 'name' },
-    { field: 'age' },
-    { field: 'email' },
+    { colId: 'id', field: 'id', headerName: 'ID', lockPosition: true },
+    { colId: 'name', field: 'name', headerName: 'Name' },
+    { colId: 'age', field: 'age', headerName: 'Age' },
+    { colId: 'email', field: 'email', headerName: 'Email' },
   ],
-  rowData: [...],
-  plugins: [ColumnReorderPlugin()],
+  rowData: [],
+  plugins: [
+    ColumnReorderPlugin({
+      enableDragDrop: true,
+      lockPinnedColumns: true,
+      dragIndicatorClass: 'gs-column-drag-indicator',
+    }),
+  ],
 });
 ```
 
 ## Plugin Options
 
-```ts title="ColumnReorderPluginOptions"
-interface ColumnReorderPluginOptions {
-  enableDragDrop?: boolean;     // Enable drag-and-drop (default: true)
-  lockPinnedColumns?: boolean;  // Prevent cross-zone dragging (default: true)
-  dragIndicatorClass?: string;  // CSS class for the drag ghost element
-}
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enableDragDrop` | `boolean` | `true` | Enable drag-and-drop reordering on header cells. |
+| `lockPinnedColumns` | `boolean` | `true` | Prevent dragging columns across pin zones (left-pinned, center, right-pinned). |
+| `dragIndicatorClass` | `string` | `'gs-column-drag-indicator'` | CSS class for the drag ghost element. |
+
+## Usage Examples
+
+### Move a Column to a Specific Index
+
+```typescript title="move-column.ts"
+grid.commandBus.dispatch('column:move', {
+  colId: 'email',
+  toIndex: 1,
+});
 ```
 
-### Lock Pinned Columns
-
-When `lockPinnedColumns` is `true` (the default), columns cannot be dragged from the pinned-left zone to the center zone or vice versa. Each pin zone maintains its own ordering.
-
-```ts
-ColumnReorderPlugin({ lockPinnedColumns: true })
-```
-
-Set to `false` to allow free movement across zones:
-
-```ts
-ColumnReorderPlugin({ lockPinnedColumns: false })
-```
-
-## Lock Position
-
-Prevent a specific column from being moved by setting `lockPosition` on the column definition:
-
-```ts
-{ field: 'rowNumber', lockPosition: true }
-```
-
-Locked columns cannot be dragged and other columns cannot be dropped in their position.
-
-## Programmatic Reorder
-
-### Move a Column to an Index
-
-```ts
-api.moveColumn('email', 1);  // Move email to index 1
-```
+The command respects `lockPosition` on the target column and `lockPinnedColumns` across pin zones.
 
 ### Swap Two Columns
 
-```ts
-engine.commandBus.dispatch('column:swap', {
+```typescript title="swap-columns.ts"
+grid.commandBus.dispatch('column:swap', {
   colIdA: 'name',
   colIdB: 'email',
 });
 ```
 
-## Drag Interaction
+Swap directly exchanges two columns in the column array and emits `column:moved`.
 
-When the user initiates a drag on a header cell:
+### Drag-and-Drop Behavior
 
-1. A ghost element appears near the cursor showing the column name.
+When drag-and-drop is enabled, the plugin injects mousedown handlers on header cells. A 5px movement threshold distinguishes clicks from drags. During a drag:
+
+1. A floating ghost element appears near the cursor showing the column name.
 2. The cursor changes to `grabbing`.
 3. On mouse release over another header cell, the column is moved to that position.
-4. The ghost element is removed and the cursor resets.
+
+```typescript title="lock-a-column.ts"
+// Columns with lockPosition cannot be dragged
+const columns = [
+  { colId: 'rowNum', field: 'rowNum', headerName: '#', lockPosition: true },
+  { colId: 'name', field: 'name', headerName: 'Name' },
+];
+```
 
 ## Commands
 
-| Command | Payload | Description |
-|---|---|---|
-| `column:move` | `{ colId, toIndex }` | Move a column to a specific index |
-| `column:swap` | `{ colIdA, colIdB }` | Swap the positions of two columns |
-| `column:dragStart` | `{ colId, startX }` | Begin a drag reorder interaction |
+| Name | Payload | Description |
+| --- | --- | --- |
+| `column:move` | `{ colId: string; toIndex: number }` | Move a column to a specific index. Respects `lockPosition` and `lockPinnedColumns`. |
+| `column:swap` | `{ colIdA: string; colIdB: string }` | Swap the positions of two columns. |
+| `column:dragStart` | `{ colId: string; startX: number; startY?: number }` | Begin a drag interaction. Creates ghost element and attaches mouse listeners. |
 
 ## Events
 
-| Event | Payload | Description |
-|---|---|---|
-| `column:moved` | `{ column, fromIndex, toIndex }` | Column was moved |
+| Name | Payload | Description |
+| --- | --- | --- |
+| `column:moved` | `{ column: ColumnState; fromIndex: number; toIndex: number }` | Emitted after a column is moved or swapped. |
+| `dom:headerRendered` | `{}` | Listened to internally to re-inject drag handlers after header re-renders. |
+| `grid:ready` | `{}` | Listened to internally to inject drag handlers on initial mount. |
+
+## React Integration
+
+```tsx title="ReorderableGrid.tsx"
+import { GridStorm, useGridApi } from '@gridstorm/react';
+import { ColumnReorderPlugin } from '@gridstorm/plugin-column-reorder';
+
+function ReorderableGrid({ rowData, columns }) {
+  const apiRef = useGridApi();
+
+  const resetOrder = () => {
+    // Move columns back to original positions
+    columns.forEach((col, i) => {
+      apiRef.current?.commandBus.dispatch('column:move', {
+        colId: col.colId,
+        toIndex: i,
+      });
+    });
+  };
+
+  return (
+    <>
+      <button onClick={resetOrder}>Reset Column Order</button>
+      <GridStorm
+        rowData={rowData}
+        columns={columns}
+        plugins={[ColumnReorderPlugin()]}
+      />
+    </>
+  );
+}
+```
 
 ## Next Steps
 
-- **[Column Pinning](/plugins/column-pinning/)** -- Pin columns to edges.
-- **[Column Resize](/plugins/column-resize/)** -- Resize columns by dragging.
+- [Column Pinning Plugin](/plugins/column-pinning/) -- pin columns to edges (interacts with `lockPinnedColumns`).
+- [Column Resize Plugin](/plugins/column-resize/) -- resize handles coexist with drag handles on headers.
+- [Row Reorder Plugin](/plugins/row-reorder/) -- reorder rows via drag-and-drop.

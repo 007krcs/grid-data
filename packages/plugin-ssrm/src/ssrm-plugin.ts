@@ -199,12 +199,18 @@ export function SSRMPlugin(options: SSRMPluginOptions): GridPlugin {
 
       // ── Automatically fetch blocks when viewport scrolls ──
       const unsubViewport = ctx.eventBus.on('viewport:changed', (payload) => {
-        if (!totalRowCount) return;
-        const startRow = payload.firstRow ?? 0;
-        const endRow = payload.lastRow ?? startRow + blockSize;
-        const missing = cache.getMissingBlocks(startRow, Math.min(endRow, totalRowCount));
-        for (const blockIdx of missing) {
-          fetchBlock(blockIdx);
+        try {
+          if (!totalRowCount) return;
+          const startRow = payload.firstRow ?? 0;
+          const endRow = payload.lastRow ?? startRow + blockSize;
+          const missing = cache.getMissingBlocks(startRow, Math.min(endRow, totalRowCount));
+          for (const blockIdx of missing) {
+            fetchBlock(blockIdx).catch((err) => {
+              console.error(`[GridStorm SSRM] Error fetching block ${blockIdx} on viewport change:`, err);
+            });
+          }
+        } catch (err) {
+          console.error('[GridStorm SSRM] Error processing viewport change:', err);
         }
       });
 
@@ -212,13 +218,17 @@ export function SSRMPlugin(options: SSRMPluginOptions): GridPlugin {
       const unsubSort = ctx.eventBus.on('column:sort:changed', () => {
         cache.clear();
         totalRowCount = 0;
-        fetchBlock(0);
+        fetchBlock(0).catch((err) => {
+          console.error('[GridStorm SSRM] Error re-fetching after sort change:', err);
+        });
       });
 
       const unsubFilter = ctx.eventBus.on('filter:changed', () => {
         cache.clear();
         totalRowCount = 0;
-        fetchBlock(0);
+        fetchBlock(0).catch((err) => {
+          console.error('[GridStorm SSRM] Error re-fetching after filter change:', err);
+        });
       });
 
       // Refresh command

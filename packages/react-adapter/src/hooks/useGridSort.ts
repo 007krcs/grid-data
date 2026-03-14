@@ -29,10 +29,11 @@ interface GridSortResult {
 export function useGridSort(): GridSortResult {
   const { engine, api } = useGridContext();
 
-  const getSortSnapshot = () => engine.store.getState().sortModel;
+  const getSortSnapshot = useCallback(() => engine.store.getState().sortModel, [engine]);
+  const subscribe = useCallback((cb: () => void) => engine.store.subscribe(cb), [engine]);
 
   const sortModel = useSyncExternalStore(
-    (cb) => engine.store.subscribe(cb),
+    subscribe,
     getSortSnapshot,
     getSortSnapshot,
   );

@@ -40,10 +40,11 @@ interface GridPaginationResult {
 export function useGridPagination(): GridPaginationResult {
   const { engine, api } = useGridContext();
 
-  const getPaginationSnapshot = () => engine.store.getState().pagination;
+  const getPaginationSnapshot = useCallback(() => engine.store.getState().pagination, [engine]);
+  const subscribe = useCallback((cb: () => void) => engine.store.subscribe(cb), [engine]);
 
   const paginationState = useSyncExternalStore(
-    (cb) => engine.store.subscribe(cb),
+    subscribe,
     getPaginationSnapshot,
     getPaginationSnapshot,
   );

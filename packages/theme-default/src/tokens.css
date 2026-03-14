@@ -130,6 +130,157 @@
   --gs-size-sidebar-width: 220px;
 }
 
+/* ─── Dark Theme ─── */
+[data-theme="dark"],
+[data-theme="dark"] .gs-root {
+  /* ── Colors: Base ── */
+  --gs-color-background: #1e1e2e;
+  --gs-color-foreground: #cdd6f4;
+  --gs-color-border: #45475a;
+  --gs-color-accent: #89b4fa;
+  --gs-color-accent-hover: #74c7ec;
+  --gs-color-error: #f38ba8;
+  --gs-color-warning: #fab387;
+  --gs-color-success: #a6e3a1;
+  --gs-color-muted: #6c7086;
+
+  /* ── Colors: Header ── */
+  --gs-color-header-bg: #181825;
+  --gs-color-header-fg: #bac2de;
+  --gs-color-header-border: #45475a;
+  --gs-color-header-hover: #313244;
+
+  /* ── Colors: Row ── */
+  --gs-color-row-bg: #1e1e2e;
+  --gs-color-row-bg-alt: #181825;
+  --gs-color-row-bg-hover: #313244;
+  --gs-color-row-bg-selected: #1e3a5f;
+  --gs-color-row-bg-selected-hover: #264a70;
+  --gs-color-row-fg: #cdd6f4;
+
+  /* ── Colors: Cell ── */
+  --gs-color-cell-focus-ring: rgba(137, 180, 250, 0.4);
+  --gs-color-cell-editing-bg: #1e1e2e;
+  --gs-color-cell-editing-border: #89b4fa;
+
+  /* ── Colors: Overlay ── */
+  --gs-color-overlay-bg: rgba(30, 30, 46, 0.85);
+  --gs-color-overlay-fg: #a6adc8;
+
+  /* ── Colors: Popup / Menu ── */
+  --gs-color-popup-bg: #181825;
+  --gs-color-popup-border: #45475a;
+  --gs-color-popup-shadow: rgba(0, 0, 0, 0.3);
+  --gs-color-menu-item-hover: #313244;
+
+  /* ── Colors: Grouping ── */
+  --gs-color-group-bg: #313244;
+  --gs-color-group-bg-hover: #45475a;
+  --gs-color-group-chevron: #a6adc8;
+
+  /* ── Colors: Floating Filter ── */
+  --gs-color-filter-bg: #181825;
+  --gs-color-filter-input-border: #45475a;
+  --gs-color-filter-input-focus: #89b4fa;
+
+  /* ── Colors: Pagination ── */
+  --gs-color-pagination-bg: #181825;
+  --gs-color-pagination-btn-hover: #313244;
+
+  /* ── Scrollbar ── */
+  --gs-scrollbar-track: transparent;
+  --gs-scrollbar-thumb: #45475a;
+  --gs-scrollbar-thumb-hover: #585b70;
+
+  /* ── Colors: Column Groups ── */
+  --gs-color-group-header-bg: #313244;
+  --gs-color-group-header-border: #45475a;
+
+  /* ── Colors: Context Menu ── */
+  --gs-color-menu-item-disabled: #585b70;
+
+  /* ── Colors: Column Sidebar ── */
+  --gs-color-sidebar-bg: #1e1e2e;
+  --gs-color-sidebar-border: #45475a;
+  --gs-color-sidebar-toggle-bg: #181825;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]),
+  .gs-root:not([data-theme] .gs-root) {
+    /* ── Colors: Base ── */
+    --gs-color-background: #1e1e2e;
+    --gs-color-foreground: #cdd6f4;
+    --gs-color-border: #45475a;
+    --gs-color-accent: #89b4fa;
+    --gs-color-accent-hover: #74c7ec;
+    --gs-color-error: #f38ba8;
+    --gs-color-warning: #fab387;
+    --gs-color-success: #a6e3a1;
+    --gs-color-muted: #6c7086;
+
+    /* ── Colors: Header ── */
+    --gs-color-header-bg: #181825;
+    --gs-color-header-fg: #bac2de;
+    --gs-color-header-border: #45475a;
+    --gs-color-header-hover: #313244;
+
+    /* ── Colors: Row ── */
+    --gs-color-row-bg: #1e1e2e;
+    --gs-color-row-bg-alt: #181825;
+    --gs-color-row-bg-hover: #313244;
+    --gs-color-row-bg-selected: #1e3a5f;
+    --gs-color-row-bg-selected-hover: #264a70;
+    --gs-color-row-fg: #cdd6f4;
+
+    /* ── Colors: Cell ── */
+    --gs-color-cell-focus-ring: rgba(137, 180, 250, 0.4);
+    --gs-color-cell-editing-bg: #1e1e2e;
+    --gs-color-cell-editing-border: #89b4fa;
+
+    /* ── Colors: Overlay ── */
+    --gs-color-overlay-bg: rgba(30, 30, 46, 0.85);
+    --gs-color-overlay-fg: #a6adc8;
+
+    /* ── Colors: Popup / Menu ── */
+    --gs-color-popup-bg: #181825;
+    --gs-color-popup-border: #45475a;
+    --gs-color-popup-shadow: rgba(0, 0, 0, 0.3);
+    --gs-color-menu-item-hover: #313244;
+
+    /* ── Colors: Grouping ── */
+    --gs-color-group-bg: #313244;
+    --gs-color-group-bg-hover: #45475a;
+    --gs-color-group-chevron: #a6adc8;
+
+    /* ── Colors: Floating Filter ── */
+    --gs-color-filter-bg: #181825;
+    --gs-color-filter-input-border: #45475a;
+    --gs-color-filter-input-focus: #89b4fa;
+
+    /* ── Colors: Pagination ── */
+    --gs-color-pagination-bg: #181825;
+    --gs-color-pagination-btn-hover: #313244;
+
+    /* ── Scrollbar ── */
+    --gs-scrollbar-track: transparent;
+    --gs-scrollbar-thumb: #45475a;
+    --gs-scrollbar-thumb-hover: #585b70;
+
+    /* ── Colors: Column Groups ── */
+    --gs-color-group-header-bg: #313244;
+    --gs-color-group-header-border: #45475a;
+
+    /* ── Colors: Context Menu ── */
+    --gs-color-menu-item-disabled: #585b70;
+
+    /* ── Colors: Column Sidebar ── */
+    --gs-color-sidebar-bg: #1e1e2e;
+    --gs-color-sidebar-border: #45475a;
+    --gs-color-sidebar-toggle-bg: #181825;
+  }
+}
+
 /* ─── Reduced Motion ─── */
 @media (prefers-reduced-motion: reduce) {
   .gs-root,

@@ -5,7 +5,29 @@ import { gridSchemas } from '../schemas';
 
 /** Shared grid engine state across tool calls. */
 export interface GridToolsContext {
-  gridEngine: GridEngine | null;
+  grids: Map<string, GridEngine>;
+  nextId: number;
+}
+
+/** Default grid ID used for backward compatibility when no gridId is specified. */
+const DEFAULT_GRID_ID = 'default';
+
+/** Maximum number of grids allowed at once. */
+const MAX_GRID_COUNT = 50;
+
+/** Valid aggregation function names. */
+const VALID_AGG_FUNCTIONS = new Set(['sum', 'avg', 'min', 'max', 'count']);
+
+function getGrid(context: GridToolsContext, gridId?: string): GridEngine | null {
+  const id = gridId || DEFAULT_GRID_ID;
+  return context.grids.get(id) || null;
+}
+
+function escapeCSVField(value: string): string {
+  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+    return '"' + value.replace(/"/g, '""') + '"';
+  }
+  return value;
 }
 
 export function createGridTools(): {
@@ -13,7 +35,7 @@ export function createGridTools(): {
   handlers: Record<string, ToolHandler>;
   context: GridToolsContext;
 } {
-  const context: GridToolsContext = { gridEngine: null };
+  const context: GridToolsContext = { grids: new Map(), nextId: 1 };
 
   const definitions: ToolDefinition[] = [
     { name: 'grid_create', description: 'Create a new data grid with columns and row data', inputSchema: gridSchemas.grid_create },
@@ -26,11 +48,6 @@ export function createGridTools(): {
 
   const handlers: Record<string, ToolHandler> = {
     grid_create: (input) => {
-      // Destroy previous engine if any
-      if (context.gridEngine) {
-        context.gridEngine.destroy();
-      }
-
       const columns = (input.columns as any[] || []).map((c: any) => ({
         field: c.field,
         headerName: c.headerName || c.field,
@@ -39,12 +56,30 @@ export function createGridTools(): {
       }));
       const rowData = input.rowData as any[] || [];
 
-      context.gridEngine = createGrid({ columns, rowData });
+      const gridId = (input.gridId as string) || DEFAULT_GRID_ID;
+
+      // Destroy previous engine with same ID if any
+      const existing = context.grids.get(gridId);
+      if (existing) {
+        existing.destroy();
+        context.grids.delete(gridId);
+      }
+
+      // LRU eviction: if at capacity, destroy the oldest grid
+      if (context.grids.size >= MAX_GRID_COUNT) {
+        const oldestKey = context.grids.keys().next().value!;
+        const oldestGrid = context.grids.get(oldestKey)!;
+        oldestGrid.destroy();
+        context.grids.delete(oldestKey);
+      }
+
+      context.grids.set(gridId, createGrid({ columns, rowData }));
 
       return {
         success: true,
         data: {
           message: 'Grid created',
+          gridId,
           columns: columns.length,
           rows: rowData.length,
         },
@@ -52,7 +87,8 @@ export function createGridTools(): {
     },
 
     grid_sort: (input) => {
-      if (!context.gridEngine) {
+      const gridEngine = getGrid(context, input.gridId as string | undefined);
+      if (!gridEngine) {
         return { success: false, error: 'No grid created. Call grid_create first.' };
       }
 
@@ -61,42 +97,44 @@ export function createGridTools(): {
         sort: s.sort || 'asc',
       }));
 
-      context.gridEngine.api.setSortModel(sortModel);
+      gridEngine.api.setSortModel(sortModel);
 
       return {
         success: true,
         data: {
           message: 'Sort applied',
           sortModel,
-          displayedRows: context.gridEngine.api.getDisplayedRowCount(),
+          displayedRows: gridEngine.api.getDisplayedRowCount(),
         },
       };
     },
 
     grid_filter: (input) => {
-      if (!context.gridEngine) {
+      const gridEngine = getGrid(context, input.gridId as string | undefined);
+      if (!gridEngine) {
         return { success: false, error: 'No grid created. Call grid_create first.' };
       }
 
       const filterModel = (input.filterModel as Record<string, any>) || {};
-      context.gridEngine.api.setFilterModel(filterModel);
+      gridEngine.api.setFilterModel(filterModel);
 
       return {
         success: true,
         data: {
           message: 'Filter applied',
           filterModel,
-          displayedRows: context.gridEngine.api.getDisplayedRowCount(),
+          displayedRows: gridEngine.api.getDisplayedRowCount(),
         },
       };
     },
 
     grid_export_csv: (input) => {
-      if (!context.gridEngine) {
+      const gridEngine = getGrid(context, input.gridId as string | undefined);
+      if (!gridEngine) {
         return { success: false, error: 'No grid created. Call grid_create first.' };
       }
 
-      const state = context.gridEngine.store.getState();
+      const state = gridEngine.store.getState();
       const columnKeys = input.columnKeys as string[] | undefined;
       const cols = state.columns.filter((c: any) => {
         if (c.hide) return false;
@@ -106,7 +144,7 @@ export function createGridTools(): {
         return true;
       });
 
-      const headers = cols.map((c: any) => c.headerName || c.field || c.colId);
+      const headers = cols.map((c: any) => escapeCSVField(c.headerName || c.field || c.colId));
       const csvRows: string[] = [headers.join(',')];
 
       for (const id of state.displayedRowIds) {
@@ -115,12 +153,7 @@ export function createGridTools(): {
           const row = cols.map((c: any) => {
             const val = (node.data as any)[c.field || c.colId];
             if (val == null) return '';
-            const str = String(val);
-            // Escape CSV values containing commas, quotes, or newlines
-            if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-              return '"' + str.replace(/"/g, '""') + '"';
-            }
-            return str;
+            return escapeCSVField(String(val));
           });
           csvRows.push(row.join(','));
         }
@@ -140,11 +173,12 @@ export function createGridTools(): {
     },
 
     grid_get_data: (input) => {
-      if (!context.gridEngine) {
+      const gridEngine = getGrid(context, input.gridId as string | undefined);
+      if (!gridEngine) {
         return { success: false, error: 'No grid created. Call grid_create first.' };
       }
 
-      const state = context.gridEngine.store.getState();
+      const state = gridEngine.store.getState();
       const pageSize = (input.pageSize as number) || 100;
       const page = (input.page as number) || 0;
       const start = page * pageSize;
@@ -170,13 +204,21 @@ export function createGridTools(): {
     },
 
     grid_aggregate: (input) => {
-      if (!context.gridEngine) {
+      const gridEngine = getGrid(context, input.gridId as string | undefined);
+      if (!gridEngine) {
         return { success: false, error: 'No grid created. Call grid_create first.' };
       }
 
-      const state = context.gridEngine.store.getState();
+      const state = gridEngine.store.getState();
       const columnId = input.columnId as string;
       const func = (input.function as string) || 'sum';
+
+      if (!VALID_AGG_FUNCTIONS.has(func)) {
+        return {
+          success: false,
+          error: `Invalid aggregation function '${func}'. Must be one of: sum, avg, min, max, count.`,
+        };
+      }
 
       const values: number[] = [];
       for (const id of state.displayedRowIds) {
@@ -199,10 +241,10 @@ export function createGridTools(): {
             result = values.reduce((a, b) => a + b, 0) / values.length;
             break;
           case 'min':
-            result = Math.min(...values);
+            result = values.reduce((a, b) => a < b ? a : b);
             break;
           case 'max':
-            result = Math.max(...values);
+            result = values.reduce((a, b) => a > b ? a : b);
             break;
           case 'count':
             result = values.length;

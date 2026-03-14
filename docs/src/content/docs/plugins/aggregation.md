@@ -1,122 +1,102 @@
 ---
 title: Aggregation
-description: Compute aggregate values (sum, avg, count, min, max) on group rows with built-in and custom aggregation functions.
+description: Compute aggregate values like sum, avg, count, min, and max on group rows with built-in and custom functions.
 ---
 
-The Aggregation plugin computes aggregate values for group rows. It walks the group tree bottom-up, computing specified aggregation functions for each group node. This plugin requires the Grouping plugin.
+The Aggregation plugin computes aggregate values for group rows by walking the group tree bottom-up. It supports built-in functions (sum, avg, count, min, max, first, last), custom aggregation functions, and automatic recomputation when grouping changes. This is an enterprise plugin that requires a license for production use.
 
 ## Installation
 
-```bash
+```bash title="Terminal"
 npm install @gridstorm/plugin-aggregation @gridstorm/plugin-grouping
 ```
 
-```ts title="Setup"
+The Aggregation plugin declares `dependencies: ['grouping']` and requires the Grouping plugin to be installed.
+
+## Setup
+
+```typescript title="setup.ts"
+import { createGrid } from '@gridstorm/core';
 import { GroupingPlugin } from '@gridstorm/plugin-grouping';
 import { AggregationPlugin } from '@gridstorm/plugin-aggregation';
 
-const engine = createGrid({
+const grid = createGrid({
   columns: [
-    { field: 'department', rowGroup: true, rowGroupIndex: 0 },
-    { field: 'name' },
-    { field: 'salary', aggFunc: 'sum' },
-    { field: 'age', aggFunc: 'avg' },
+    { colId: 'department', field: 'department', headerName: 'Department', rowGroup: true, rowGroupIndex: 0 },
+    { colId: 'name', field: 'name', headerName: 'Name' },
+    { colId: 'salary', field: 'salary', headerName: 'Salary', aggFunc: 'sum' },
+    { colId: 'age', field: 'age', headerName: 'Age', aggFunc: 'avg' },
   ],
-  rowData: [...],
+  rowData: [],
   plugins: [
     GroupingPlugin({ defaultExpanded: true }),
-    AggregationPlugin(),
+    AggregationPlugin({
+      customAggFuncs: {
+        median: ({ values }) => {
+          const nums = values.filter((v) => v != null && !isNaN(Number(v))).map(Number).sort((a, b) => a - b);
+          if (nums.length === 0) return null;
+          const mid = Math.floor(nums.length / 2);
+          return nums.length % 2 === 0 ? (nums[mid - 1] + nums[mid]) / 2 : nums[mid];
+        },
+      },
+    }),
   ],
 });
 ```
 
-:::caution
-The Aggregation plugin declares `dependencies: ['grouping']`. The Grouping plugin must be installed alongside it.
-:::
-
 ## Plugin Options
 
-```ts title="AggregationPluginOptions"
-interface AggregationPluginOptions {
-  defaultAggFunc?: string;                  // Default agg function name
-  customAggFuncs?: Record<string, AggFunc>; // Custom agg functions
-}
-```
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| `defaultAggFunc` | `string` | `undefined` | Default aggregation function name applied to columns without an explicit `aggFunc`. |
+| `customAggFuncs` | `Record<string, AggFunc>` | `{}` | Custom aggregation functions merged with the built-in registry. Keys become the function names you reference in `aggFunc`. |
 
 ## Built-in Aggregation Functions
 
 | Name | Description |
-|---|---|
-| `sum` | Sum of all numeric values |
-| `avg` | Average of all numeric values |
-| `count` | Count of non-null values |
-| `min` | Minimum numeric value |
-| `max` | Maximum numeric value |
-| `first` | First value in the group |
-| `last` | Last value in the group |
+| --- | --- |
+| `sum` | Sum of all numeric values. |
+| `avg` | Average of all numeric values. |
+| `count` | Count of non-null values. |
+| `min` | Minimum numeric value. |
+| `max` | Maximum numeric value. |
+| `first` | First value in the group. |
+| `last` | Last value in the group. |
 
-### Assigning to Columns
+## Usage Examples
 
-Set the aggregation function in the column definition:
+### Set Aggregation on a Column at Runtime
 
-```ts
-{ field: 'salary', aggFunc: 'sum' }
-{ field: 'age', aggFunc: 'avg' }
-{ field: 'name', aggFunc: 'count' }
-```
-
-### Change at Runtime
-
-```ts
-engine.commandBus.dispatch('agg:setColumnFunc', {
+```typescript title="set-agg.ts"
+grid.commandBus.dispatch('agg:setColumnFunc', {
   colId: 'salary',
   aggFunc: 'avg',
 });
 ```
 
-### Remove Aggregation
+### Remove Aggregation from a Column
 
-```ts
-engine.commandBus.dispatch('agg:removeColumnFunc', {
+When all aggregation columns are removed, `aggData` is cleared from all group nodes.
+
+```typescript title="remove-agg.ts"
+grid.commandBus.dispatch('agg:removeColumnFunc', {
   colId: 'salary',
 });
 ```
 
+### Manually Trigger Recomputation
+
+Aggregations auto-recompute on `grouping:changed` events. You can also trigger it manually.
+
+```typescript title="recompute.ts"
+grid.commandBus.dispatch('agg:compute', {});
+```
+
 ## Custom Aggregation Functions
 
-Register custom functions via plugin options:
+The `AggFunc` signature receives an object with `values`, `nodes`, and `column`:
 
-```ts title="Custom agg functions"
-AggregationPlugin({
-  customAggFuncs: {
-    median: ({ values }) => {
-      const sorted = values
-        .filter((v) => v != null && !isNaN(Number(v)))
-        .map(Number)
-        .sort((a, b) => a - b);
-      if (sorted.length === 0) return null;
-      const mid = Math.floor(sorted.length / 2);
-      return sorted.length % 2 === 0
-        ? (sorted[mid - 1] + sorted[mid]) / 2
-        : sorted[mid];
-    },
-    distinctCount: ({ values }) => {
-      return new Set(values.filter((v) => v != null)).size;
-    },
-  },
-})
-```
-
-Then use them on columns:
-
-```ts
-{ field: 'salary', aggFunc: 'median' }
-{ field: 'department', aggFunc: 'distinctCount' }
-```
-
-### AggFunc Interface
-
-```ts title="AggFunc"
+```typescript title="custom-agg.ts"
 type AggFunc = (params: {
   values: any[];
   nodes: RowNode[];
@@ -124,40 +104,58 @@ type AggFunc = (params: {
 }) => any;
 ```
 
-## Accessing Aggregated Values
-
-Aggregated values are stored on the group RowNode's `aggData` property:
-
-```ts
-const groupNode = api.getRowNode('group-Engineering');
-if (groupNode?.aggData) {
-  console.log('Total salary:', groupNode.aggData.salary);
-  console.log('Average age:', groupNode.aggData.age);
-}
-```
-
-## Hierarchical Aggregation
-
-Aggregations cascade bottom-up through nested groups. A parent group's aggregation uses its child groups' aggregated values (not the raw leaf values), which means:
-
-- A `sum` at the top level is the sum of all child group sums
-- An `avg` at the top level averages the child group averages (weighted by leaf count via `avg` function)
+For hierarchical groups, `values` may contain already-aggregated child group values rather than raw leaf values, enabling cascading aggregation.
 
 ## Commands
 
-| Command | Payload | Description |
-|---|---|---|
-| `agg:setColumnFunc` | `{ colId, aggFunc }` | Set aggregation on a column |
-| `agg:removeColumnFunc` | `{ colId }` | Remove aggregation from a column |
-| `agg:compute` | `{}` | Manually trigger recomputation |
+| Name | Payload | Description |
+| --- | --- | --- |
+| `agg:setColumnFunc` | `{ colId: string; aggFunc: string }` | Set the aggregation function on a column. Triggers immediate recomputation. |
+| `agg:removeColumnFunc` | `{ colId: string }` | Remove aggregation from a column. Sets `aggFunc` to `null`. Clears `aggData` if no agg columns remain. |
+| `agg:compute` | `{}` | Manually trigger aggregation recomputation across all group nodes. |
 
 ## Events
 
-| Event | Payload | Description |
-|---|---|---|
-| `aggregation:computed` | `{ groupNodeIds }` | Aggregations were recomputed |
+| Name | Payload | Description |
+| --- | --- | --- |
+| `aggregation:computed` | `{ groupNodeIds: string[] }` | Emitted after aggregations are computed. Contains the IDs of all group nodes that were updated. |
+| `grouping:changed` | `{ groupColumns: string[] }` | Listened to internally to auto-recompute aggregations when grouping changes. |
+
+## React Integration
+
+```tsx title="AggregatedGrid.tsx"
+import { GridStorm, useGridApi } from '@gridstorm/react';
+import { GroupingPlugin } from '@gridstorm/plugin-grouping';
+import { AggregationPlugin } from '@gridstorm/plugin-aggregation';
+
+function AggregatedGrid({ rowData, columns }) {
+  const apiRef = useGridApi();
+
+  const switchToAvg = () => {
+    apiRef.current?.commandBus.dispatch('agg:setColumnFunc', {
+      colId: 'salary',
+      aggFunc: 'avg',
+    });
+  };
+
+  return (
+    <>
+      <button onClick={switchToAvg}>Show Average Salary</button>
+      <GridStorm
+        rowData={rowData}
+        columns={columns}
+        plugins={[
+          GroupingPlugin({ defaultExpanded: true }),
+          AggregationPlugin(),
+        ]}
+      />
+    </>
+  );
+}
+```
 
 ## Next Steps
 
-- **[Grouping](/plugins/grouping/)** -- Required companion plugin.
-- **[Columns](/core-concepts/columns/)** -- Column aggFunc configuration.
+- [Grouping Plugin](/plugins/grouping/) -- required companion plugin for row grouping.
+- [Pivoting Plugin](/plugins/pivoting/) -- pivot grouped data into dynamic columns (requires Aggregation).
+- [Excel Export Plugin](/plugins/excel-export/) -- export aggregated data.

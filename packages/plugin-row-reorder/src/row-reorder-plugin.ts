@@ -35,6 +35,14 @@ export function RowReorderPlugin(options: RowReorderPluginOptions = {}): GridPlu
       const customOrder = new Map<string, number>();
       let updatingOrder = false;
 
+      // Cached root element for scoped DOM queries
+      let cachedRoot: HTMLElement | null = null;
+      const getRoot = (): HTMLElement | null => {
+        if (cachedRoot && cachedRoot.isConnected) return cachedRoot;
+        cachedRoot = document.querySelector<HTMLElement>('.gs-root');
+        return cachedRoot;
+      };
+
       // ── Move row to index ──
       disposers.push(
         ctx.commandBus.registerHandler(
@@ -115,10 +123,13 @@ export function RowReorderPlugin(options: RowReorderPluginOptions = {}): GridPlu
       );
 
       // Re-apply custom order after any reprocessing (sort/filter)
+      // Depth guard prevents infinite loops from nested setState calls
+      let reorderDepth = 0;
       disposers.push(
         ctx.store.subscribe(() => {
           if (updatingOrder) return;
           if (customOrder.size === 0) return;
+          if (reorderDepth > 0) return;
           const state = ctx.store.getState();
           const currentIds = state.displayedRowIds;
 
@@ -126,20 +137,27 @@ export function RowReorderPlugin(options: RowReorderPluginOptions = {}): GridPlu
           const hasCustomRows = currentIds.some(id => customOrder.has(id));
           if (!hasCustomRows) return;
 
-          // Sort displayed IDs by custom order, putting un-ordered rows at the end
+          // Sort displayed IDs by custom order, putting un-ordered rows at the end.
+          // Use original index as tiebreaker for stable sorting.
           const sorted = [...currentIds].sort((a, b) => {
             const orderA = customOrder.get(a);
             const orderB = customOrder.get(b);
             if (orderA != null && orderB != null) return orderA - orderB;
             if (orderA != null) return -1;
             if (orderB != null) return 1;
-            return 0;
+            // Stable tiebreaker: preserve original relative order
+            return currentIds.indexOf(a) - currentIds.indexOf(b);
           });
 
           // Only update if order actually changed
           const changed = sorted.some((id, i) => id !== currentIds[i]);
           if (changed) {
-            ctx.store.setState((prev) => ({ ...prev, displayedRowIds: sorted }));
+            reorderDepth++;
+            try {
+              ctx.store.setState((prev) => ({ ...prev, displayedRowIds: sorted }));
+            } finally {
+              reorderDepth--;
+            }
           }
         }),
       );
@@ -196,17 +214,19 @@ export function RowReorderPlugin(options: RowReorderPluginOptions = {}): GridPlu
 
         // Mark the grid root for CSS targeting
         const markRoot = () => {
-          const root = document.querySelector('.gs-root');
+          const root = getRoot();
           root?.setAttribute('data-gs-row-reorder', '');
         };
 
-        // Find the body viewport element
+        // Find the body viewport element (scoped to grid root)
         const getBodyViewport = (): HTMLElement | null => {
-          return document.querySelector('.gs-body-viewport');
+          const root = getRoot();
+          return root?.querySelector('.gs-body-viewport') ?? null;
         };
 
         const getBodyContainer = (): HTMLElement | null => {
-          return document.querySelector('.gs-body');
+          const root = getRoot();
+          return root?.querySelector('.gs-body') ?? null;
         };
 
         // Start drag interaction
@@ -387,7 +407,7 @@ export function RowReorderPlugin(options: RowReorderPluginOptions = {}): GridPlu
           viewport?.removeEventListener('mousedown', onMouseDown);
           styleEl?.remove();
           styleEl = null;
-          const root = document.querySelector('.gs-root');
+          const root = getRoot();
           root?.removeAttribute('data-gs-row-reorder');
         });
       }

@@ -1,104 +1,70 @@
 ---
 title: Clipboard
-description: Copy, cut, and paste grid data with keyboard shortcuts and TSV/CSV format support.
+description: Add copy, cut, and paste operations with keyboard shortcuts and TSV format support to your GridStorm data grid.
 ---
 
-The Clipboard plugin enables copy, cut, and paste operations on grid data. It integrates with the browser's Clipboard API, uses tab-separated values (TSV) format for compatibility with spreadsheets, and responds to standard Ctrl+C / Ctrl+X / Ctrl+V keyboard shortcuts.
+The Clipboard plugin enables copy, cut, and paste operations on grid data. It uses the browser Clipboard API, serializes data as tab-separated values (TSV) for spreadsheet compatibility, and responds to standard keyboard shortcuts (Ctrl+C, Ctrl+X, Ctrl+V). This is an enterprise plugin that requires a license for production use.
 
 ## Installation
 
-```bash
+```bash title="Terminal"
 npm install @gridstorm/plugin-clipboard @gridstorm/plugin-selection
 ```
 
-```ts title="Setup"
+The Clipboard plugin declares `dependencies: ['selection']` and requires the Selection plugin to be installed.
+
+## Setup
+
+```typescript title="setup.ts"
+import { createGrid } from '@gridstorm/core';
 import { SelectionPlugin } from '@gridstorm/plugin-selection';
 import { ClipboardPlugin } from '@gridstorm/plugin-clipboard';
 
-const engine = createGrid({
-  columns: [...],
-  rowData: [...],
+const grid = createGrid({
+  columns: [
+    { colId: 'name', field: 'name', headerName: 'Name', editable: true },
+    { colId: 'email', field: 'email', headerName: 'Email', editable: true },
+  ],
+  rowData: [],
   plugins: [
     SelectionPlugin({ mode: 'multiple' }),
-    ClipboardPlugin(),
+    ClipboardPlugin({
+      copyHeaders: false,
+      delimiter: '\t',
+      suppressPaste: false,
+      suppressCut: false,
+    }),
   ],
 });
 ```
 
-:::caution
-The Clipboard plugin declares `dependencies: ['selection']`. The Selection plugin must be installed alongside it.
-:::
-
 ## Plugin Options
 
-```ts title="ClipboardPluginOptions"
-interface ClipboardPluginOptions {
-  copyHeaders?: boolean;             // Include headers in copy (default: false)
-  delimiter?: string;                // Field delimiter (default: '\t')
-  processCellForClipboard?: (params: { value: any; column: ColumnState }) => string;
-  processCellFromClipboard?: (params: { value: string; column: ColumnState }) => any;
-  suppressPaste?: boolean;           // Disable paste (default: false)
-  suppressCut?: boolean;             // Disable cut (default: false)
-}
-```
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| `copyHeaders` | `boolean` | `false` | Include column headers as the first row when copying. |
+| `delimiter` | `string` | `'\t'` | Field delimiter for clipboard text. Use `','` for CSV format. |
+| `processCellForClipboard` | `(params: { value: any; node: RowNode; column: ColumnState }) => string` | `undefined` | Transform cell values during copy. |
+| `processCellFromClipboard` | `(params: { value: string; column: ColumnState }) => any` | `undefined` | Transform cell values during paste. |
+| `suppressPaste` | `boolean` | `false` | Disable paste operations entirely. |
+| `suppressCut` | `boolean` | `false` | Disable cut operations entirely. |
 
-### Include Headers
+## Usage Examples
 
-```ts
-ClipboardPlugin({ copyHeaders: true })
-```
+### Copy Selected Rows
 
-### Custom Delimiter
+Copies all visible columns of the selected rows to the clipboard as TSV text.
 
-Use comma-separated values instead of tab-separated:
-
-```ts
-ClipboardPlugin({ delimiter: ',' })
-```
-
-### Process Cell Values
-
-Transform values during copy/paste:
-
-```ts title="Custom processing"
-ClipboardPlugin({
-  processCellForClipboard: ({ value, column }) => {
-    if (column.colId === 'date') {
-      return new Date(value).toLocaleDateString();
-    }
-    return String(value ?? '');
-  },
-  processCellFromClipboard: ({ value, column }) => {
-    if (column.colId === 'age') {
-      return parseInt(value, 10);
-    }
-    return value;
-  },
-})
-```
-
-## Keyboard Shortcuts
-
-When the grid has focus, the following shortcuts are active:
-
-| Shortcut | Action |
-|---|---|
-| `Ctrl+C` / `Cmd+C` | Copy selected rows |
-| `Ctrl+X` / `Cmd+X` | Cut selected rows |
-| `Ctrl+V` / `Cmd+V` | Paste at focused cell |
-
-## Copy
-
-Copies the selected rows in TSV format. All visible columns are included.
-
-```ts title="Programmatic copy"
-engine.commandBus.dispatch('clipboard:copy', {});
+```typescript title="copy.ts"
+grid.commandBus.dispatch('clipboard:copy', {});
 ```
 
 ### Copy a Specific Range
 
-```ts title="Copy range"
-engine.commandBus.dispatch('clipboard:copyRange', {
+Copy a rectangular range by specifying row indices and column IDs.
+
+```typescript title="copy-range.ts"
+grid.commandBus.dispatch('clipboard:copyRange', {
   startRow: 0,
   endRow: 4,
   startCol: 'name',
@@ -106,44 +72,81 @@ engine.commandBus.dispatch('clipboard:copyRange', {
 });
 ```
 
-## Cut
+### Cut and Paste
 
-Copies the selected rows and then clears the cell values in the grid:
+Cut copies the selected rows and then clears the cell values (setting them to `null`). Paste reads TSV text from the clipboard and fills cells starting from the currently focused cell position.
 
-```ts
-engine.commandBus.dispatch('clipboard:cut', {});
+```typescript title="cut-paste.ts"
+// Cut selected rows
+grid.commandBus.dispatch('clipboard:cut', {});
+
+// Paste at the focused cell
+grid.commandBus.dispatch('clipboard:paste', {});
 ```
 
-## Paste
+Paste respects column `editable` status -- non-editable columns are skipped. It also applies `valueParser` and `valueSetter` from column definitions when available.
 
-Reads TSV data from the clipboard and writes it into the grid starting from the currently focused cell. The paste fills cells left-to-right (matching visible columns) and top-to-bottom (matching displayed rows).
+## Keyboard Shortcuts
 
-```ts
-engine.commandBus.dispatch('clipboard:paste', {});
-```
+When the grid root element has focus, these shortcuts are active:
 
-:::note
-Paste requires the browser Clipboard API (`navigator.clipboard.readText()`). The user must grant clipboard read permission, and the grid must have focus.
-:::
+| Shortcut | Action |
+| --- | --- |
+| `Ctrl+C` / `Cmd+C` | Copy selected rows. |
+| `Ctrl+X` / `Cmd+X` | Cut selected rows. |
+| `Ctrl+V` / `Cmd+V` | Paste at the focused cell. |
+
+The plugin ensures the grid root is focusable by setting `tabindex="0"` if not already present.
 
 ## Commands
 
-| Command | Payload | Description |
-|---|---|---|
-| `clipboard:copy` | `{}` | Copy selected rows |
-| `clipboard:cut` | `{}` | Cut selected rows |
-| `clipboard:paste` | `{}` | Paste from clipboard |
-| `clipboard:copyRange` | `{ startRow, endRow, startCol, endCol }` | Copy a specific range |
+| Name | Payload | Description |
+| --- | --- | --- |
+| `clipboard:copy` | `{}` | Copy selected rows to clipboard as TSV. |
+| `clipboard:cut` | `{}` | Copy selected rows and clear their cell values. No-op if `suppressCut` is `true`. |
+| `clipboard:paste` | `{}` | Read from clipboard and paste starting at the focused cell. No-op if `suppressPaste` is `true`. |
+| `clipboard:copyRange` | `{ startRow: number; endRow: number; startCol: string; endCol: string }` | Copy a specific rectangular range to clipboard. |
 
 ## Events
 
-| Event | Payload | Description |
-|---|---|---|
-| `clipboard:copy` | `{ data }` | Data was copied |
-| `clipboard:cut` | `{ data }` | Data was cut |
-| `clipboard:paste` | `{ data }` | Data was pasted |
+| Name | Payload | Description |
+| --- | --- | --- |
+| `clipboard:copy` | `{ data: string }` | Emitted after data is copied to the clipboard. |
+| `clipboard:cut` | `{ data: string }` | Emitted after data is cut to the clipboard. |
+| `clipboard:paste` | `{ data: string }` | Emitted after data is pasted from the clipboard. |
+
+## React Integration
+
+```tsx title="ClipboardGrid.tsx"
+import { GridStorm, useGridApi } from '@gridstorm/react';
+import { SelectionPlugin } from '@gridstorm/plugin-selection';
+import { ClipboardPlugin } from '@gridstorm/plugin-clipboard';
+
+function ClipboardGrid({ rowData, columns }) {
+  const apiRef = useGridApi();
+
+  const copy = () => apiRef.current?.commandBus.dispatch('clipboard:copy', {});
+  const paste = () => apiRef.current?.commandBus.dispatch('clipboard:paste', {});
+
+  return (
+    <>
+      <button onClick={copy}>Copy</button>
+      <button onClick={paste}>Paste</button>
+      <GridStorm
+        rowData={rowData}
+        columns={columns}
+        plugins={[
+          SelectionPlugin({ mode: 'multiple' }),
+          ClipboardPlugin({ copyHeaders: true }),
+        ]}
+      />
+    </>
+  );
+}
+```
 
 ## Next Steps
 
-- **[Selection](/plugins/selection/)** -- Required companion plugin.
-- **[Editing](/plugins/editing/)** -- Paste often triggers editing workflows.
+- [Selection Plugin](/plugins/selection/) -- required companion plugin for identifying rows to copy.
+- [Editing Plugin](/plugins/editing/) -- paste workflows often involve cell editing.
+- [Excel Export Plugin](/plugins/excel-export/) -- export to CSV or Excel files for larger exports.

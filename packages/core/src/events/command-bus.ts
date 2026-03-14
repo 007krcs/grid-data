@@ -86,11 +86,13 @@ export class CommandBus {
     // Execute handlers
     const list = this.handlers.get(commandType);
     if (!list || list.length === 0) {
-      // No handler — this is not necessarily an error (command might be handled later)
+      if (typeof globalThis !== 'undefined' && (globalThis as any).__GRIDSTORM_DEV__) {
+        console.warn(`[GridStorm] No handler registered for command "${commandType}".`);
+      }
       return;
     }
 
-    for (const handler of list) {
+    for (const handler of [...list]) {
       try {
         handler(payload);
       } catch (err) {
@@ -130,7 +132,7 @@ export class CommandBus {
     // Execute sync handlers first
     const syncList = this.handlers.get(commandType);
     if (syncList) {
-      for (const handler of syncList) {
+      for (const handler of [...syncList]) {
         try {
           handler(payload);
         } catch (err) {
@@ -142,7 +144,7 @@ export class CommandBus {
     // Execute async handlers sequentially
     const asyncList = this.asyncHandlers.get(commandType);
     if (asyncList) {
-      for (const handler of asyncList) {
+      for (const handler of [...asyncList]) {
         try {
           await handler(payload);
         } catch (err) {

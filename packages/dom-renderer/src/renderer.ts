@@ -117,6 +117,7 @@ export class DomRenderer {
   private columnVirtualizer = new ColumnVirtualizer();
   private scrollManager = new ScrollManager();
   private keyboardManager = new KeyboardManager();
+  private lastRenderedRowCount = 0;
 
   // Row DOM cache
   private renderedRows = new Map<string, RowDomEntry>();
@@ -128,6 +129,9 @@ export class DomRenderer {
 
   // Subscription cleanup
   private unsubscribers: Array<() => void> = [];
+
+  // State change batching
+  private renderPending = false;
 
   // Last rendered state
   private lastStartIndex = -1;
@@ -197,6 +201,11 @@ export class DomRenderer {
   mount(): void {
     if (isServer()) return;
 
+    // Guard against double mount — tear down previous instance first
+    if (this.root) {
+      this.destroy();
+    }
+
     this.createDom();
     this.setupVirtualScroller();
     this.configureColumnVirtualizer();
@@ -238,6 +247,7 @@ export class DomRenderer {
     // Clean up feature state
     this.removeEditorOverlay();
     this.headerCheckbox = null;
+    this._lastCellClick = null;
 
     // Clean up extensions
     for (const ext of this.extensions) {
@@ -248,6 +258,10 @@ export class DomRenderer {
       this.container.removeChild(this.root);
     }
     this.root = null;
+
+    // Null out references to allow GC and prevent use-after-destroy
+    this.engine = null as any;
+    this.container = null as any;
   }
 
   // ── DOM Creation ──
@@ -776,6 +790,7 @@ export class DomRenderer {
 
   private setupResizeObserver(): void {
     this.resizeObserver = safeResizeObserver((entries) => {
+      if (!this.engine || !this.bodyViewport) return;
       for (const entry of entries) {
         if (entry.target === this.bodyViewport) {
           const height = entry.contentRect.height;
@@ -1057,8 +1072,9 @@ export class DomRenderer {
 
     // Update virtual scroller if row count changed
     const newRowCount = state.displayedRowIds.length;
-    if (this.scroller.getTotalHeight() !== newRowCount * ((this.engine.api.getGridOption('rowHeight') as number) ?? 40)) {
+    if (newRowCount !== this.lastRenderedRowCount) {
       this.scroller.updateRowCount(newRowCount);
+      this.lastRenderedRowCount = newRowCount;
       if (this.heightSpacer) {
         this.heightSpacer.style.height = `${this.scroller.getTotalHeight()}px`;
       }
@@ -1070,15 +1086,25 @@ export class DomRenderer {
     this.lastStartIndex = -1;
     this.lastEndIndex = -1;
 
-    this.renderVisibleRows();
+    // Batch render via microtask to coalesce rapid state changes.
+    // If a render is already scheduled, skip. Otherwise schedule one
+    // that will pick up the latest state.
+    if (this.renderPending) return;
 
-    // Update extensions
-    if (this.root) {
-      const ctx = this.buildContext();
-      for (const ext of this.extensions) {
-        ext.update(ctx);
+    this.renderPending = true;
+    queueMicrotask(() => {
+      if (!this.engine) return;
+      this.renderPending = false;
+      this.renderVisibleRows();
+
+      // Update extensions
+      if (this.root) {
+        const ctx = this.buildContext();
+        for (const ext of this.extensions) {
+          ext.update(ctx);
+        }
       }
-    }
+    });
   }
 
   // ── Row Rendering ──
@@ -1315,6 +1341,7 @@ export class DomRenderer {
     cell.setAttribute('role', 'gridcell');
     cell.setAttribute('aria-colindex', String(colIndex + 1));
     cell.setAttribute('data-col-id', col.colId);
+    cell.id = `gs-cell-${node.id}-${col.colId}`;
     cell.className = `${this.prefix}-cell`;
     cell.style.cssText = `
       width:${col.width}px;
@@ -1520,7 +1547,10 @@ export class DomRenderer {
     el.removeAttribute('data-row-id');
     el.removeAttribute('aria-rowindex');
     el.removeAttribute('aria-selected');
-    this.rowPool.push(el);
+    // Cap the pool to prevent unbounded memory growth
+    if (this.rowPool.length < 100) {
+      this.rowPool.push(el);
+    }
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -1706,9 +1736,9 @@ export class DomRenderer {
     if (!col) return;
 
     // Find cell DOM element
-    const rowEl = this.bodyContainer?.querySelector(`[data-row-id="${rowId}"]`);
+    const rowEl = this.bodyContainer?.querySelector(`[data-row-id="${CSS.escape(rowId)}"]`);
     if (!rowEl) return;
-    const cellEl = rowEl.querySelector(`[data-col-id="${colId}"]`) as HTMLElement | null;
+    const cellEl = rowEl.querySelector(`[data-col-id="${CSS.escape(colId)}"]`) as HTMLElement | null;
     if (!cellEl) return;
 
     // Clear cell content and prepare for editor
@@ -1749,6 +1779,7 @@ export class DomRenderer {
       select.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
         else if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: true }); }
+        else if (e.key === 'Tab') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
       });
 
       editorEl = select;

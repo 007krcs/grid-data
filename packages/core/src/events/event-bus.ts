@@ -22,6 +22,14 @@ export class EventBus<TEventMap extends Record<string, any>> {
     };
   }
 
+  once<K extends keyof TEventMap>(event: K, listener: EventListener<TEventMap[K]>): () => void {
+    const unsubscribe = this.on(event, (payload) => {
+      unsubscribe();
+      listener(payload);
+    });
+    return unsubscribe;
+  }
+
   emit<K extends keyof TEventMap>(event: K, payload: TEventMap[K]): void {
     const set = this.listeners.get(event);
     if (!set) return;

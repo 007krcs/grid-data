@@ -103,6 +103,11 @@ export class FloatingFilterRenderer implements RendererExtension {
 
   private renderFilterRow(ctx: RendererContext): void {
     if (!this.container) return;
+
+    // Clear all existing debounce timers before rebuilding
+    for (const timer of this.filterDebounceTimers.values()) clearTimeout(timer);
+    this.filterDebounceTimers.clear();
+
     this.container.textContent = '';
     this.filterInputs.clear();
 

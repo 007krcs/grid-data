@@ -405,8 +405,14 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
     ...containerStyle,
   };
 
+  // ── Context value (stable reference) ──
+  const contextValue = useMemo<GridContextValue<TData> | null>(
+    () => (engine ? { engine, api: engine.api, rootElement } : null),
+    [engine, rootElement],
+  );
+
   // ── Before engine is ready (first render before useEffect), render only the container ──
-  if (!engine) {
+  if (!engine || !contextValue) {
     return (
       <GridErrorBoundary>
         <div
@@ -417,12 +423,6 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
       </GridErrorBoundary>
     );
   }
-
-  // ── Context value (stable reference) ──
-  const contextValue = useMemo<GridContextValue<TData>>(
-    () => ({ engine, api: engine.api, rootElement }),
-    [engine, rootElement],
-  );
 
   return (
     <GridErrorBoundary>

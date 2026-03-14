@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "pnpm install",
-  "buildCommand": "node examples/build-all.cjs",
+  "buildCommand": "echo CWD=$(pwd) && ls -la && pnpm run build:examples",
   "outputDirectory": "examples/dist",
   "framework": null
 }

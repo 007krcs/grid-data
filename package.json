@@ -30,7 +30,8 @@
     "changeset": "changeset",
     "version": "changeset version",
     "publish": "pnpm -r --filter='./packages/*' run build && changeset publish",
-    "publish:alpha": "pnpm -r --filter='./packages/*' run build && changeset publish --tag alpha"
+    "publish:alpha": "pnpm -r --filter='./packages/*' run build && changeset publish --tag alpha",
+    "build:examples": "node examples/build-all.cjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",

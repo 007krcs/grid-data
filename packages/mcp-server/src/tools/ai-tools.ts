@@ -1,6 +1,9 @@
 import type { ToolDefinition, ToolHandler } from '../types';
 import { aiSchemas } from '../schemas';
 
+const AI_NOT_CONFIGURED = '[GridStorm AI] AI-powered PDF analysis requires both a configured PDF parser (pdfjs-dist) ' +
+  'and an AI/ML backend. See documentation for setup instructions.';
+
 export function createAiTools(): { definitions: ToolDefinition[]; handlers: Record<string, ToolHandler> } {
   const definitions: ToolDefinition[] = [
     { name: 'pdf_detect_pii', description: 'Detect personally identifiable information (PII) in PDF pages', inputSchema: aiSchemas.pdf_detect_pii },
@@ -11,16 +14,49 @@ export function createAiTools(): { definitions: ToolDefinition[]; handlers: Reco
 
   const handlers: Record<string, ToolHandler> = {
     pdf_detect_pii: (input) => {
-      return { success: true, data: { detections: [], pageIndex: input.pageIndex ?? null, types: input.types ?? [], threshold: input.threshold ?? 0.8 } };
+      return {
+        success: false,
+        error: AI_NOT_CONFIGURED,
+        data: {
+          pageIndex: input.pageIndex ?? null,
+          types: input.types ?? [],
+          threshold: input.threshold ?? 0.8,
+          hint: 'PII detection requires a loaded PDF with text extraction and an AI/ML backend for entity recognition.',
+        },
+      };
     },
+
     pdf_classify: (input) => {
-      return { success: true, data: { classifications: [], topN: input.topN ?? 3 } };
+      return {
+        success: false,
+        error: AI_NOT_CONFIGURED,
+        data: {
+          topN: input.topN ?? 3,
+          hint: 'Document classification requires a loaded PDF with text extraction and an AI/ML classification model.',
+        },
+      };
     },
+
     pdf_summarize: (input) => {
-      return { success: true, data: { summary: '', maxLength: input.maxLength ?? 500 } };
+      return {
+        success: false,
+        error: AI_NOT_CONFIGURED,
+        data: {
+          maxLength: input.maxLength ?? 500,
+          hint: 'Document summarization requires a loaded PDF with text extraction and an AI/ML summarization model.',
+        },
+      };
     },
+
     pdf_extract_fields: (input) => {
-      return { success: true, data: { fields: input.fields ?? [], extracted: {} } };
+      return {
+        success: false,
+        error: AI_NOT_CONFIGURED,
+        data: {
+          fields: input.fields ?? [],
+          hint: 'Field extraction requires a loaded PDF with text extraction and an AI/ML extraction model.',
+        },
+      };
     },
   };
 

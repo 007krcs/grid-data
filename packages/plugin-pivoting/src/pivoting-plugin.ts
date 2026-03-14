@@ -56,18 +56,44 @@ export function PivotPlugin(options: PivotPluginOptions = {}): GridPlugin {
 
       // ── Enable pivot mode ──
       const unregEnable = ctx.commandBus.registerHandler('pivot:enable', () => {
-        ctx.setState<PivotState>('pivoting', (prev) => ({ ...prev, pivotMode: true }));
+        // Save original columns before pivot
+        const currentState = ctx.store.getState();
+        ctx.setState<PivotState>('pivoting', (prev) => ({
+          ...prev,
+          pivotMode: true,
+          originalColumns: currentState.columns,
+        }));
         rebuildPivot(ctx, pivotMaxGeneratedColumns, processSecondaryColumns);
+        // Inject generated columns into state.columns
+        const ps = ctx.getState<PivotState>('pivoting');
+        if (ps.generatedColumns.length > 0) {
+          const groupCols = currentState.columns.filter((c: ColumnState) =>
+            !ps.pivotColumns.includes(c.colId) && c.aggFunc == null
+          );
+          ctx.store.setState((prev) => ({
+            ...prev,
+            columns: [...groupCols, ...ps.generatedColumns] as ColumnState[],
+          }));
+        }
         emitPivotChanged(ctx);
       });
 
       // ── Disable pivot mode ──
       const unregDisable = ctx.commandBus.registerHandler('pivot:disable', () => {
+        const ps = ctx.getState<PivotState>('pivoting');
+        const originalColumns = (ps as any).originalColumns;
         ctx.setState<PivotState>('pivoting', (prev) => ({
           ...prev,
           pivotMode: false,
           generatedColumns: [],
         }));
+        // Restore original columns
+        if (originalColumns) {
+          ctx.store.setState((prev) => ({
+            ...prev,
+            columns: originalColumns,
+          }));
+        }
         emitPivotChanged(ctx);
       });
 

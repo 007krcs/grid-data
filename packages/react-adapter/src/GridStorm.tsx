@@ -23,37 +23,40 @@ import type { GridStormProps, ReactColumnDef } from './types';
 import { GridErrorBoundary } from './ErrorBoundary';
 
 // ── useGridEngine hook (internal) ──
+// Uses useState + useEffect so that StrictMode's cleanup → remount cycle
+// creates a fresh engine each time instead of leaving a null ref.
 
-function useGridEngine<TData = any>(config: GridConfig<TData>): GridEngine<TData> {
-  const engineRef = useRef<GridEngine<TData> | null>(null);
+function useGridEngine<TData = any>(config: GridConfig<TData>): GridEngine<TData> | null {
+  const [engine, setEngine] = useState<GridEngine<TData> | null>(null);
+  const configRef = useRef(config);
+  configRef.current = config;
 
-  if (!engineRef.current) {
-    engineRef.current = createGrid(config);
-  }
-
-  // Clean up on unmount
+  // Create engine in useEffect so StrictMode can safely destroy + recreate
   useEffect(() => {
+    const eng = createGrid(configRef.current);
+    setEngine(eng);
+
     return () => {
-      engineRef.current?.destroy();
-      engineRef.current = null;
+      eng.destroy();
+      setEngine(null);
     };
   }, []);
 
   // Sync rowData changes
   useEffect(() => {
-    if (config.rowData && engineRef.current) {
-      engineRef.current.api.setRowData(config.rowData);
+    if (config.rowData && engine) {
+      engine.api.setRowData(config.rowData);
     }
-  }, [config.rowData]);
+  }, [config.rowData, engine]);
 
   // Sync column changes
   useEffect(() => {
-    if (config.columns && engineRef.current) {
-      engineRef.current.api.setColumnDefs(config.columns);
+    if (config.columns && engine) {
+      engine.api.setColumnDefs(config.columns);
     }
-  }, [config.columns]);
+  }, [config.columns, engine]);
 
-  return engineRef.current;
+  return engine;
 }
 
 // ── Column processing: convert ReactColumnDef[] → ColumnDef[] ──
@@ -196,7 +199,7 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
 
   // ── Mount DOM renderer ──
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !engine) return;
 
     const renderer = new DomRenderer({
       container: containerRef.current,
@@ -249,6 +252,7 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
   };
 
   useEffect(() => {
+    if (!engine) return;
     const removeMw = engine.commandBus.use((ctx) => {
       const cbs = controlledCallbacksRef.current;
 
@@ -271,25 +275,25 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
 
   // ── Controlled mode: sync controlled props to engine ──
   useEffect(() => {
-    if (controlledSortModel !== undefined) {
+    if (controlledSortModel !== undefined && engine) {
       engine.api.setSortModel(controlledSortModel);
     }
   }, [controlledSortModel, engine]);
 
   useEffect(() => {
-    if (controlledFilterModel !== undefined) {
+    if (controlledFilterModel !== undefined && engine) {
       engine.api.setFilterModel(controlledFilterModel as any);
     }
   }, [controlledFilterModel, engine]);
 
   useEffect(() => {
-    if (controlledCurrentPage !== undefined) {
+    if (controlledCurrentPage !== undefined && engine) {
       engine.api.paginationGoToPage(controlledCurrentPage);
     }
   }, [controlledCurrentPage, engine]);
 
   useEffect(() => {
-    if (controlledSelectedRowIds !== undefined) {
+    if (controlledSelectedRowIds !== undefined && engine) {
       engine.store.setState((prev) => ({
         ...prev,
         selection: { ...prev.selection, selectedRowIds: controlledSelectedRowIds },
@@ -330,6 +334,7 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
   };
 
   useEffect(() => {
+    if (!engine) return;
     const eb = engine.eventBus;
     const cbs = () => eventCallbacksRef.current;
 
@@ -370,31 +375,43 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
 
   // ── Fire onGridReady ──
   useEffect(() => {
-    onGridReady?.(engine.api);
+    if (engine) {
+      onGridReady?.(engine.api);
+    }
   }, [engine]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Sync rowData prop changes ──
   useEffect(() => {
-    if (rowData) {
+    if (rowData && engine) {
       engine.api.setRowData(rowData);
     }
   }, [rowData, engine]);
-
-  // ── Context value (stable reference) ──
-  const contextValue = useMemo<GridContextValue<TData>>(
-    () => ({
-      engine,
-      api: engine.api,
-      rootElement,
-    }),
-    [engine, rootElement],
-  );
 
   // ── Container style ──
   const style: CSSProperties = {
     height: typeof height === 'number' ? `${height}px` : height,
     width: typeof width === 'number' ? `${width}px` : width,
     ...containerStyle,
+  };
+
+  // ── Before engine is ready (first render before useEffect), render only the container ──
+  if (!engine) {
+    return (
+      <GridErrorBoundary>
+        <div
+          ref={containerRef}
+          className={`gs-container ${containerClass ?? ''}`.trim()}
+          style={style}
+        />
+      </GridErrorBoundary>
+    );
+  }
+
+  // ── Context value (stable reference) ──
+  const contextValue: GridContextValue<TData> = {
+    engine,
+    api: engine.api,
+    rootElement,
   };
 
   return (

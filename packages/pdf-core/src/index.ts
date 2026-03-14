@@ -5,6 +5,16 @@
 export { createPdfEngine } from './engine/pdf-engine';
 export type { PdfEngine } from './engine/pdf-engine';
 
+// Parser interface (for pluggable PDF backends)
+export { NoPdfParserError } from './engine/pdf-parser';
+export type {
+  PdfParser,
+  ParsedDocument,
+  PageInfo,
+  PageTextContent,
+  TextItem,
+} from './engine/pdf-parser';
+
 // Types - Document
 export type {
   PdfDocumentState,

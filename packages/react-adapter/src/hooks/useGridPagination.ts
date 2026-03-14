@@ -40,9 +40,12 @@ interface GridPaginationResult {
 export function useGridPagination(): GridPaginationResult {
   const { engine, api } = useGridContext();
 
+  const getPaginationSnapshot = () => engine.store.getState().pagination;
+
   const paginationState = useSyncExternalStore(
     (cb) => engine.store.subscribe(cb),
-    () => engine.store.getState().pagination,
+    getPaginationSnapshot,
+    getPaginationSnapshot,
   );
 
   const { currentPage, pageSize, totalRows } = paginationState;

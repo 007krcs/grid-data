@@ -550,6 +550,9 @@ export interface ColumnDef<TData = any, TValue = any> {
    * @default undefined (no spanning)
    */
   rowSpan?: (params: CellCallbackParams<TData, TValue>) => number;
+
+  /** When true, cellRenderer string results are set via innerHTML. Default: false (uses textContent for XSS safety). */
+  dangerouslySetInnerHTML?: boolean;
 }
 
 // ── Supporting Types ──

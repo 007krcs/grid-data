@@ -20,8 +20,11 @@ export function useGridState<TData = any, TResult = any>(
 ): TResult {
   const { engine } = useGridContext<TData>();
 
+  const getSnapshot = () => selector(engine.store.getState() as GridState<TData>);
+
   return useSyncExternalStore(
     (onStoreChange) => engine.store.subscribe(onStoreChange),
-    () => selector(engine.store.getState() as GridState<TData>),
+    getSnapshot,
+    getSnapshot,
   );
 }

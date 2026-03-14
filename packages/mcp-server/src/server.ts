@@ -3,10 +3,16 @@ import { createGridTools } from './tools/grid-tools';
 import { createPdfTools } from './tools/pdf-tools';
 import { createAiTools } from './tools/ai-tools';
 
-export function createMCPServer(_config: MCPServerConfig = {}): MCPToolRegistry {
+export function createMCPServer(config: MCPServerConfig = {}): MCPToolRegistry {
   const gridTools = createGridTools();
   const pdfTools = createPdfTools();
   const aiTools = createAiTools();
+
+  // If a gridApi was provided via config, it can be used for future extensions.
+  // The grid tools maintain their own engine instance via context.
+  if (config.gridApi) {
+    // Reserved for external grid API injection
+  }
 
   const tools: ToolDefinition[] = [
     ...gridTools.definitions,

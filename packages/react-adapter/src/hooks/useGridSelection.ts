@@ -33,9 +33,12 @@ interface GridSelectionResult<TData = any> {
 export function useGridSelection<TData = any>(): GridSelectionResult<TData> {
   const { engine, api } = useGridContext<TData>();
 
+  const getSelectionSnapshot = () => engine.store.getState().selection.selectedRowIds;
+
   const selectedRowIds = useSyncExternalStore(
     (cb) => engine.store.subscribe(cb),
-    () => engine.store.getState().selection.selectedRowIds,
+    getSelectionSnapshot,
+    getSelectionSnapshot,
   );
 
   const selectedCount = selectedRowIds.size;

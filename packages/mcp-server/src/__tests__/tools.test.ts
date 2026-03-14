@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   createMCPServer,
   handleToolCall,
@@ -7,7 +7,7 @@ import {
   createPdfTools,
   createAiTools,
 } from '../index';
-import type { MCPToolRegistry, ToolDefinition } from '../types';
+import type { MCPToolRegistry } from '../types';
 
 describe('MCP Server', () => {
   describe('createMCPServer', () => {
@@ -89,7 +89,7 @@ describe('MCP Server', () => {
       registry = createMCPServer();
     });
 
-    it('should return success for a valid tool call', () => {
+    it('should return success for a valid grid_create call', () => {
       const result = handleToolCall(registry, 'grid_create', {
         columns: [{ field: 'name', headerName: 'Name' }],
         rowData: [{ name: 'Alice' }],
@@ -151,12 +151,12 @@ describe('MCP Server', () => {
     });
   });
 
-  describe('grid tool handlers', () => {
-    it('grid_create should return column and row counts', () => {
+  describe('grid tool handlers — real engine integration', () => {
+    it('grid_create should create a real grid engine', () => {
       const { handlers } = createGridTools();
       const result = handlers.grid_create!({
         columns: [{ field: 'a' }, { field: 'b' }, { field: 'c' }],
-        rowData: [{ a: 1 }, { a: 2 }],
+        rowData: [{ a: 1, b: 2, c: 3 }, { a: 4, b: 5, c: 6 }],
       });
       expect(result).toEqual({
         success: true,
@@ -164,217 +164,370 @@ describe('MCP Server', () => {
       });
     });
 
-    it('grid_sort should return the sort model', () => {
+    it('grid_sort should require grid_create first', () => {
       const { handlers } = createGridTools();
-      const sortModel = [{ colId: 'name', sort: 'asc' }];
-      const result = handlers.grid_sort!({ sortModel });
+      const result = handlers.grid_sort!({ sortModel: [{ colId: 'name', sort: 'asc' }] });
       expect(result).toEqual({
-        success: true,
-        data: { message: 'Sort applied', sortModel },
+        success: false,
+        error: 'No grid created. Call grid_create first.',
       });
     });
 
-    it('grid_filter should return the filter model', () => {
+    it('grid_sort should apply sorting to a real engine', () => {
       const { handlers } = createGridTools();
-      const filterModel = { name: { type: 'contains', filter: 'test' } };
+      handlers.grid_create!({
+        columns: [{ field: 'name' }],
+        rowData: [{ name: 'Charlie' }, { name: 'Alice' }, { name: 'Bob' }],
+      });
+
+      const result = handlers.grid_sort!({ sortModel: [{ colId: 'name', sort: 'asc' }] });
+      expect(result.success).toBe(true);
+      expect(result.data.message).toBe('Sort applied');
+      expect(result.data.displayedRows).toBe(3);
+    });
+
+    it('grid_filter should require grid_create first', () => {
+      const { handlers } = createGridTools();
+      const result = handlers.grid_filter!({ filterModel: {} });
+      expect(result).toEqual({
+        success: false,
+        error: 'No grid created. Call grid_create first.',
+      });
+    });
+
+    it('grid_filter should apply filter model to real engine', () => {
+      const { handlers } = createGridTools();
+      handlers.grid_create!({
+        columns: [{ field: 'name' }],
+        rowData: [{ name: 'Alice' }, { name: 'Bob' }, { name: 'Charlie' }],
+      });
+
+      const filterModel = { name: { filterType: 'text', type: 'contains', filter: 'li' } };
       const result = handlers.grid_filter!({ filterModel });
+      expect(result.success).toBe(true);
+      expect(result.data.message).toBe('Filter applied');
+      // After filtering for 'li', should match 'Alice' and 'Charlie'
+      expect(result.data.displayedRows).toBe(2);
+    });
+
+    it('grid_get_data should require grid_create first', () => {
+      const { handlers } = createGridTools();
+      const result = handlers.grid_get_data!({});
       expect(result).toEqual({
-        success: true,
-        data: { message: 'Filter applied', filterModel },
+        success: false,
+        error: 'No grid created. Call grid_create first.',
       });
     });
 
-    it('grid_export_csv should use default fileName if not provided', () => {
+    it('grid_get_data should return actual row data', () => {
+      const { handlers } = createGridTools();
+      handlers.grid_create!({
+        columns: [{ field: 'name' }, { field: 'age' }],
+        rowData: [{ name: 'Alice', age: 30 }, { name: 'Bob', age: 25 }],
+      });
+
+      const result = handlers.grid_get_data!({});
+      expect(result.success).toBe(true);
+      expect(result.data.total).toBe(2);
+      expect(result.data.rows).toHaveLength(2);
+      expect(result.data.rows[0]).toEqual({ name: 'Alice', age: 30 });
+      expect(result.data.rows[1]).toEqual({ name: 'Bob', age: 25 });
+    });
+
+    it('grid_get_data should respect pagination', () => {
+      const { handlers } = createGridTools();
+      handlers.grid_create!({
+        columns: [{ field: 'id' }],
+        rowData: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }],
+      });
+
+      const result = handlers.grid_get_data!({ page: 1, pageSize: 2 });
+      expect(result.success).toBe(true);
+      expect(result.data.total).toBe(5);
+      expect(result.data.rows).toHaveLength(2);
+      expect(result.data.rows[0]).toEqual({ id: 3 });
+      expect(result.data.rows[1]).toEqual({ id: 4 });
+      expect(result.data.page).toBe(1);
+      expect(result.data.pageSize).toBe(2);
+    });
+
+    it('grid_aggregate should require grid_create first', () => {
+      const { handlers } = createGridTools();
+      const result = handlers.grid_aggregate!({ columnId: 'price', function: 'sum' });
+      expect(result).toEqual({
+        success: false,
+        error: 'No grid created. Call grid_create first.',
+      });
+    });
+
+    it('grid_aggregate should compute sum on real data', () => {
+      const { handlers } = createGridTools();
+      handlers.grid_create!({
+        columns: [{ field: 'price' }],
+        rowData: [{ price: 10 }, { price: 20 }, { price: 30 }],
+      });
+
+      const result = handlers.grid_aggregate!({ columnId: 'price', function: 'sum' });
+      expect(result.success).toBe(true);
+      expect(result.data.result).toBe(60);
+      expect(result.data.count).toBe(3);
+    });
+
+    it('grid_aggregate should compute avg on real data', () => {
+      const { handlers } = createGridTools();
+      handlers.grid_create!({
+        columns: [{ field: 'score' }],
+        rowData: [{ score: 80 }, { score: 90 }, { score: 100 }],
+      });
+
+      const result = handlers.grid_aggregate!({ columnId: 'score', function: 'avg' });
+      expect(result.success).toBe(true);
+      expect(result.data.result).toBe(90);
+    });
+
+    it('grid_aggregate should compute min and max', () => {
+      const { handlers } = createGridTools();
+      handlers.grid_create!({
+        columns: [{ field: 'val' }],
+        rowData: [{ val: 5 }, { val: 1 }, { val: 9 }, { val: 3 }],
+      });
+
+      const minResult = handlers.grid_aggregate!({ columnId: 'val', function: 'min' });
+      expect(minResult.data.result).toBe(1);
+
+      const maxResult = handlers.grid_aggregate!({ columnId: 'val', function: 'max' });
+      expect(maxResult.data.result).toBe(9);
+    });
+
+    it('grid_aggregate should compute count', () => {
+      const { handlers } = createGridTools();
+      handlers.grid_create!({
+        columns: [{ field: 'val' }],
+        rowData: [{ val: 5 }, { val: 'text' }, { val: 9 }, { val: null }],
+      });
+
+      const result = handlers.grid_aggregate!({ columnId: 'val', function: 'count' });
+      expect(result.data.result).toBe(2); // only numeric values
+      expect(result.data.count).toBe(2);
+    });
+
+    it('grid_export_csv should require grid_create first', () => {
       const { handlers } = createGridTools();
       const result = handlers.grid_export_csv!({});
       expect(result).toEqual({
-        success: true,
-        data: { message: 'CSV export initiated', fileName: 'export.csv' },
+        success: false,
+        error: 'No grid created. Call grid_create first.',
       });
+    });
+
+    it('grid_export_csv should produce real CSV output', () => {
+      const { handlers } = createGridTools();
+      handlers.grid_create!({
+        columns: [{ field: 'name', headerName: 'Name' }, { field: 'age', headerName: 'Age' }],
+        rowData: [{ name: 'Alice', age: 30 }, { name: 'Bob', age: 25 }],
+      });
+
+      const result = handlers.grid_export_csv!({});
+      expect(result.success).toBe(true);
+      expect(result.data.csv).toContain('Name,Age');
+      expect(result.data.csv).toContain('Alice,30');
+      expect(result.data.csv).toContain('Bob,25');
+      expect(result.data.fileName).toBe('export.csv');
     });
 
     it('grid_export_csv should use provided fileName', () => {
       const { handlers } = createGridTools();
+      handlers.grid_create!({
+        columns: [{ field: 'x' }],
+        rowData: [{ x: 1 }],
+      });
+
       const result = handlers.grid_export_csv!({ fileName: 'my-data.csv' });
-      expect(result).toEqual({
-        success: true,
-        data: { message: 'CSV export initiated', fileName: 'my-data.csv' },
-      });
+      expect(result.data.fileName).toBe('my-data.csv');
     });
 
-    it('grid_get_data should return pagination defaults', () => {
+    it('should allow creating a new grid after destroying old one', () => {
       const { handlers } = createGridTools();
-      const result = handlers.grid_get_data!({});
+      handlers.grid_create!({
+        columns: [{ field: 'a' }],
+        rowData: [{ a: 1 }],
+      });
+
+      // Create a second grid — should replace the first
+      const result = handlers.grid_create!({
+        columns: [{ field: 'b' }, { field: 'c' }],
+        rowData: [{ b: 10, c: 20 }],
+      });
       expect(result).toEqual({
         success: true,
-        data: { rows: [], total: 0, page: 0, pageSize: 100 },
+        data: { message: 'Grid created', columns: 2, rows: 1 },
       });
+
+      // Verify data comes from second grid
+      const getData = handlers.grid_get_data!({});
+      expect(getData.data.rows[0]).toEqual({ b: 10, c: 20 });
     });
 
-    it('grid_get_data should respect provided pagination', () => {
+    it('end-to-end: create, filter, sort, aggregate, export', () => {
       const { handlers } = createGridTools();
-      const result = handlers.grid_get_data!({ page: 2, pageSize: 25 });
-      expect(result).toEqual({
-        success: true,
-        data: { rows: [], total: 0, page: 2, pageSize: 25 },
-      });
-    });
 
-    it('grid_aggregate should return aggregation result', () => {
-      const { handlers } = createGridTools();
-      const result = handlers.grid_aggregate!({ columnId: 'price', function: 'sum' });
-      expect(result).toEqual({
-        success: true,
-        data: { columnId: 'price', function: 'sum', result: 0 },
+      // Create
+      handlers.grid_create!({
+        columns: [
+          { field: 'name', headerName: 'Name' },
+          { field: 'dept', headerName: 'Department' },
+          { field: 'salary', headerName: 'Salary' },
+        ],
+        rowData: [
+          { name: 'Alice', dept: 'Eng', salary: 100000 },
+          { name: 'Bob', dept: 'Sales', salary: 80000 },
+          { name: 'Charlie', dept: 'Eng', salary: 120000 },
+          { name: 'Diana', dept: 'Sales', salary: 90000 },
+        ],
       });
+
+      // Get all data
+      const allData = handlers.grid_get_data!({});
+      expect(allData.data.total).toBe(4);
+
+      // Aggregate salary
+      const sumResult = handlers.grid_aggregate!({ columnId: 'salary', function: 'sum' });
+      expect(sumResult.data.result).toBe(390000);
+
+      const avgResult = handlers.grid_aggregate!({ columnId: 'salary', function: 'avg' });
+      expect(avgResult.data.result).toBe(97500);
+
+      // Export CSV
+      const csvResult = handlers.grid_export_csv!({});
+      expect(csvResult.data.csv).toContain('Name,Department,Salary');
+      expect(csvResult.data.rows).toBe(4);
     });
   });
 
-  describe('PDF tool handlers', () => {
-    it('pdf_load should return source', () => {
+  describe('PDF tool handlers — informative stubs', () => {
+    it('pdf_load should return error with informative message', () => {
       const { handlers } = createPdfTools();
       const result = handlers.pdf_load!({ source: '/path/to/file.pdf' });
-      expect(result).toEqual({
-        success: true,
-        data: { message: 'PDF loaded', source: '/path/to/file.pdf' },
-      });
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('No PDF parser configured');
+      expect(result.data.source).toBe('/path/to/file.pdf');
+      expect(result.data.hint).toBeDefined();
     });
 
-    it('pdf_extract_text should return default values', () => {
+    it('pdf_extract_text should return error with informative message', () => {
       const { handlers } = createPdfTools();
       const result = handlers.pdf_extract_text!({});
-      expect(result).toEqual({
-        success: true,
-        data: { text: '', pageIndex: null, allPages: false },
-      });
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('No PDF parser configured');
+      expect(result.data.hint).toBeDefined();
     });
 
-    it('pdf_extract_text should use provided pageIndex', () => {
+    it('pdf_extract_text should pass through provided params', () => {
       const { handlers } = createPdfTools();
       const result = handlers.pdf_extract_text!({ pageIndex: 3, allPages: true });
-      expect(result).toEqual({
-        success: true,
-        data: { text: '', pageIndex: 3, allPages: true },
-      });
+      expect(result.data.pageIndex).toBe(3);
+      expect(result.data.allPages).toBe(true);
     });
 
-    it('pdf_search should return query and empty matches', () => {
+    it('pdf_search should return error with query echoed', () => {
       const { handlers } = createPdfTools();
       const result = handlers.pdf_search!({ query: 'hello' });
-      expect(result).toEqual({
-        success: true,
-        data: { query: 'hello', matches: [], totalMatches: 0 },
-      });
+      expect(result.success).toBe(false);
+      expect(result.data.query).toBe('hello');
     });
 
-    it('pdf_annotate should return annotation details', () => {
+    it('pdf_annotate should return error with params echoed', () => {
       const { handlers } = createPdfTools();
       const result = handlers.pdf_annotate!({ pageIndex: 0, type: 'highlight', rect: [10, 20, 100, 40] });
-      expect(result).toEqual({
-        success: true,
-        data: { message: 'Annotation added', pageIndex: 0, type: 'highlight', rect: [10, 20, 100, 40] },
-      });
+      expect(result.success).toBe(false);
+      expect(result.data.pageIndex).toBe(0);
+      expect(result.data.type).toBe('highlight');
+      expect(result.data.rect).toEqual([10, 20, 100, 40]);
     });
 
-    it('pdf_redact should return redaction details', () => {
+    it('pdf_redact should return error with params echoed', () => {
       const { handlers } = createPdfTools();
       const result = handlers.pdf_redact!({ pageIndex: 1, rect: [50, 60, 200, 80] });
-      expect(result).toEqual({
-        success: true,
-        data: { message: 'Redaction applied', pageIndex: 1, rect: [50, 60, 200, 80] },
-      });
+      expect(result.success).toBe(false);
+      expect(result.data.pageIndex).toBe(1);
+      expect(result.data.rect).toEqual([50, 60, 200, 80]);
     });
 
-    it('pdf_save should use default fileName if not provided', () => {
+    it('pdf_save should return error with fileName', () => {
       const { handlers } = createPdfTools();
       const result = handlers.pdf_save!({});
-      expect(result).toEqual({
-        success: true,
-        data: { message: 'PDF saved', fileName: 'output.pdf' },
-      });
+      expect(result.success).toBe(false);
+      expect(result.data.fileName).toBe('output.pdf');
     });
 
-    it('pdf_get_metadata should return empty metadata', () => {
+    it('pdf_get_metadata should return error with hint', () => {
       const { handlers } = createPdfTools();
       const result = handlers.pdf_get_metadata!({});
-      expect(result).toEqual({
-        success: true,
-        data: { title: '', author: '', pages: 0, createdAt: null, modifiedAt: null },
-      });
+      expect(result.success).toBe(false);
+      expect(result.data.hint).toBeDefined();
     });
   });
 
-  describe('AI tool handlers', () => {
-    it('pdf_detect_pii should return default detection settings', () => {
+  describe('AI tool handlers — informative stubs', () => {
+    it('pdf_detect_pii should return error with defaults', () => {
       const { handlers } = createAiTools();
       const result = handlers.pdf_detect_pii!({});
-      expect(result).toEqual({
-        success: true,
-        data: { detections: [], pageIndex: null, types: [], threshold: 0.8 },
-      });
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('AI-powered PDF analysis');
+      expect(result.data.pageIndex).toBe(null);
+      expect(result.data.types).toEqual([]);
+      expect(result.data.threshold).toBe(0.8);
+      expect(result.data.hint).toBeDefined();
     });
 
     it('pdf_detect_pii should use provided settings', () => {
       const { handlers } = createAiTools();
       const result = handlers.pdf_detect_pii!({ pageIndex: 2, types: ['email', 'ssn'], threshold: 0.9 });
-      expect(result).toEqual({
-        success: true,
-        data: { detections: [], pageIndex: 2, types: ['email', 'ssn'], threshold: 0.9 },
-      });
+      expect(result.data.pageIndex).toBe(2);
+      expect(result.data.types).toEqual(['email', 'ssn']);
+      expect(result.data.threshold).toBe(0.9);
     });
 
-    it('pdf_classify should return default topN', () => {
+    it('pdf_classify should return error with defaults', () => {
       const { handlers } = createAiTools();
       const result = handlers.pdf_classify!({});
-      expect(result).toEqual({
-        success: true,
-        data: { classifications: [], topN: 3 },
-      });
+      expect(result.success).toBe(false);
+      expect(result.data.topN).toBe(3);
+      expect(result.data.hint).toBeDefined();
     });
 
     it('pdf_classify should use provided topN', () => {
       const { handlers } = createAiTools();
       const result = handlers.pdf_classify!({ topN: 5 });
-      expect(result).toEqual({
-        success: true,
-        data: { classifications: [], topN: 5 },
-      });
+      expect(result.data.topN).toBe(5);
     });
 
-    it('pdf_summarize should return default maxLength', () => {
+    it('pdf_summarize should return error with defaults', () => {
       const { handlers } = createAiTools();
       const result = handlers.pdf_summarize!({});
-      expect(result).toEqual({
-        success: true,
-        data: { summary: '', maxLength: 500 },
-      });
+      expect(result.success).toBe(false);
+      expect(result.data.maxLength).toBe(500);
+      expect(result.data.hint).toBeDefined();
     });
 
     it('pdf_summarize should use provided maxLength', () => {
       const { handlers } = createAiTools();
       const result = handlers.pdf_summarize!({ maxLength: 1000 });
-      expect(result).toEqual({
-        success: true,
-        data: { summary: '', maxLength: 1000 },
-      });
+      expect(result.data.maxLength).toBe(1000);
     });
 
-    it('pdf_extract_fields should return empty extracted object', () => {
+    it('pdf_extract_fields should return error with defaults', () => {
       const { handlers } = createAiTools();
       const result = handlers.pdf_extract_fields!({});
-      expect(result).toEqual({
-        success: true,
-        data: { fields: [], extracted: {} },
-      });
+      expect(result.success).toBe(false);
+      expect(result.data.fields).toEqual([]);
+      expect(result.data.hint).toBeDefined();
     });
 
     it('pdf_extract_fields should return provided fields', () => {
       const { handlers } = createAiTools();
       const result = handlers.pdf_extract_fields!({ fields: ['name', 'date', 'amount'] });
-      expect(result).toEqual({
-        success: true,
-        data: { fields: ['name', 'date', 'amount'], extracted: {} },
-      });
+      expect(result.data.fields).toEqual(['name', 'date', 'amount']);
     });
   });
 

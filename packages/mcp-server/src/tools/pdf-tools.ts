@@ -1,6 +1,10 @@
 import type { ToolDefinition, ToolHandler } from '../types';
 import { pdfSchemas } from '../schemas';
 
+const PDF_NOT_CONFIGURED = '[GridStorm PDF] No PDF parser configured. ' +
+  'Install pdfjs-dist and pass a PdfParser to the PDF engine options. ' +
+  'See documentation for setup instructions.';
+
 export function createPdfTools(): { definitions: ToolDefinition[]; handlers: Record<string, ToolHandler> } {
   const definitions: ToolDefinition[] = [
     { name: 'pdf_load', description: 'Load a PDF document from a file path or URL', inputSchema: pdfSchemas.pdf_load },
@@ -14,25 +18,83 @@ export function createPdfTools(): { definitions: ToolDefinition[]; handlers: Rec
 
   const handlers: Record<string, ToolHandler> = {
     pdf_load: (input) => {
-      return { success: true, data: { message: 'PDF loaded', source: input.source } };
+      return {
+        success: false,
+        error: PDF_NOT_CONFIGURED,
+        data: {
+          source: input.source,
+          hint: 'PDF loading requires pdf.js integration (Phase 2). Configure a PdfParser implementation to enable this feature.',
+        },
+      };
     },
+
     pdf_extract_text: (input) => {
-      return { success: true, data: { text: '', pageIndex: input.pageIndex ?? null, allPages: input.allPages ?? false } };
+      return {
+        success: false,
+        error: PDF_NOT_CONFIGURED,
+        data: {
+          pageIndex: input.pageIndex ?? null,
+          allPages: input.allPages ?? false,
+          hint: 'Text extraction requires a loaded PDF document with pdf.js parser configured.',
+        },
+      };
     },
+
     pdf_search: (input) => {
-      return { success: true, data: { query: input.query, matches: [], totalMatches: 0 } };
+      return {
+        success: false,
+        error: PDF_NOT_CONFIGURED,
+        data: {
+          query: input.query,
+          hint: 'PDF search requires a loaded PDF document with pdf.js parser configured.',
+        },
+      };
     },
+
     pdf_annotate: (input) => {
-      return { success: true, data: { message: 'Annotation added', pageIndex: input.pageIndex, type: input.type, rect: input.rect } };
+      return {
+        success: false,
+        error: PDF_NOT_CONFIGURED,
+        data: {
+          pageIndex: input.pageIndex,
+          type: input.type,
+          rect: input.rect,
+          hint: 'Annotation support requires a loaded PDF document with pdf.js parser configured.',
+        },
+      };
     },
+
     pdf_redact: (input) => {
-      return { success: true, data: { message: 'Redaction applied', pageIndex: input.pageIndex, rect: input.rect } };
+      return {
+        success: false,
+        error: PDF_NOT_CONFIGURED,
+        data: {
+          pageIndex: input.pageIndex,
+          rect: input.rect,
+          hint: 'Redaction support requires a loaded PDF document with pdf.js parser configured.',
+        },
+      };
     },
+
     pdf_save: (input) => {
-      return { success: true, data: { message: 'PDF saved', fileName: input.fileName || 'output.pdf' } };
+      return {
+        success: false,
+        error: PDF_NOT_CONFIGURED,
+        data: {
+          fileName: input.fileName || 'output.pdf',
+          hint: 'PDF save requires a loaded PDF document with pdf.js parser configured.',
+        },
+      };
     },
+
     pdf_get_metadata: () => {
-      return { success: true, data: { title: '', author: '', pages: 0, createdAt: null, modifiedAt: null } };
+      return {
+        success: false,
+        error: PDF_NOT_CONFIGURED,
+        data: {
+          hint: 'Metadata extraction requires a loaded PDF document with pdf.js parser configured.',
+        },
+      };
     },
   };
 

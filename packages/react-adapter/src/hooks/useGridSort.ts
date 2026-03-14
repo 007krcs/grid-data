@@ -29,9 +29,12 @@ interface GridSortResult {
 export function useGridSort(): GridSortResult {
   const { engine, api } = useGridContext();
 
+  const getSortSnapshot = () => engine.store.getState().sortModel;
+
   const sortModel = useSyncExternalStore(
     (cb) => engine.store.subscribe(cb),
-    () => engine.store.getState().sortModel,
+    getSortSnapshot,
+    getSortSnapshot,
   );
 
   const isSorted = sortModel.length > 0;

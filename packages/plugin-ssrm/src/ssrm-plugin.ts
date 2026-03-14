@@ -197,6 +197,17 @@ export function SSRMPlugin(options: SSRMPluginOptions): GridPlugin {
         },
       );
 
+      // ── Automatically fetch blocks when viewport scrolls ──
+      const unsubViewport = ctx.eventBus.on('viewport:changed', (payload) => {
+        if (!totalRowCount) return;
+        const startRow = payload.firstRow ?? 0;
+        const endRow = payload.lastRow ?? startRow + blockSize;
+        const missing = cache.getMissingBlocks(startRow, Math.min(endRow, totalRowCount));
+        for (const blockIdx of missing) {
+          fetchBlock(blockIdx);
+        }
+      });
+
       // When sort/filter changes, clear cache and re-fetch
       const unsubSort = ctx.eventBus.on('column:sort:changed', () => {
         cache.clear();
@@ -227,6 +238,7 @@ export function SSRMPlugin(options: SSRMPluginOptions): GridPlugin {
       return () => {
         unsubLicenseWatermark?.();
         unregViewport();
+        unsubViewport();
         unsubSort();
         unsubFilter();
         unregRefresh();

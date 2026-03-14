@@ -15,4 +15,5 @@ export interface PivotState {
   pivotMode: boolean;
   pivotColumns: string[];
   generatedColumns: ColumnDef[];
+  originalColumns?: any[];
 }

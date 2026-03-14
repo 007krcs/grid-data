@@ -12,6 +12,10 @@ import type {
 import { TextCellEditor } from './editors/text-editor';
 import { NumberCellEditor } from './editors/number-editor';
 import { SelectCellEditor } from './editors/select-editor';
+import { EditHistory } from './edit-history';
+// Validators available for future use
+import type { ValidationRule as _ValidationRule } from './validators';
+import { runValidation as _runValidation } from './validators';
 
 export interface EditingPluginOptions {
   /** Default editor type when column doesn't specify one. Default: 'text'. */
@@ -26,7 +30,7 @@ export function EditingPlugin(options: EditingPluginOptions = {}): GridPlugin {
   const {
     defaultEditor = 'text',
     stopEditingWhenCellLoseFocus: _stopOnBlur = true,
-    undoRedo: _undoRedo = false,
+    undoRedo: undoRedoEnabled = false,
   } = options;
 
   return {
@@ -35,6 +39,9 @@ export function EditingPlugin(options: EditingPluginOptions = {}): GridPlugin {
     version: '0.1.0',
 
     install(ctx: PluginContext) {
+      // ── Edit History (undo/redo) ──
+      const history = undoRedoEnabled ? new EditHistory() : null;
+
       // ── Register built-in editors ──
       ctx.registerCellRenderer('__text_editor', TextCellEditor.create as any);
       ctx.registerCellEditor('text', TextCellEditor);
@@ -68,9 +75,19 @@ export function EditingPlugin(options: EditingPluginOptions = {}): GridPlugin {
           if (!editable) return;
 
           // Get current value
-          const field = col.field ?? col.colId;
-          const value =
-            node.data != null ? (node.data as any)[field] : undefined;
+          let value: any;
+          const valueGetter = col.originalDef.valueGetter;
+          if (valueGetter && node.data != null) {
+            try {
+              value = valueGetter({ data: node.data, node, colDef: col.originalDef, colId: col.colId });
+            } catch {
+              const field = col.field ?? col.colId;
+              value = node.data != null ? (node.data as any)[field] : undefined;
+            }
+          } else {
+            const field = col.field ?? col.colId;
+            value = node.data != null ? (node.data as any)[field] : undefined;
+          }
 
           ctx.store.setState((prev) => ({
             ...prev,
@@ -139,6 +156,70 @@ export function EditingPlugin(options: EditingPluginOptions = {}): GridPlugin {
         },
       );
 
+      // ── Register editing:undo command ──
+      const unregisterUndo = ctx.commandBus.registerHandler('editing:undo', () => {
+        if (!history) return;
+        const record = history.undo();
+        if (!record) return;
+
+        const state = ctx.store.getState();
+        const node = state.rowNodes.get(record.rowId);
+        if (!node?.data) return;
+
+        const col = state.columns.find((c: ColumnState) => c.colId === record.colId);
+        const field = col?.field ?? record.colId;
+        (node.data as any)[field] = record.oldValue;
+        node.version++;
+
+        ctx.eventBus.emit('cell:valueChanged', {
+          node,
+          colId: record.colId,
+          oldValue: record.newValue,
+          newValue: record.oldValue,
+        });
+        ctx.commandBus.dispatch('rows:reprocess', {});
+      });
+
+      // ── Register editing:redo command ──
+      const unregisterRedo = ctx.commandBus.registerHandler('editing:redo', () => {
+        if (!history) return;
+        const record = history.redo();
+        if (!record) return;
+
+        const state = ctx.store.getState();
+        const node = state.rowNodes.get(record.rowId);
+        if (!node?.data) return;
+
+        const col = state.columns.find((c: ColumnState) => c.colId === record.colId);
+        const field = col?.field ?? record.colId;
+        (node.data as any)[field] = record.newValue;
+        node.version++;
+
+        ctx.eventBus.emit('cell:valueChanged', {
+          node,
+          colId: record.colId,
+          oldValue: record.oldValue,
+          newValue: record.newValue,
+        });
+        ctx.commandBus.dispatch('rows:reprocess', {});
+      });
+
+      // ── Track edits for undo/redo ──
+      let unsubEditingStopped: (() => void) | undefined;
+      if (history) {
+        unsubEditingStopped = ctx.eventBus.on('cell:editingStopped', (event) => {
+          if (!event.cancelled && event.oldValue !== event.newValue) {
+            history.push({
+              rowId: event.node.id,
+              colId: event.colId,
+              oldValue: event.oldValue,
+              newValue: event.newValue,
+              timestamp: Date.now(),
+            });
+          }
+        });
+      }
+
       // ── Handle double-click to start editing ──
       const unsubDblClick = ctx.eventBus.on(
         'cell:doubleClicked',
@@ -155,7 +236,10 @@ export function EditingPlugin(options: EditingPluginOptions = {}): GridPlugin {
         unregisterStop();
         unregisterSetValue();
         unregisterGetEditor();
+        unregisterUndo();
+        unregisterRedo();
         unsubDblClick();
+        unsubEditingStopped?.();
       };
     },
   };

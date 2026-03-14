@@ -1,0 +1,76 @@
+/* ─── Print Styles ─── */
+@media print {
+  .gs-root {
+    overflow: visible !important;
+    height: auto !important;
+    border: 1px solid #000;
+  }
+
+  .gs-body-viewport {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  .gs-body {
+    position: static !important;
+    height: auto !important;
+  }
+
+  .gs-row {
+    position: static !important;
+    display: flex !important;
+    border-bottom: 1px solid #ccc;
+    page-break-inside: avoid;
+  }
+
+  .gs-cell {
+    color: #000 !important;
+    background: #fff !important;
+  }
+
+  .gs-header-cell {
+    color: #000 !important;
+    background: #f0f0f0 !important;
+    font-weight: bold;
+  }
+
+  /* Hide non-printable UI elements */
+  .gs-floating-filter,
+  .gs-pagination,
+  .gs-sidebar,
+  .gs-sidebar-toggle,
+  .gs-scrollbar,
+  .gs-resize-handle,
+  .gs-context-menu,
+  .gs-row-drag-ghost,
+  .gs-row-drop-indicator {
+    display: none !important;
+  }
+
+  /* Remove scrollbar styling */
+  .gs-body-viewport::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Remove sticky positioning */
+  .gs-header {
+    position: static !important;
+  }
+
+  .gs-pinned-left,
+  .gs-pinned-right {
+    position: static !important;
+  }
+
+  /* Force light colors for printing */
+  .gs-root {
+    --gs-color-background: #ffffff;
+    --gs-color-foreground: #000000;
+    --gs-color-border: #cccccc;
+    --gs-color-header-background: #f0f0f0;
+    --gs-color-header-foreground: #000000;
+    --gs-color-row-hover: transparent;
+    --gs-color-row-stripe: #f8f8f8;
+    --gs-color-selected: transparent;
+  }
+}

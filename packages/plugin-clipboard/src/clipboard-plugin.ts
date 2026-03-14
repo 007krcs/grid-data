@@ -119,7 +119,13 @@ export function ClipboardPlugin(options: ClipboardPluginOptions = {}): GridPlugi
       const unsubReady = ctx.eventBus.on('grid:ready', () => {
         requestAnimationFrame(() => {
           rootEl = document.querySelector('.gs-root');
-          rootEl?.addEventListener('keydown', onKeyDown);
+          if (rootEl) {
+            // Ensure root is focusable for keyboard events
+            if (!rootEl.getAttribute('tabindex')) {
+              rootEl.setAttribute('tabindex', '0');
+            }
+            rootEl.addEventListener('keydown', onKeyDown);
+          }
         });
       });
 
@@ -138,6 +144,13 @@ export function ClipboardPlugin(options: ClipboardPluginOptions = {}): GridPlugi
 
         for (const node of selectedNodes) {
           for (const col of visibleCols) {
+            // Check if column is explicitly non-editable via originalDef
+            const rawEditable = col.originalDef.editable;
+            const editable = typeof rawEditable === 'function'
+              ? rawEditable({ data: node.data, value: undefined, node, colDef: col.originalDef, colId: col.colId, rowIndex: node.displayIndex })
+              : rawEditable;
+            if (editable === false) continue;
+
             const field = col.field ?? col.colId;
             if (node.data && field in (node.data as any)) {
               (node.data as any)[field] = null;
@@ -173,6 +186,13 @@ export function ClipboardPlugin(options: ClipboardPluginOptions = {}): GridPlugi
             const col = visibleCols[startColIdx + colOffset];
             if (!col) continue;
 
+            // Check if column is explicitly non-editable via originalDef
+            const rawEditable = col.originalDef.editable;
+            const editable = typeof rawEditable === 'function'
+              ? rawEditable({ data: node.data, value: undefined, node, colDef: col.originalDef, colId: col.colId, rowIndex: rowIdx })
+              : rawEditable;
+            if (editable === false) continue;
+
             const field = col.field ?? col.colId;
             let value: any = cells[colOffset];
 
@@ -180,7 +200,35 @@ export function ClipboardPlugin(options: ClipboardPluginOptions = {}): GridPlugi
               value = processCellFromClipboard({ value, column: col });
             }
 
-            (node.data as any)[field] = value;
+            // Apply valueParser if defined
+            if (col.originalDef.valueParser) {
+              try {
+                value = col.originalDef.valueParser({
+                  newValue: value,
+                  oldValue: (node.data as any)[field],
+                  data: node.data,
+                  node,
+                  colDef: col.originalDef,
+                });
+              } catch { /* use raw value */ }
+            }
+
+            // Apply valueSetter if defined
+            if (col.originalDef.valueSetter) {
+              try {
+                col.originalDef.valueSetter({
+                  newValue: value,
+                  oldValue: (node.data as any)[field],
+                  data: node.data,
+                  node,
+                  colDef: col.originalDef,
+                });
+              } catch {
+                (node.data as any)[field] = value;
+              }
+            } else {
+              (node.data as any)[field] = value;
+            }
           }
           node.version++;
         }

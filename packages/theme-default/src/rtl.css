@@ -1,0 +1,82 @@
+/* ─── RTL Support ─── */
+/* Applied when dir="rtl" is set on the grid container or html element */
+
+[dir="rtl"] .gs-root,
+.gs-root[dir="rtl"] {
+  direction: rtl;
+}
+
+[dir="rtl"] .gs-header-cell,
+.gs-root[dir="rtl"] .gs-header-cell {
+  text-align: right;
+}
+
+[dir="rtl"] .gs-cell,
+.gs-root[dir="rtl"] .gs-cell {
+  text-align: right;
+}
+
+[dir="rtl"] .gs-sort-icon,
+.gs-root[dir="rtl"] .gs-sort-icon {
+  margin-left: 0;
+  margin-right: 4px;
+}
+
+[dir="rtl"] .gs-group-cell,
+.gs-root[dir="rtl"] .gs-group-cell {
+  padding-left: 0;
+}
+
+[dir="rtl"] .gs-group-chevron,
+.gs-root[dir="rtl"] .gs-group-chevron {
+  margin-left: 4px;
+  margin-right: 0;
+  transform: rotate(180deg);
+}
+
+[dir="rtl"] .gs-group-chevron.gs-expanded,
+.gs-root[dir="rtl"] .gs-group-chevron.gs-expanded {
+  transform: rotate(90deg);
+}
+
+[dir="rtl"] .gs-pinned-left,
+.gs-root[dir="rtl"] .gs-pinned-left {
+  right: 0;
+  left: auto;
+  border-left: none;
+  border-right: var(--gs-border-width, 1px) solid var(--gs-color-border);
+}
+
+[dir="rtl"] .gs-pinned-right,
+.gs-root[dir="rtl"] .gs-pinned-right {
+  left: 0;
+  right: auto;
+  border-right: none;
+  border-left: var(--gs-border-width, 1px) solid var(--gs-color-border);
+}
+
+[dir="rtl"] .gs-checkbox-cell,
+.gs-root[dir="rtl"] .gs-checkbox-cell {
+  padding-left: 0;
+  padding-right: var(--gs-spacing-cell-horizontal, 12px);
+}
+
+[dir="rtl"] .gs-resize-handle,
+.gs-root[dir="rtl"] .gs-resize-handle {
+  right: auto;
+  left: 0;
+  cursor: col-resize;
+}
+
+[dir="rtl"] .gs-sidebar,
+.gs-root[dir="rtl"] .gs-sidebar {
+  right: auto;
+  left: 0;
+  border-right: none;
+  border-left: var(--gs-border-width, 1px) solid var(--gs-color-border);
+}
+
+[dir="rtl"] .gs-pagination,
+.gs-root[dir="rtl"] .gs-pagination {
+  direction: rtl;
+}

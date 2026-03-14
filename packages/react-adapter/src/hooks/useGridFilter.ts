@@ -31,14 +31,19 @@ interface GridFilterResult {
 export function useGridFilter(): GridFilterResult {
   const { engine, api } = useGridContext();
 
+  const getFilterSnapshot = () => engine.store.getState().filterModel;
+  const getQuickFilterSnapshot = () => engine.store.getState().quickFilterText;
+
   const filterModel = useSyncExternalStore(
     (cb) => engine.store.subscribe(cb),
-    () => engine.store.getState().filterModel,
+    getFilterSnapshot,
+    getFilterSnapshot,
   );
 
   const quickFilterText = useSyncExternalStore(
     (cb) => engine.store.subscribe(cb),
-    () => engine.store.getState().quickFilterText,
+    getQuickFilterSnapshot,
+    getQuickFilterSnapshot,
   );
 
   const isFiltered =

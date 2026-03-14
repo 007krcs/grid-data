@@ -33,9 +33,12 @@ interface GridColumnResult {
 export function useGridColumn(): GridColumnResult {
   const { engine, api } = useGridContext();
 
+  const getColumnsSnapshot = () => engine.store.getState().columns;
+
   const allColumns = useSyncExternalStore(
     (cb) => engine.store.subscribe(cb),
-    () => engine.store.getState().columns,
+    getColumnsSnapshot,
+    getColumnsSnapshot,
   );
 
   const visibleColumns = allColumns.filter((c) => !c.hide);

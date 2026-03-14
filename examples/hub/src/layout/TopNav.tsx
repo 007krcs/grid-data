@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Icon } from '../icons/Icon';
 import { ThemeToggle } from '../theme/ThemeToggle';
 import { navigate } from '../App';
@@ -18,6 +19,8 @@ function isActive(route: string, path: string): boolean {
 }
 
 export function TopNav({ route }: TopNavProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <nav className="top-nav">
       <div className="top-nav-left">
@@ -29,13 +32,20 @@ export function TopNav({ route }: TopNavProps) {
           <div className="top-nav-logo">GS</div>
           <span className="top-nav-name">GridStorm</span>
         </a>
-        <div className="top-nav-links">
+        <button
+          className="mobile-menu-toggle"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Toggle navigation menu"
+        >
+          <Icon name={mobileMenuOpen ? 'x' : 'menu'} size={24} />
+        </button>
+        <div className={`top-nav-links${mobileMenuOpen ? ' open' : ''}`}>
           {navLinks.map(link => (
             <a
               key={link.path}
               href={`#${link.path}`}
               className={`top-nav-link ${isActive(route, link.path) ? 'active' : ''}`}
-              onClick={(e) => { e.preventDefault(); navigate(link.path); }}
+              onClick={(e) => { e.preventDefault(); navigate(link.path); setMobileMenuOpen(false); }}
             >
               {link.label}
             </a>

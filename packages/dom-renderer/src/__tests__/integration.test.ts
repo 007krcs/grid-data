@@ -315,6 +315,7 @@ describe('Integration: Core + Plugins + DomRenderer', () => {
           field: 'name' as const,
           headerName: 'Name',
           cellRenderer: ({ value }: { value: any }) => '<b>' + value + '</b>',
+          dangerouslySetInnerHTML: true,
         },
         { colId: 'age', field: 'age' as const, headerName: 'Age' },
       ],

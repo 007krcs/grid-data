@@ -476,7 +476,11 @@ export class DomRenderer {
         sortIndex: col.sortIndex,
       });
       if (typeof result === 'string') {
-        cell.innerHTML = result;
+        if (col.originalDef.dangerouslySetInnerHTML) {
+          cell.innerHTML = result;
+        } else {
+          cell.textContent = result;
+        }
       } else {
         cell.appendChild(result);
       }
@@ -1096,8 +1100,6 @@ export class DomRenderer {
     const state = this.engine.store.getState();
     const { columns: visibleCols, colResult } = this.getVisibleColumnsForRender(scrollLeft);
     this.lastColumnResult = colResult;
-    const rowHeight = (this.engine.api.getGridOption('rowHeight') as number) ?? 40;
-
     // Determine which row IDs should be rendered
     const newRowIds = new Set<string>();
     for (let i = result.startIndex; i < result.endIndex; i++) {
@@ -1126,7 +1128,7 @@ export class DomRenderer {
 
       if (existing) {
         // Update position if needed
-        const expectedTop = i * rowHeight;
+        const expectedTop = node.rowTop;
         if (existing.element.style.top !== `${expectedTop}px`) {
           existing.element.style.top = `${expectedTop}px`;
         }
@@ -1162,8 +1164,8 @@ export class DomRenderer {
       } else {
         // Create new row
         const rowEl = this.acquireRow();
-        const top = i * rowHeight;
-        this.setupRow(rowEl, node, visibleCols, i, top, rowHeight);
+        const top = node.rowTop;
+        this.setupRow(rowEl, node, visibleCols, i, top, node.rowHeight);
         this.bodyContainer.appendChild(rowEl);
         this.renderedRows.set(rowId, {
           element: rowEl,
@@ -1377,7 +1379,11 @@ export class DomRenderer {
           rowIndex,
         });
         if (typeof result === 'string') {
-          cell.innerHTML = result;
+          if (col.originalDef.dangerouslySetInnerHTML) {
+            cell.innerHTML = result;
+          } else {
+            cell.textContent = result;
+          }
         } else {
           cell.appendChild(result);
         }

@@ -148,6 +148,75 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
       eventBus.emit('rowData:changed', { rowData: data });
     },
 
+    addRows(data: TData[], index?: number) {
+      if (!Array.isArray(data) || data.length === 0) return;
+      const newNodes = createRowNodes(data, config.getRowId, rowHeight);
+
+      store.batch(() => {
+        store.setState((prev) => {
+          const updatedMap = new Map(prev.rowNodes);
+          for (const node of newNodes) {
+            updatedMap.set(node.id, node);
+          }
+          const newIds = newNodes.map((n) => n.id);
+          const updatedIds = [...prev.displayedRowIds];
+          const insertAt = index != null ? Math.min(index, updatedIds.length) : updatedIds.length;
+          updatedIds.splice(insertAt, 0, ...newIds);
+          return { ...prev, rowNodes: updatedMap, displayedRowIds: updatedIds };
+        });
+        reprocessRows();
+      });
+
+      eventBus.emit('rowData:changed', { rowData: data });
+    },
+
+    removeRows(rowIds: string[]) {
+      if (!Array.isArray(rowIds) || rowIds.length === 0) return;
+      const idsToRemove = new Set(rowIds);
+
+      store.batch(() => {
+        store.setState((prev) => {
+          const updatedMap = new Map(prev.rowNodes);
+          const updatedSelection = new Set(prev.selection.selectedRowIds);
+          for (const id of idsToRemove) {
+            updatedMap.delete(id);
+            updatedSelection.delete(id);
+          }
+          return {
+            ...prev,
+            rowNodes: updatedMap,
+            selection: { ...prev.selection, selectedRowIds: updatedSelection },
+          };
+        });
+        reprocessRows();
+      });
+
+      eventBus.emit('rowData:changed', { rowData: [] });
+    },
+
+    updateRows(updates: Array<{ id: string; data: Partial<TData> }>) {
+      if (!Array.isArray(updates) || updates.length === 0) return;
+
+      store.batch(() => {
+        const state = store.getState();
+        for (const update of updates) {
+          const node = state.rowNodes.get(update.id);
+          if (!node || !node.data) continue;
+          Object.assign(node.data as any, update.data);
+          node.version++;
+          eventBus.emit('cell:valueChanged', {
+            node,
+            colId: '',
+            oldValue: undefined,
+            newValue: update.data,
+          });
+        }
+        reprocessRows();
+      });
+
+      eventBus.emit('rowData:changed', { rowData: [] });
+    },
+
     getRowNode(id: string) {
       return store.getState().rowNodes.get(id);
     },
@@ -352,8 +421,17 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
       const col = findColumn(store.getState().columns, params.colId);
       if (!col) return;
 
-      const value =
-        node.data != null ? (node.data as any)[col.field ?? col.colId] : undefined;
+      let value: any;
+      const valueGetter = col.originalDef.valueGetter;
+      if (valueGetter && node.data != null) {
+        try {
+          value = valueGetter({ data: node.data, node, colDef: col.originalDef, colId: col.colId });
+        } catch {
+          value = node.data != null ? (node.data as any)[col.field ?? col.colId] : undefined;
+        }
+      } else {
+        value = node.data != null ? (node.data as any)[col.field ?? col.colId] : undefined;
+      }
 
       store.setState((prev) => ({
         ...prev,
@@ -383,7 +461,37 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
         if (!cancel && value !== originalValue && node.data != null) {
           const col = state.columns.find((c) => c.colId === colId);
           const field = col?.field ?? colId;
-          (node.data as any)[field] = value;
+          let finalValue = value;
+
+          // Apply valueParser if defined
+          if (col?.originalDef.valueParser) {
+            try {
+              finalValue = col.originalDef.valueParser({
+                newValue: value,
+                oldValue: originalValue,
+                data: node.data,
+                node,
+                colDef: col.originalDef,
+              });
+            } catch { /* use raw value */ }
+          }
+
+          // Apply valueSetter if defined, else direct field write
+          if (col?.originalDef.valueSetter) {
+            try {
+              col.originalDef.valueSetter({
+                newValue: finalValue,
+                oldValue: originalValue,
+                data: node.data,
+                node,
+                colDef: col.originalDef,
+              });
+            } catch { /* fallback to direct write */
+              (node.data as any)[field] = finalValue;
+            }
+          } else {
+            (node.data as any)[field] = finalValue;
+          }
           node.version++;
         }
 
@@ -531,6 +639,18 @@ export function createGrid<TData = any>(config: GridConfig<TData>): GridEngine<T
     if (payload.filterModel != null) {
       api.setFilterModel(payload.filterModel);
     }
+  });
+
+  commandBus.registerHandler('rows:add', (payload: { data: TData[]; index?: number }) => {
+    api.addRows(payload.data, payload.index);
+  });
+
+  commandBus.registerHandler('rows:remove', (payload: { rowIds: string[] }) => {
+    api.removeRows(payload.rowIds);
+  });
+
+  commandBus.registerHandler('rows:update', (payload: { updates: Array<{ id: string; data: Partial<TData> }> }) => {
+    api.updateRows(payload.updates);
   });
 
   // ── Plugin Manager ──

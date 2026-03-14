@@ -575,6 +575,25 @@ export interface GridApi<TData = any> {
    */
   getDisplayedRowAtIndex(index: number): RowNode<TData> | undefined;
 
+  /**
+   * Adds rows to the grid incrementally without replacing existing data.
+   * @param data - Array of row data objects to add.
+   * @param index - Optional insertion index. Rows are appended if omitted.
+   */
+  addRows(data: TData[], index?: number): void;
+
+  /**
+   * Removes rows by their IDs without replacing the entire dataset.
+   * @param rowIds - Array of row IDs to remove.
+   */
+  removeRows(rowIds: string[]): void;
+
+  /**
+   * Updates existing rows by merging new data into their current data objects.
+   * @param updates - Array of objects with `id` and partial `data` to merge.
+   */
+  updateRows(updates: Array<{ id: string; data: Partial<TData> }>): void;
+
   // ── Columns ──
 
   /**

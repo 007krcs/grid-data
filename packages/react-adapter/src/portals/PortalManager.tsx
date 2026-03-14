@@ -305,9 +305,12 @@ export function PortalManager<TData = any>(props: PortalManagerProps<TData>) {
   }, [rootElement, scanVisibleRows, scanHeaderCells]);
 
   // ── Re-scan when state changes (sort, filter, data) ──
+  const getVersionSnapshot = () => engine.store.getVersion();
+
   const stateVersion = useSyncExternalStore(
     (cb) => engine.store.subscribe(cb),
-    () => engine.store.getVersion(),
+    getVersionSnapshot,
+    getVersionSnapshot,
   );
 
   useEffect(() => {

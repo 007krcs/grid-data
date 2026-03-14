@@ -185,8 +185,14 @@ export function MasterDetailPlugin(options: MasterDetailOptions): GridPlugin {
           if (detailState.expandedMasterIds.has(payload.nodeId)) return;
 
           detailState.expandedMasterIds.add(payload.nodeId);
-          fetchDetailData(payload.nodeId);
-          applyDetailRows();
+          applyDetailRows(); // Show detail row immediately (may have cached data)
+
+          // Fetch data asynchronously, then re-apply to show loaded data
+          fetchDetailData(payload.nodeId).then(() => {
+            applyDetailRows();
+          }).catch((err) => {
+            console.error(`[GridStorm] Failed to fetch detail data for row ${payload.nodeId}:`, err);
+          });
 
           ctx.eventBus.emit('detail:opened' as any, {
             nodeId: payload.nodeId,
@@ -237,13 +243,18 @@ export function MasterDetailPlugin(options: MasterDetailOptions): GridPlugin {
         'detail:expandAll',
         () => {
           const state = ctx.store.getState();
+          const fetchPromises: Promise<void>[] = [];
           for (const id of state.displayedRowIds) {
             if (!isDetailRowId(id) && !detailState.expandedMasterIds.has(id)) {
               detailState.expandedMasterIds.add(id);
-              fetchDetailData(id);
+              fetchPromises.push(fetchDetailData(id));
             }
           }
-          applyDetailRows();
+          applyDetailRows(); // Show immediately
+          // Re-apply after all data is fetched
+          Promise.all(fetchPromises).then(() => {
+            applyDetailRows();
+          }).catch(() => {});
         },
       );
 

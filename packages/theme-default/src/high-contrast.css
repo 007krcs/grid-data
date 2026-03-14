@@ -1,31 +1,91 @@
 /* ═══════════════════════════════════════════════
    GridStorm High Contrast Theme
-   For accessibility. Apply with data-theme="high-contrast".
+   WCAG AAA compliant (7:1 contrast ratio).
+   Apply with data-theme="high-contrast".
    ═══════════════════════════════════════════════ */
 
 .gs-root[data-theme='high-contrast'],
 .gs-theme-high-contrast .gs-root {
+  /* ── Colors: Base ── */
   --gs-color-background: #000000;
   --gs-color-foreground: #ffffff;
   --gs-color-border: #ffffff;
   --gs-color-accent: #ffff00;
+  --gs-color-accent-hover: #ffdd00;
+  --gs-color-error: #ff6666;
+  --gs-color-warning: #ffcc00;
+  --gs-color-success: #66ff66;
+  --gs-color-muted: #b0b0b0;
 
-  --gs-color-header-bg: #000000;
+  /* ── Colors: Header ── */
+  --gs-color-header-bg: #111111;
   --gs-color-header-fg: #ffffff;
   --gs-color-header-border: #ffffff;
-  --gs-color-header-hover: #333333;
+  --gs-color-header-hover: #1a1a1a;
 
+  /* ── Colors: Row ── */
   --gs-color-row-bg: #000000;
-  --gs-color-row-bg-alt: #1a1a1a;
-  --gs-color-row-bg-hover: #333333;
-  --gs-color-row-bg-selected: #003366;
-  --gs-color-row-bg-selected-hover: #004488;
+  --gs-color-row-bg-alt: #111111;
+  --gs-color-row-bg-hover: #1a1a1a;
+  --gs-color-row-bg-selected: #333300;
+  --gs-color-row-bg-selected-hover: #444400;
   --gs-color-row-fg: #ffffff;
 
-  --gs-color-cell-focus-ring: rgba(255, 255, 0, 0.6);
+  /* ── Colors: Cell ── */
+  --gs-color-cell-focus-ring: #ffff00;
+  --gs-color-cell-editing-bg: #111111;
+  --gs-color-cell-editing-border: #ffff00;
 
-  --gs-border-width: 2px;
+  /* ── Colors: Overlay ── */
+  --gs-color-overlay-bg: rgba(0, 0, 0, 0.9);
+  --gs-color-overlay-fg: #e0e0e0;
+
+  /* ── Colors: Popup / Menu ── */
+  --gs-color-popup-bg: #111111;
+  --gs-color-popup-border: #ffffff;
+  --gs-color-popup-shadow: none;
+  --gs-color-menu-item-hover: #1a1a1a;
+
+  /* ── Typography ── */
   --gs-font-weight-header: 700;
 
-  --gs-shadow-focus-ring: 0 0 0 3px var(--gs-color-accent);
+  /* ── Borders ── */
+  --gs-border-width: 2px;
+  --gs-border-radius: 0px;
+  --gs-border-radius-popup: 0px;
+
+  /* ── Shadows ── */
+  --gs-shadow-focus-ring: 0 0 0 3px #ffff00;
+  --gs-shadow-popup: none;
+
+  /* ── Colors: Grouping ── */
+  --gs-color-group-bg: #111111;
+  --gs-color-group-bg-hover: #1a1a1a;
+  --gs-color-group-chevron: #ffffff;
+
+  /* ── Colors: Floating Filter ── */
+  --gs-color-filter-bg: #111111;
+  --gs-color-filter-input-border: #ffffff;
+  --gs-color-filter-input-focus: #ffff00;
+
+  /* ── Colors: Pagination ── */
+  --gs-color-pagination-bg: #111111;
+  --gs-color-pagination-btn-hover: #1a1a1a;
+
+  /* ── Scrollbar ── */
+  --gs-scrollbar-track: #333333;
+  --gs-scrollbar-thumb: #666666;
+  --gs-scrollbar-thumb-hover: #999999;
+
+  /* ── Colors: Column Groups ── */
+  --gs-color-group-header-bg: #111111;
+  --gs-color-group-header-border: #ffffff;
+
+  /* ── Colors: Context Menu ── */
+  --gs-color-menu-item-disabled: #b0b0b0;
+
+  /* ── Colors: Column Sidebar ── */
+  --gs-color-sidebar-bg: #111111;
+  --gs-color-sidebar-border: #ffffff;
+  --gs-color-sidebar-toggle-bg: #1a1a1a;
 }

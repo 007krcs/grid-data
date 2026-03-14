@@ -31,6 +31,10 @@ export function RowReorderPlugin(options: RowReorderPluginOptions = {}): GridPlu
     install(ctx: PluginContext) {
       const disposers: (() => void)[] = [];
 
+      // Persistent custom order map: rowId -> desired position index
+      const customOrder = new Map<string, number>();
+      let updatingOrder = false;
+
       // ── Move row to index ──
       disposers.push(
         ctx.commandBus.registerHandler(
@@ -63,7 +67,14 @@ export function RowReorderPlugin(options: RowReorderPluginOptions = {}): GridPlu
             ids.splice(fromIndex, 1);
             ids.splice(toIndex, 0, payload.rowId);
 
+            updatingOrder = true;
             ctx.store.setState((prev) => ({ ...prev, displayedRowIds: ids }));
+            // Persist custom order
+            customOrder.clear();
+            for (let i = 0; i < ids.length; i++) {
+              customOrder.set(ids[i]!, i);
+            }
+            updatingOrder = false;
             ctx.eventBus.emit('row:moved', {
               rowId: payload.rowId,
               fromIndex,
@@ -86,7 +97,14 @@ export function RowReorderPlugin(options: RowReorderPluginOptions = {}): GridPlu
 
             [ids[indexA], ids[indexB]] = [ids[indexB]!, ids[indexA]!];
 
+            updatingOrder = true;
             ctx.store.setState((prev) => ({ ...prev, displayedRowIds: ids }));
+            // Persist custom order
+            customOrder.clear();
+            for (let i = 0; i < ids.length; i++) {
+              customOrder.set(ids[i]!, i);
+            }
+            updatingOrder = false;
             ctx.eventBus.emit('row:moved', {
               rowId: payload.rowIdA,
               fromIndex: indexA,
@@ -94,6 +112,36 @@ export function RowReorderPlugin(options: RowReorderPluginOptions = {}): GridPlu
             });
           },
         ),
+      );
+
+      // Re-apply custom order after any reprocessing (sort/filter)
+      disposers.push(
+        ctx.store.subscribe(() => {
+          if (updatingOrder) return;
+          if (customOrder.size === 0) return;
+          const state = ctx.store.getState();
+          const currentIds = state.displayedRowIds;
+
+          // Check if all custom-ordered rows are still present
+          const hasCustomRows = currentIds.some(id => customOrder.has(id));
+          if (!hasCustomRows) return;
+
+          // Sort displayed IDs by custom order, putting un-ordered rows at the end
+          const sorted = [...currentIds].sort((a, b) => {
+            const orderA = customOrder.get(a);
+            const orderB = customOrder.get(b);
+            if (orderA != null && orderB != null) return orderA - orderB;
+            if (orderA != null) return -1;
+            if (orderB != null) return 1;
+            return 0;
+          });
+
+          // Only update if order actually changed
+          const changed = sorted.some((id, i) => id !== currentIds[i]);
+          if (changed) {
+            ctx.store.setState((prev) => ({ ...prev, displayedRowIds: sorted }));
+          }
+        }),
       );
 
       // ── DOM drag-and-drop via event delegation ──

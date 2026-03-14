@@ -1,4 +1,5 @@
 import React from 'react';
+import { ErrorCatcher } from '../../shared/ErrorCatcher';
 import { ThemeProvider } from './theme/ThemeProvider';
 import { HomePage } from './pages/HomePage';
 import { DocsPage } from './pages/DocsPage';
@@ -34,13 +35,15 @@ export function App() {
 
   return (
     <ThemeProvider>
-      <div className="bg-pattern" />
-      <div className="bg-glow" />
-      <div className="hub-container">
-        <TopNav route={route} />
-        {page}
-        <Footer />
-      </div>
+      <ErrorCatcher>
+        <div className="bg-pattern" />
+        <div className="bg-glow" />
+        <div className="hub-container">
+          <TopNav route={route} />
+          {page}
+          <Footer />
+        </div>
+      </ErrorCatcher>
     </ThemeProvider>
   );
 }

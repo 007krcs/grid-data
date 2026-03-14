@@ -87,11 +87,11 @@ export class VirtualScroller {
 
     switch (position) {
       case 'top':
-        return rowTop;
+        return Math.max(0, rowTop);
       case 'bottom':
-        return rowTop + rh - this.viewportHeight;
+        return Math.max(0, rowTop + rh - this.viewportHeight);
       case 'middle':
-        return rowTop + rh / 2 - this.viewportHeight / 2;
+        return Math.max(0, rowTop + rh / 2 - this.viewportHeight / 2);
     }
   }
 
@@ -167,7 +167,7 @@ export class VirtualScroller {
 
     let cumulative = 0;
     for (let i = 0; i < this.rowCount; i++) {
-      const h = heightFn(i);
+      const h = Math.max(1, Number(heightFn(i)) || 40);
       this.heightCache[i] = h;
       cumulative += h;
       this.cumulativeHeights[i] = cumulative;

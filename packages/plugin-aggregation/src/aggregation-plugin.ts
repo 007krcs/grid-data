@@ -66,6 +66,7 @@ export function AggregationPlugin(options: AggregationPluginOptions = {}): GridP
                 : c,
             ),
           }));
+          computeAggregations(ctx, aggFuncRegistry);
         },
       );
 

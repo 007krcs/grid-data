@@ -31,17 +31,18 @@ interface GridFilterResult {
 export function useGridFilter(): GridFilterResult {
   const { engine, api } = useGridContext();
 
-  const getFilterSnapshot = () => engine.store.getState().filterModel;
-  const getQuickFilterSnapshot = () => engine.store.getState().quickFilterText;
+  const getFilterSnapshot = useCallback(() => engine.store.getState().filterModel, [engine]);
+  const getQuickFilterSnapshot = useCallback(() => engine.store.getState().quickFilterText, [engine]);
+  const subscribe = useCallback((cb: () => void) => engine.store.subscribe(cb), [engine]);
 
   const filterModel = useSyncExternalStore(
-    (cb) => engine.store.subscribe(cb),
+    subscribe,
     getFilterSnapshot,
     getFilterSnapshot,
   );
 
   const quickFilterText = useSyncExternalStore(
-    (cb) => engine.store.subscribe(cb),
+    subscribe,
     getQuickFilterSnapshot,
     getQuickFilterSnapshot,
   );

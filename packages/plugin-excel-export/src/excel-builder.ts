@@ -6,11 +6,20 @@ import type { CellData, CellType } from './types';
 
 // ─── CSV ───
 
+/** Characters that can trigger formula execution in spreadsheet applications. */
+const FORMULA_PREFIXES = ['=', '+', '-', '@', '\t', '\r'];
+
 /**
  * Escapes a CSV cell value according to RFC 4180.
  * Wraps in double-quotes if the value contains commas, quotes, or newlines.
+ * Sanitizes values starting with formula-triggering characters to prevent
+ * CSV injection attacks by prepending a tab character inside the quotes.
  */
 function escapeCsvCell(value: string): string {
+  // Sanitize formula injection: prefix with tab inside quotes
+  if (value.length > 0 && FORMULA_PREFIXES.includes(value[0]!)) {
+    return `"\t${value.replace(/"/g, '""')}"`;
+  }
   if (
     value.includes(',') ||
     value.includes('"') ||

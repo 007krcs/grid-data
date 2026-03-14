@@ -33,10 +33,11 @@ interface GridSelectionResult<TData = any> {
 export function useGridSelection<TData = any>(): GridSelectionResult<TData> {
   const { engine, api } = useGridContext<TData>();
 
-  const getSelectionSnapshot = () => engine.store.getState().selection.selectedRowIds;
+  const getSelectionSnapshot = useCallback(() => engine.store.getState().selection.selectedRowIds, [engine]);
+  const subscribe = useCallback((cb: () => void) => engine.store.subscribe(cb), [engine]);
 
   const selectedRowIds = useSyncExternalStore(
-    (cb) => engine.store.subscribe(cb),
+    subscribe,
     getSelectionSnapshot,
     getSelectionSnapshot,
   );
@@ -44,8 +45,9 @@ export function useGridSelection<TData = any>(): GridSelectionResult<TData> {
   const selectedCount = selectedRowIds.size;
 
   const isRowSelected = useCallback(
-    (rowId: string) => selectedRowIds.has(rowId),
-    [selectedRowIds],
+    (rowId: string) =>
+      engine.store.getState().selection.selectedRowIds.has(rowId),
+    [engine],
   );
 
   const getSelectedRows = useCallback(() => api.getSelectedRows(), [api]);

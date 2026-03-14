@@ -354,7 +354,7 @@ describe('DomRenderer', () => {
   // ── 7. Selection Visual ──
 
   describe('Selection visual', () => {
-    it('should add gs-row-selected class and aria-selected="true" on selected row', () => {
+    it('should add gs-row-selected class and aria-selected="true" on selected row', async () => {
       renderer.mount();
 
       // Select the first row via the selection plugin command
@@ -362,13 +362,14 @@ describe('DomRenderer', () => {
         rowId: 'row-0',
         source: 'click',
       });
+      await Promise.resolve(); // flush microtask render batch
 
       const row = container.querySelector('[data-row-id="row-0"]')!;
       expect(row.classList.contains('gs-row-selected')).toBe(true);
       expect(row.getAttribute('aria-selected')).toBe('true');
     });
 
-    it('should not set aria-selected on unselected rows', () => {
+    it('should not set aria-selected on unselected rows', async () => {
       renderer.mount();
 
       // Select only row-0
@@ -376,13 +377,14 @@ describe('DomRenderer', () => {
         rowId: 'row-0',
         source: 'click',
       });
+      await Promise.resolve(); // flush microtask render batch
 
       const unselectedRow = container.querySelector('[data-row-id="row-1"]')!;
       expect(unselectedRow.classList.contains('gs-row-selected')).toBe(false);
       expect(unselectedRow.getAttribute('aria-selected')).toBeNull();
     });
 
-    it('should remove selection visual when row is deselected', () => {
+    it('should remove selection visual when row is deselected', async () => {
       renderer.mount();
 
       // Select row-0
@@ -390,12 +392,14 @@ describe('DomRenderer', () => {
         rowId: 'row-0',
         source: 'click',
       });
+      await Promise.resolve(); // flush microtask render batch
 
       // Deselect by selecting another row (single selection mode by default)
       engine.commandBus.dispatch('selection:select', {
         rowId: 'row-1',
         source: 'click',
       });
+      await Promise.resolve(); // flush microtask render batch
 
       const row0 = container.querySelector('[data-row-id="row-0"]')!;
       expect(row0.classList.contains('gs-row-selected')).toBe(false);

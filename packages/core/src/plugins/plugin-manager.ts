@@ -24,6 +24,8 @@ export class PluginManager<TData = any> {
   private pluginApis = new Map<string, any>();
   private cellRenderers = new Map<string, CellRendererFn>();
   private cellEditors = new Map<string, CellEditorDef>();
+  private pluginUnsubscribes = new Map<string, Array<() => void>>();
+  private pluginStateOwners = new Map<string, string>(); // state key → plugin id
   private installed = false;
 
   constructor(
@@ -91,6 +93,13 @@ export class PluginManager<TData = any> {
     const ids = [...this.disposers.keys()].reverse();
     for (const id of ids) {
       try {
+        // Call all tracked unsubscribes (event + command) for this plugin
+        const unsubs = this.pluginUnsubscribes.get(id);
+        if (unsubs) {
+          for (const unsub of unsubs) {
+            unsub();
+          }
+        }
         this.disposers.get(id)?.();
       } catch (err) {
         console.error(`[GridStorm] Error destroying plugin "${id}":`, err);
@@ -101,13 +110,25 @@ export class PluginManager<TData = any> {
     this.pluginApis.clear();
     this.cellRenderers.clear();
     this.cellEditors.clear();
+    this.pluginUnsubscribes.clear();
+    this.pluginStateOwners.clear();
     this.installed = false;
   }
 
   // ── Private ──
 
-  private createContext(_plugin: GridPlugin<TData>): PluginContext<TData> {
+  private trackUnsubscribe(pluginId: string, unsub: () => void): void {
+    let unsubs = this.pluginUnsubscribes.get(pluginId);
+    if (!unsubs) {
+      unsubs = [];
+      this.pluginUnsubscribes.set(pluginId, unsubs);
+    }
+    unsubs.push(unsub);
+  }
+
+  private createContext(plugin: GridPlugin<TData>): PluginContext<TData> {
     const self = this;
+    const pluginId = plugin.id;
 
     const storeAccess: PluginStoreAccess<TData> = {
       getState: () => self.store.getState(),
@@ -119,15 +140,26 @@ export class PluginManager<TData = any> {
 
     const eventBusAccess: PluginEventBus<TData> = {
       emit: (event, payload) => self.eventBus.emit(event, payload),
-      on: (event, listener) => self.eventBus.on(event, listener),
+      on: (event, listener) => {
+        const unsub = self.eventBus.on(event, listener);
+        self.trackUnsubscribe(pluginId, unsub);
+        return unsub;
+      },
     };
 
     const commandBusAccess: PluginCommandBus = {
       dispatch: (type: any, payload: any) => self.commandBus.dispatch(type, payload),
       dispatchAsync: (type: any, payload: any) => self.commandBus.dispatchAsync(type, payload),
-      registerHandler: (type: any, handler: any) => self.commandBus.registerHandler(type, handler),
-      registerAsyncHandler: (type: any, handler: any) =>
-        self.commandBus.registerAsyncHandler(type, handler),
+      registerHandler: (type: any, handler: any) => {
+        const unsub = self.commandBus.registerHandler(type, handler);
+        self.trackUnsubscribe(pluginId, unsub);
+        return unsub;
+      },
+      registerAsyncHandler: (type: any, handler: any) => {
+        const unsub = self.commandBus.registerAsyncHandler(type, handler);
+        self.trackUnsubscribe(pluginId, unsub);
+        return unsub;
+      },
     };
 
     return {
@@ -137,13 +169,33 @@ export class PluginManager<TData = any> {
       commandBus: commandBusAccess,
       config: this.config,
 
-      getPlugin: <T extends GridPlugin>(id: string) => self.getPlugin<T>(id),
+      getPlugin: <T extends GridPlugin>(id: string) => {
+        if (
+          typeof globalThis !== 'undefined' &&
+          (globalThis as any).__GRIDSTORM_DEV__ &&
+          plugin.dependencies &&
+          !plugin.dependencies.includes(id)
+        ) {
+          console.warn(
+            `[GridStorm] Plugin "${pluginId}" accessed plugin "${id}" without declaring it as a dependency.`,
+          );
+        }
+        return self.getPlugin<T>(id);
+      },
 
       registerCommand: (commandType: string, handler: CommandHandler) => {
-        self.commandBus.registerHandler(commandType, handler);
+        const unsub = self.commandBus.registerHandler(commandType, handler);
+        self.trackUnsubscribe(pluginId, unsub);
       },
 
       registerState: <S>(key: string, initialState: S) => {
+        const existingOwner = self.pluginStateOwners.get(key);
+        if (existingOwner && existingOwner !== pluginId) {
+          throw new Error(
+            `[GridStorm] Plugin "${pluginId}" attempted to register state key "${key}" already owned by plugin "${existingOwner}".`,
+          );
+        }
+        self.pluginStateOwners.set(key, pluginId);
         self.store.setState((prev) => ({
           ...prev,
           pluginState: {

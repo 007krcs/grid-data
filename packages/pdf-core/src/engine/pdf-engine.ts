@@ -1,7 +1,7 @@
 // ─── PDF Engine ───
 // Factory function that wires all infrastructure together.
 
-import type { PdfDocumentState, PdfAnnotation, ToolMode } from '../types/document';
+import type { PdfDocumentState, PdfAnnotation, ToolMode, PageRotation } from '../types/document';
 import type { PdfEventMap } from '../types/events';
 import type { PdfApi, PdfViewerConfig } from '../types/plugin';
 import { createInitialState, createDefaultFlags } from '../types/document';
@@ -10,6 +10,7 @@ import { EventBus } from '../events/event-bus';
 import { PdfCommandBus } from '../commands/command-bus';
 import { PdfPluginManager } from '../plugins/plugin-manager';
 import { generateId } from '../utils/id';
+import type { PdfParser } from './pdf-parser';
 import { NoPdfParserError } from './pdf-parser';
 
 /** The complete PDF engine instance. */
@@ -43,7 +44,7 @@ export function createPdfEngine(config: PdfViewerConfig = {}): PdfEngine {
   const commandBus = new PdfCommandBus(store, eventBus, config.maxHistorySize);
 
   // Create the public API
-  const api = createPdfApi(store, eventBus, commandBus);
+  const api = createPdfApi(store, eventBus, commandBus, config.parser);
 
   // Create plugin manager
   const pluginManager = new PdfPluginManager(store, eventBus, commandBus, api, config);
@@ -82,49 +83,81 @@ function createPdfApi(
   store: Store<PdfDocumentState>,
   eventBus: EventBus<PdfEventMap>,
   commandBus: PdfCommandBus,
+  parser?: PdfParser,
 ): PdfApi {
   return {
     // Document
     async loadDocument(_source: ArrayBuffer | Uint8Array | string): Promise<void> {
-      // Phase 2: pdf.js integration will handle actual PDF parsing.
-      // For now, store the raw bytes and create a placeholder page.
-      // Real PDF parsing requires a PdfParser implementation.
       const bytes = _source instanceof ArrayBuffer
         ? new Uint8Array(_source)
         : typeof _source === 'string'
           ? new TextEncoder().encode(_source)
           : _source;
 
-      console.warn(new NoPdfParserError().message);
+      if (parser) {
+        // Use the provided parser to load and parse the document
+        const data = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+        const parsed = await parser.loadDocument(data);
 
-      store.setState((prev) => ({
-        ...prev,
-        loaded: true,
-        documentBytes: bytes,
-        metadata: {
-          ...prev.metadata,
+        store.setState((prev) => ({
+          ...prev,
+          loaded: true,
+          documentBytes: bytes,
+          metadata: {
+            ...prev.metadata,
+            ...parsed.metadata,
+            pageCount: parsed.pageCount,
+          },
+          pages: parsed.pages.map((p, i) => ({
+            index: i,
+            width: p.width,
+            height: p.height,
+            rotation: p.rotation as PageRotation,
+            annotationIds: [],
+            rendered: false,
+            textContent: null,
+          })),
+        }));
+
+        eventBus.emit('document:loaded', {
+          pageCount: parsed.pageCount,
+          metadata: store.getState().metadata,
+        });
+      } else {
+        // No parser configured — store raw bytes and create a placeholder page.
+        console.warn(new NoPdfParserError().message);
+
+        store.setState((prev) => ({
+          ...prev,
+          loaded: true,
+          documentBytes: bytes,
+          metadata: {
+            ...prev.metadata,
+            pageCount: 1,
+          },
+          pages: [{
+            index: 0,
+            width: 612,
+            height: 792,
+            rotation: 0,
+            annotationIds: [],
+            rendered: false,
+            textContent: null,
+          }],
+        }));
+
+        eventBus.emit('document:loaded', {
           pageCount: 1,
-        },
-        pages: [{
-          index: 0,
-          width: 612,
-          height: 792,
-          rotation: 0,
-          annotationIds: [],
-          rendered: false,
-          textContent: null,
-        }],
-      }));
-
-      eventBus.emit('document:loaded', {
-        pageCount: 1,
-        metadata: store.getState().metadata,
-      });
+          metadata: store.getState().metadata,
+        });
+      }
     },
 
     async saveDocument(): Promise<Blob> {
       const bytes = store.getState().documentBytes;
-      const blob = new Blob(bytes ? [bytes.buffer as ArrayBuffer] : [], { type: 'application/pdf' });
+      // Create a new copy of the bytes to avoid retaining a reference to the original buffer
+      const copy = bytes ? new Uint8Array(bytes) : null;
+      const blob = new Blob(copy ? [copy] : [], { type: 'application/pdf' });
       eventBus.emit('document:saved', { blob });
       return blob;
     },
@@ -247,26 +280,24 @@ function registerCoreCommands(
     eventBus.emit('zoom:changed', { zoom });
   });
 
-  // Zoom fit width — calculates zoom to fit page width in a standard viewport (800px)
-  commandBus.registerHandler('zoom:fitWidth', () => {
+  // Zoom fit width — calculates zoom to fit page width in the container
+  commandBus.registerHandler('zoom:fitWidth', (payload: { containerWidth?: number }) => {
     const state = store.getState();
     const page = state.pages[state.activePageIndex];
     if (!page) return;
-    // Use a default container width of 800px if no renderer is attached
-    const containerWidth = 800;
+    const containerWidth = payload?.containerWidth || 800;
     const zoom = Math.max(0.1, Math.min(containerWidth / page.width, 10));
     store.setState((prev) => ({ ...prev, zoom }));
     eventBus.emit('zoom:changed', { zoom });
   });
 
-  // Zoom fit page — calculates zoom to fit entire page in a standard viewport (800x600)
-  commandBus.registerHandler('zoom:fitPage', () => {
+  // Zoom fit page — calculates zoom to fit entire page in the container
+  commandBus.registerHandler('zoom:fitPage', (payload: { containerWidth?: number; containerHeight?: number }) => {
     const state = store.getState();
     const page = state.pages[state.activePageIndex];
     if (!page) return;
-    // Use default container dimensions of 800x600 if no renderer is attached
-    const containerWidth = 800;
-    const containerHeight = 600;
+    const containerWidth = payload?.containerWidth || 800;
+    const containerHeight = payload?.containerHeight || 600;
     const zoomW = containerWidth / page.width;
     const zoomH = containerHeight / page.height;
     const zoom = Math.max(0.1, Math.min(Math.min(zoomW, zoomH), 10));
@@ -286,15 +317,7 @@ function registerCoreCommands(
     eventBus.emit('tool:changed', { mode: payload.mode });
   });
 
-  // History commands
-  commandBus.registerHandler('history:undo', () => {
-    commandBus.undo();
-  });
-
-  commandBus.registerHandler('history:redo', () => {
-    commandBus.redo();
-  });
-
+  // History commands — undo/redo exposed only via API methods to avoid recursion
   commandBus.registerHandler('history:clear', () => {
     commandBus.clearHistory();
   });

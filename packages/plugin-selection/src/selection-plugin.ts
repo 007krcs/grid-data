@@ -140,6 +140,49 @@ export function SelectionPlugin(options: SelectionPluginOptions = {}): GridPlugi
         },
       );
 
+      // ── Register selection:set command (for controlled selection from React adapter) ──
+      const unregisterSet = ctx.commandBus.registerHandler(
+        'selection:set',
+        (payload: { selectedRowIds: Set<string> | string[]; source?: SelectionSource }) => {
+          const rawIds = payload.selectedRowIds instanceof Set
+            ? payload.selectedRowIds
+            : new Set(payload.selectedRowIds);
+          const source = payload.source ?? 'api';
+          const state = ctx.store.getState();
+
+          // Filter to only selectable IDs
+          const newIds = new Set<string>();
+          for (const id of rawIds) {
+            const n = state.rowNodes.get(id);
+            if (n && n.selectable) {
+              newIds.add(id);
+            }
+          }
+
+          // Clear old selection flags
+          for (const id of state.selection.selectedRowIds) {
+            const n = state.rowNodes.get(id);
+            if (n) { n.selected = false; n.version++; }
+          }
+
+          // Apply new selection flags
+          for (const id of newIds) {
+            const n = state.rowNodes.get(id);
+            if (n) {
+              n.selected = true;
+              n.version++;
+            }
+          }
+
+          ctx.store.setState((prev) => ({
+            ...prev,
+            selection: { ...prev.selection, selectedRowIds: newIds },
+          }));
+
+          emitSelectionChanged(ctx, source);
+        },
+      );
+
       // ── Register selection:selectAll command ──
       const unregisterSelectAll = ctx.commandBus.registerHandler(
         'selection:selectAll',
@@ -191,6 +234,7 @@ export function SelectionPlugin(options: SelectionPluginOptions = {}): GridPlugi
 
       return () => {
         unregisterSelect();
+        unregisterSet();
         unregisterSelectAll();
         unregisterDeselectAll();
         unregisterFocus();

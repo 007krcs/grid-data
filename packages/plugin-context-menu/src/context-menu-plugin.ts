@@ -21,7 +21,7 @@ export function ContextMenuPlugin(options: ContextMenuPluginOptions = {}): GridP
     version: '0.1.0',
 
     install(ctx: PluginContext) {
-      if (suppressContextMenu) return;
+      if (suppressContextMenu) return () => {};
 
       // Runtime-registered items from other plugins
       const registeredItems: ContextMenuItem[] = [];
@@ -437,7 +437,11 @@ export function ContextMenuPlugin(options: ContextMenuPluginOptions = {}): GridP
       let rootEl: HTMLElement | null = null;
       const unsubReady = ctx.eventBus.on('grid:ready', () => {
         requestAnimationFrame(() => {
-          rootEl = document.querySelector('.gs-root');
+          // Scope to the grid's own root element via the renderer's container
+          const containers = document.querySelectorAll<HTMLElement>('.gs-root');
+          rootEl = containers.length === 1
+            ? containers[0]!
+            : (ctx as any).rootElement ?? containers[0] ?? null;
           rootEl?.addEventListener('contextmenu', onContextMenu);
         });
       });

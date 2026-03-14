@@ -945,7 +945,7 @@ export interface GridApi<TData = any> {
   addEventListener<K extends keyof GridEventMap<TData>>(
     event: K,
     listener: (payload: GridEventMap<TData>[K]) => void,
-  ): void;
+  ): () => void;
 
   /**
    * Removes a previously registered event listener.

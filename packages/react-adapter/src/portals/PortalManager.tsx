@@ -195,6 +195,16 @@ export function PortalManager<TData = any>(props: PortalManagerProps<TData>) {
       const newPortals = new Map<string, CellPortalEntry<TData>>();
       const rowElements = bodyContainer.querySelectorAll<HTMLElement>('.gs-row');
 
+      // Pre-build O(1) lookup maps to avoid O(n) indexOf / find in hot path
+      const rowIdIndexMap = new Map<string, number>();
+      for (let i = 0; i < state.displayedRowIds.length; i++) {
+        rowIdIndexMap.set(state.displayedRowIds[i]!, i);
+      }
+      const columnMap = new Map<string, ColumnState>();
+      for (const col of state.columns) {
+        columnMap.set(col.colId, col);
+      }
+
       for (const rowEl of rowElements) {
         const rowId = rowEl.getAttribute('data-row-id');
         if (!rowId) continue;
@@ -209,10 +219,10 @@ export function PortalManager<TData = any>(props: PortalManagerProps<TData>) {
 
           const key = `${rowId}:${colId}`;
           const Component = cellRenderers.get(colId)!;
-          const colState = state.columns.find((c) => c.colId === colId);
+          const colState = columnMap.get(colId);
           if (!colState) continue;
 
-          const rowIndex = state.displayedRowIds.indexOf(rowId);
+          const rowIndex = rowIdIndexMap.get(rowId) ?? -1;
           const rendererProps = buildCellProps(node, colState, rowIndex);
 
           // Get or create a stable wrapper div inside the cell.
@@ -305,10 +315,11 @@ export function PortalManager<TData = any>(props: PortalManagerProps<TData>) {
   }, [rootElement, scanVisibleRows, scanHeaderCells]);
 
   // ── Re-scan when state changes (sort, filter, data) ──
-  const getVersionSnapshot = () => engine.store.getVersion();
+  const getVersionSnapshot = useCallback(() => engine.store.getVersion(), [engine]);
+  const subscribeStore = useCallback((cb: () => void) => engine.store.subscribe(cb), [engine]);
 
   const stateVersion = useSyncExternalStore(
-    (cb) => engine.store.subscribe(cb),
+    subscribeStore,
     getVersionSnapshot,
     getVersionSnapshot,
   );
@@ -340,9 +351,9 @@ export function PortalManager<TData = any>(props: PortalManagerProps<TData>) {
         const editorComponent = reactEditorMap.current.get(colId);
         if (!editorComponent || !rootElement) return;
 
-        // Find the cell element
+        // Find the cell element (CSS.escape prevents selector injection from rowId/colId)
         const cellEl = rootElement.querySelector<HTMLElement>(
-          `.gs-row[data-row-id="${node.id}"] .gs-cell[data-col-id="${colId}"]`,
+          `.gs-row[data-row-id="${CSS.escape(node.id)}"] .gs-cell[data-col-id="${CSS.escape(colId)}"]`,
         );
         if (!cellEl) return;
 

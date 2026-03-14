@@ -1,7 +1,7 @@
 // ─── useGridColumn Hook ───
 // Column state and manipulation actions.
 
-import { useSyncExternalStore, useCallback } from 'react';
+import { useSyncExternalStore, useCallback, useMemo } from 'react';
 import type { ColumnState, PinnedPosition } from '@gridstorm/core';
 import { useGridContext } from '../context';
 
@@ -33,15 +33,19 @@ interface GridColumnResult {
 export function useGridColumn(): GridColumnResult {
   const { engine, api } = useGridContext();
 
-  const getColumnsSnapshot = () => engine.store.getState().columns;
+  const getColumnsSnapshot = useCallback(() => engine.store.getState().columns, [engine]);
+  const subscribe = useCallback((cb: () => void) => engine.store.subscribe(cb), [engine]);
 
   const allColumns = useSyncExternalStore(
-    (cb) => engine.store.subscribe(cb),
+    subscribe,
     getColumnsSnapshot,
     getColumnsSnapshot,
   );
 
-  const visibleColumns = allColumns.filter((c) => !c.hide);
+  const visibleColumns = useMemo(
+    () => allColumns.filter((c) => !c.hide),
+    [allColumns],
+  );
 
   const setColumnVisible = useCallback(
     (colId: string, visible: boolean) => api.setColumnVisible(colId, visible),

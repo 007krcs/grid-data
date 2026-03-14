@@ -1,7 +1,7 @@
 // ─── useGridState Hook ───
 // Selector-based reactive state subscription via useSyncExternalStore.
 
-import { useSyncExternalStore } from 'react';
+import { useSyncExternalStore, useCallback } from 'react';
 import type { GridState } from '@gridstorm/core';
 import { useGridContext } from '../context';
 
@@ -20,7 +20,11 @@ export function useGridState<TData = any, TResult = any>(
 ): TResult {
   const { engine } = useGridContext<TData>();
 
-  const getSnapshot = () => selector(engine.store.getState() as GridState<TData>);
+  // Memoize getSnapshot so useSyncExternalStore doesn't re-subscribe every render
+  const getSnapshot = useCallback(
+    () => selector(engine.store.getState() as GridState<TData>),
+    [selector, engine],
+  );
 
   return useSyncExternalStore(
     (onStoreChange) => engine.store.subscribe(onStoreChange),

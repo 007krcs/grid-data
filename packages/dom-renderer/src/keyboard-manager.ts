@@ -43,6 +43,12 @@ export class KeyboardManager {
     this.engine = null;
   }
 
+  /** Check if the event target is an interactive form element (input/select/textarea). */
+  private isFormElement(e: KeyboardEvent): boolean {
+    const tag = (e.target as HTMLElement)?.tagName;
+    return tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+  }
+
   private handleKeyDown(e: KeyboardEvent): void {
     if (!this.engine || !this.getVisibleColumns) return;
 
@@ -51,19 +57,19 @@ export class KeyboardManager {
 
     switch (e.key) {
       case 'ArrowDown':
-        e.preventDefault();
+        if (!this.isFormElement(e)) e.preventDefault();
         this.moveFocus(0, 1);
         break;
       case 'ArrowUp':
-        e.preventDefault();
+        if (!this.isFormElement(e)) e.preventDefault();
         this.moveFocus(0, -1);
         break;
       case 'ArrowRight':
-        e.preventDefault();
+        if (!this.isFormElement(e)) e.preventDefault();
         this.moveFocus(1, 0);
         break;
       case 'ArrowLeft':
-        e.preventDefault();
+        if (!this.isFormElement(e)) e.preventDefault();
         this.moveFocus(-1, 0);
         break;
       case 'Home':
@@ -87,14 +93,18 @@ export class KeyboardManager {
           this.setFocus(cols.length - 1, focused.rowIndex);
         }
         break;
-      case 'PageDown':
+      case 'PageDown': {
         e.preventDefault();
-        this.moveFocus(0, 20);
+        const visibleRows = this.getVisibleRowCount();
+        this.moveFocus(0, visibleRows);
         break;
-      case 'PageUp':
+      }
+      case 'PageUp': {
         e.preventDefault();
-        this.moveFocus(0, -20);
+        const visibleRows = this.getVisibleRowCount();
+        this.moveFocus(0, -visibleRows);
         break;
+      }
       case 'Enter':
       case 'F2':
         // Only start editing if not already editing — the editor input's
@@ -138,11 +148,32 @@ export class KeyboardManager {
         break;
       case 'Tab':
         if (focused && !state.editing) {
+          const cols = this.getVisibleColumns();
+          const colIdx = cols.findIndex((c) => c.colId === focused.colId);
+          const isLastCell = !e.shiftKey &&
+            colIdx === cols.length - 1 &&
+            focused.rowIndex === state.displayedRowIds.length - 1;
+          const isFirstCell = e.shiftKey && colIdx === 0 && focused.rowIndex === 0;
+
+          // Allow default Tab behavior to leave the grid on boundary cells
+          if (isLastCell || isFirstCell) {
+            break;
+          }
+
           e.preventDefault();
           this.moveFocus(e.shiftKey ? -1 : 1, 0);
         }
         break;
     }
+  }
+
+  /** Calculate the number of visible rows based on viewport and row height. */
+  private getVisibleRowCount(): number {
+    if (!this.engine || !this.root) return 20;
+    const rowHeight = (this.engine.api.getGridOption('rowHeight') as number) ?? 40;
+    const viewport = this.root.querySelector('.gs-body-viewport') as HTMLElement | null;
+    const viewportHeight = viewport?.clientHeight ?? 600;
+    return Math.max(1, Math.floor(viewportHeight / rowHeight));
   }
 
   private moveFocus(colDelta: number, rowDelta: number): void {
@@ -207,10 +238,10 @@ export class KeyboardManager {
     const rowId = state.displayedRowIds[rowIdx];
     if (!rowId) return;
 
-    const rowEl = this.root.querySelector(`[data-row-id="${rowId}"]`);
+    const rowEl = this.root.querySelector(`[data-row-id="${CSS.escape(rowId)}"]`);
     if (!rowEl) return;
 
-    const cellEl = rowEl.querySelector(`[data-col-id="${colId}"]`) as HTMLElement;
+    const cellEl = rowEl.querySelector(`[data-col-id="${CSS.escape(colId)}"]`) as HTMLElement;
     if (!cellEl) return;
 
     cellEl.classList.add('gs-cell-focused');

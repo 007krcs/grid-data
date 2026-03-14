@@ -115,11 +115,12 @@ describe('Integration: Core + Plugins + DomRenderer', () => {
   // ──────────────────────────────────────────────
   // 2. Selection + render update
   // ──────────────────────────────────────────────
-  it('should add gs-row-selected class and aria-selected when a row is selected', () => {
+  it('should add gs-row-selected class and aria-selected when a row is selected', async () => {
     mountGrid({ plugins: [SelectionPlugin()] });
 
     // Dispatch selection:select for row-0
     engine.commandBus.dispatch('selection:select', { rowId: 'row-0' });
+    await Promise.resolve(); // flush microtask render batch
 
     const rowEl = container.querySelector('[data-row-id="row-0"]');
     expect(rowEl).toBeTruthy();
@@ -136,7 +137,7 @@ describe('Integration: Core + Plugins + DomRenderer', () => {
   // ──────────────────────────────────────────────
   // 3. Filter + row count
   // ──────────────────────────────────────────────
-  it('should render fewer rows after applying a text filter', () => {
+  it('should render fewer rows after applying a text filter', async () => {
     mountGrid({
       rows: makeRows(5),
       plugins: [FilteringPlugin()],
@@ -151,6 +152,7 @@ describe('Integration: Core + Plugins + DomRenderer', () => {
       colId: 'name',
       model: { filterType: 'text', type: 'contains', filter: 'Alice' },
     });
+    await Promise.resolve(); // flush microtask render batch
 
     // Now only rows whose name contains 'Alice' should be rendered
     const filteredRows = container.querySelectorAll('[role="row"][data-row-id]');
@@ -223,7 +225,7 @@ describe('Integration: Core + Plugins + DomRenderer', () => {
   // ──────────────────────────────────────────────
   // 6. Multiple plugins coexistence
   // ──────────────────────────────────────────────
-  it('should support sorting + selection + filtering together', () => {
+  it('should support sorting + selection + filtering together', async () => {
     mountGrid({
       rows: makeRows(5),
       plugins: [SortingPlugin(), SelectionPlugin(), FilteringPlugin()],
@@ -242,6 +244,7 @@ describe('Integration: Core + Plugins + DomRenderer', () => {
 
     // 2) Select a row
     engine.commandBus.dispatch('selection:select', { rowId: firstRowId });
+    await Promise.resolve(); // flush microtask render batch
     const selectedRowEl = container.querySelector(`[data-row-id="${firstRowId}"]`);
     expect(selectedRowEl!.classList.contains('gs-row-selected')).toBe(true);
     expect(selectedRowEl!.getAttribute('aria-selected')).toBe('true');
@@ -251,6 +254,7 @@ describe('Integration: Core + Plugins + DomRenderer', () => {
       colId: 'age',
       model: { filterType: 'number', type: 'greaterThan', filter: 30 },
     });
+    await Promise.resolve(); // flush microtask render batch
 
     const filteredRows = container.querySelectorAll('[role="row"][data-row-id]');
     expect(filteredRows.length).toBeLessThan(5);
@@ -433,7 +437,7 @@ describe('Integration: Core + Plugins + DomRenderer', () => {
   // ──────────────────────────────────────────────
   // 14. Quick filter reduces displayed rows
   // ──────────────────────────────────────────────
-  it('should reduce rendered rows when quick filter is applied', () => {
+  it('should reduce rendered rows when quick filter is applied', async () => {
     mountGrid({
       rows: makeRows(5),
       plugins: [FilteringPlugin()],
@@ -444,6 +448,7 @@ describe('Integration: Core + Plugins + DomRenderer', () => {
 
     // Apply quick filter that matches 'Bob'
     engine.commandBus.dispatch('filter:quickFilter', { text: 'Bob' });
+    await Promise.resolve(); // flush microtask render batch
 
     const filteredRows = container.querySelectorAll('[role="row"][data-row-id]');
     expect(filteredRows.length).toBeLessThan(5);
@@ -536,16 +541,18 @@ describe('Integration: Core + Plugins + DomRenderer', () => {
   // ──────────────────────────────────────────────
   // 17. Selection deselect on second click
   // ──────────────────────────────────────────────
-  it('should deselect a row when clicked again with selection plugin', () => {
+  it('should deselect a row when clicked again with selection plugin', async () => {
     mountGrid({ plugins: [SelectionPlugin()] });
 
     // Select row-0
     engine.commandBus.dispatch('selection:select', { rowId: 'row-0' });
+    await Promise.resolve(); // flush microtask render batch
     let rowEl = container.querySelector('[data-row-id="row-0"]');
     expect(rowEl!.classList.contains('gs-row-selected')).toBe(true);
 
     // Deselect row-0 by selecting again (single mode deselection)
     engine.commandBus.dispatch('selection:select', { rowId: 'row-0' });
+    await Promise.resolve(); // flush microtask render batch
     rowEl = container.querySelector('[data-row-id="row-0"]');
     expect(rowEl!.classList.contains('gs-row-selected')).toBe(false);
     expect(rowEl!.getAttribute('aria-selected')).toBeNull();
@@ -604,7 +611,7 @@ describe('Integration: Core + Plugins + DomRenderer', () => {
   // ──────────────────────────────────────────────
   // 20. Clear filter restores all rows
   // ──────────────────────────────────────────────
-  it('should restore all rows when filter is cleared', () => {
+  it('should restore all rows when filter is cleared', async () => {
     mountGrid({
       rows: makeRows(5),
       plugins: [FilteringPlugin()],
@@ -615,12 +622,14 @@ describe('Integration: Core + Plugins + DomRenderer', () => {
       colId: 'name',
       model: { filterType: 'text', type: 'contains', filter: 'Alice' },
     });
+    await Promise.resolve(); // flush microtask render batch
 
     const filteredCount = container.querySelectorAll('[role="row"][data-row-id]').length;
     expect(filteredCount).toBeLessThan(5);
 
     // Clear all filters
     engine.commandBus.dispatch('filter:clear', {});
+    await Promise.resolve(); // flush microtask render batch
 
     const restoredCount = container.querySelectorAll('[role="row"][data-row-id]').length;
     expect(restoredCount).toBe(5);

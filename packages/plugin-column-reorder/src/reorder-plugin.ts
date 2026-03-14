@@ -25,6 +25,14 @@ export function ColumnReorderPlugin(options: ColumnReorderPluginOptions = {}): G
     version: '0.1.0',
 
     install(ctx: PluginContext) {
+      // Cached root element for scoped DOM queries
+      let cachedRoot: HTMLElement | null = null;
+      const getRoot = (): HTMLElement | null => {
+        if (cachedRoot && cachedRoot.isConnected) return cachedRoot;
+        cachedRoot = document.querySelector<HTMLElement>('.gs-root');
+        return cachedRoot;
+      };
+
       // ── Move column to index ──
       const unregMove = ctx.commandBus.registerHandler(
         'column:move',
@@ -70,7 +78,9 @@ export function ColumnReorderPlugin(options: ColumnReorderPluginOptions = {}): G
       // ── Inject drag handlers into header cells ──
       const injectDragHandlers = () => {
         if (!_enableDragDrop) return;
-        const headers = document.querySelectorAll('.gs-header-cell');
+        const root = getRoot();
+        const scope = root ?? document;
+        const headers = scope.querySelectorAll('.gs-header-cell');
         for (const header of headers) {
           const el = header as HTMLElement;
           const colId = el.getAttribute('data-col-id');

@@ -25,6 +25,7 @@
 [dir="rtl"] .gs-group-cell,
 .gs-root[dir="rtl"] .gs-group-cell {
   padding-left: 0;
+  padding-right: calc(var(--gs-size-group-indent, 24px) * var(--gs-group-level, 0));
 }
 
 [dir="rtl"] .gs-group-chevron,

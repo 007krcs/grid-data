@@ -4,7 +4,7 @@
  */
 export interface PdfParser {
   /** Load and parse a PDF document from raw bytes */
-  loadDocument(source: ArrayBuffer): Promise<ParsedDocument>;
+  loadDocument(source: ArrayBuffer | Uint8Array): Promise<ParsedDocument>;
   /** Extract text content from a specific page */
   getPageText(pageIndex: number): Promise<PageTextContent>;
   /** Get page dimensions and metadata */

@@ -63,6 +63,8 @@ export interface PdfViewerConfig {
   enableTextLayer?: boolean;
   /** Enable annotation layer (default: true). */
   enableAnnotationLayer?: boolean;
+  /** Pluggable PDF parser backend (e.g. pdf.js adapter). */
+  parser?: import('../engine/pdf-parser').PdfParser;
 }
 
 // ─── Public API ───

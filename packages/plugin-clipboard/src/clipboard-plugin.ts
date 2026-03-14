@@ -118,7 +118,11 @@ export function ClipboardPlugin(options: ClipboardPluginOptions = {}): GridPlugi
       let rootEl: HTMLElement | null = null;
       const unsubReady = ctx.eventBus.on('grid:ready', () => {
         requestAnimationFrame(() => {
-          rootEl = document.querySelector('.gs-root');
+          // Scope to the grid's own root element
+          const containers = document.querySelectorAll<HTMLElement>('.gs-root');
+          rootEl = containers.length === 1
+            ? containers[0]!
+            : (ctx as any).rootElement ?? containers[0] ?? null;
           if (rootEl) {
             // Ensure root is focusable for keyboard events
             if (!rootEl.getAttribute('tabindex')) {

@@ -3,9 +3,7 @@ title: GridConfig
 description: Complete reference for the GridConfig interface used to initialize a GridStorm data grid.
 ---
 
-The `GridConfig` interface defines all options for creating a GridStorm grid. It is passed to `createGrid()` in vanilla JavaScript or as props to the `<GridStorm>` React component.
-
-## Interface
+The `GridConfig<TData>` interface defines every option for creating a GridStorm grid instance. Pass it to `createGrid()` in vanilla TypeScript or as props to the `<GridStorm>` React component.
 
 ```ts title="GridConfig<TData>"
 interface GridConfig<TData = any> {
@@ -33,195 +31,333 @@ interface GridConfig<TData = any> {
   locale?: string;
   theme?: string;
   onGridReady?: (api: GridApi<TData>) => void;
-  onRowDataChanged?: (event: { rowData: TData[] }) => void;
-  onSelectionChanged?: (event: { selectedNodes: RowNode<TData>[]; source: SelectionSource }) => void;
-  onSortChanged?: (event: { sortModel: SortModelItem[] }) => void;
-  onFilterChanged?: (event: { filterModel: Record<string, FilterModel> }) => void;
-  onCellValueChanged?: (event: { node: RowNode<TData>; colId: string; oldValue: any; newValue: any }) => void;
+  onRowDataChanged?: (event: GridEventMap<TData>['rowData:changed']) => void;
+  onSelectionChanged?: (event: GridEventMap<TData>['selection:changed']) => void;
+  onSortChanged?: (event: GridEventMap<TData>['column:sort:changed']) => void;
+  onFilterChanged?: (event: GridEventMap<TData>['filter:changed']) => void;
+  onCellValueChanged?: (event: GridEventMap<TData>['cell:valueChanged']) => void;
 }
 ```
 
-## Properties
+## Data Options
 
-### Required
-
-| Property | Type | Description |
-|---|---|---|
-| `columns` | `ColumnDef<TData>[]` | Column definitions. Determines which fields are displayed and how. See [Column Definitions](/api/column-definitions/). |
-
-### Data
-
-| Property | Type | Default | Description |
+| Option | Type | Default | Description |
 |---|---|---|---|
-| `rowData` | `TData[]` | `undefined` | Client-side row data array. Mutually exclusive with `dataSource`. |
-| `dataSource` | `DataSource<TData>` | `undefined` | Server-side or infinite data source for lazy loading. |
-| `rowModelType` | `'client' \| 'server' \| 'infinite' \| 'viewport'` | `'client'` | Row model type. |
-| `getRowId` | `(params: GetRowIdParams) => string` | Array index | Function to generate unique row IDs from data. |
+| `columns` | `ColumnDef<TData>[]` | **required** | Array of column definitions describing every column to render. Order determines initial display order. |
+| `rowData` | `TData[]` | `undefined` | Client-side row data array. Mutually exclusive with `dataSource`. The grid performs all sorting, filtering, and grouping in the browser. |
+| `dataSource` | `DataSource<TData>` | `undefined` | Server-side or infinite data source for fetching rows on demand. Mutually exclusive with `rowData`. |
+| `rowModelType` | `'client' \| 'server' \| 'infinite' \| 'viewport'` | `'client'` | Determines how the grid fetches and manages row data. |
+| `getRowId` | `(params: GetRowIdParams<TData>) => string` | Array index | Callback to generate a unique string ID for each row. Recommended for stable selection and update performance. |
 
-### Plugins
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `plugins` | `GridPlugin[]` | `[]` | Array of plugin instances to install. |
-
-### Column Defaults
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `defaultColDef` | `Partial<ColumnDef>` | `{}` | Default values applied to all column definitions. Column-level values override defaults. |
-
-### Sizing
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `rowHeight` | `number \| function` | `40` | Row height in pixels. Pass a function for dynamic heights: `(params) => number`. |
-| `headerHeight` | `number` | `48` | Header row height in pixels. |
-
-### Layout
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `domLayout` | `'normal' \| 'autoHeight' \| 'print'` | `'normal'` | DOM layout mode. `autoHeight` sizes the grid to fit all rows. `print` optimizes for printing. |
-
-### Pinned Rows
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `pinnedTopRowData` | `TData[]` | `undefined` | Rows pinned to the top of the grid. Not affected by sort/filter/pagination. |
-| `pinnedBottomRowData` | `TData[]` | `undefined` | Rows pinned to the bottom of the grid. |
-
-### Scrolling
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `suppressScrollX` | `boolean` | `false` | Disable horizontal scrolling. |
-| `suppressScrollY` | `boolean` | `false` | Disable vertical scrolling. |
-
-### Selection
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `rowSelection` | `'single' \| 'multiple'` | `undefined` | Row selection mode. Also configurable via the Selection plugin. |
-
-### Editing
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `editType` | `'cell' \| 'row'` | `undefined` | Editing mode. `cell` edits one cell at a time. `row` edits all cells in a row. |
-| `undoRedoCellEditing` | `boolean` | `false` | Enable undo/redo for cell edits. |
-
-### Pagination
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `pagination` | `boolean` | `false` | Enable pagination. Also configurable via the Pagination plugin. |
-| `paginationPageSize` | `number` | `100` | Number of rows per page. |
-
-### Animation
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `animateRows` | `boolean` | `false` | Animate row transitions during sort/filter changes. |
-
-### Accessibility
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `ariaLabel` | `string` | `undefined` | ARIA label for the grid root element. |
-
-### Localization
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `locale` | `string` | `undefined` | Locale string for number/date formatting. |
-
-### Theme
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `theme` | `string` | `undefined` | Theme name applied as `data-theme` attribute. |
-
-### Event Callbacks
-
-| Property | Type | Description |
-|---|---|---|
-| `onGridReady` | `(api: GridApi) => void` | Called when the grid engine is initialized. |
-| `onRowDataChanged` | `(event) => void` | Called when `setRowData()` is invoked. |
-| `onSelectionChanged` | `(event) => void` | Called when row selection changes. |
-| `onSortChanged` | `(event) => void` | Called when the sort model changes. |
-| `onFilterChanged` | `(event) => void` | Called when the filter model changes. |
-| `onCellValueChanged` | `(event) => void` | Called when a cell value is committed after editing. |
-
-## GetRowIdParams
-
-```ts
-interface GetRowIdParams<TData> {
-  data: TData;           // The row data object
-  index: number;         // Array index
-  parentKeys?: string[]; // Parent group keys (for grouped data)
-}
-```
-
-## DataSource
-
-```ts
-interface DataSource<TData> {
-  getRows(params: DataSourceRequest): Promise<DataSourceResult<TData>>;
-  destroy?(): void;
-}
-
-interface DataSourceRequest {
-  startRow: number;
-  endRow: number;
-  sortModel: SortModelItem[];
-  filterModel: Record<string, FilterModel>;
-  groupKeys: string[];
-  pivotCols: string[];
-  pivotMode: boolean;
-  valueCols: string[];
-  rowGroupCols: string[];
-}
-
-interface DataSourceResult<TData> {
-  rowData: TData[];
-  rowCount: number;
-  lastRow?: number;
-}
-```
-
-## Usage Example
-
-```ts title="Full config example"
+```ts title="Data options"
 import { createGrid } from '@gridstorm/core';
-import { SortingPlugin } from '@gridstorm/plugin-sorting';
-import { SelectionPlugin } from '@gridstorm/plugin-selection';
 
 const engine = createGrid({
+  columns: [{ field: 'name' }, { field: 'email' }],
+  rowData: [
+    { id: 1, name: 'Alice', email: 'alice@example.com' },
+    { id: 2, name: 'Bob', email: 'bob@example.com' },
+  ],
+  rowModelType: 'client',
+  getRowId: (params) => String(params.data.id),
+});
+```
+
+## Column Options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `defaultColDef` | `Partial<ColumnDef<TData>>` | `{}` | Default column definition applied to all columns. Individual column definitions override these defaults. |
+
+```ts title="Column defaults"
+const engine = createGrid({
   columns: [
-    { field: 'name', headerName: 'Name', sortable: true },
-    { field: 'age', headerName: 'Age', width: 80, sortable: true },
-    { field: 'email', headerName: 'Email', flex: 1 },
+    { field: 'name', headerName: 'Full Name' },
+    { field: 'salary', width: 120 },
   ],
   rowData: employees,
-  getRowId: (params) => params.data.id,
-  plugins: [
-    SortingPlugin({ multiSort: true }),
-    SelectionPlugin({ mode: 'multiple' }),
-  ],
-  defaultColDef: { resizable: true, filterable: true },
-  rowHeight: 44,
-  headerHeight: 48,
-  pagination: true,
-  paginationPageSize: 50,
-  ariaLabel: 'Employee directory',
-  theme: 'light',
-  onGridReady: (api) => {
-    console.log('Grid ready with', api.getDisplayedRowCount(), 'rows');
+  defaultColDef: {
+    sortable: true,
+    resizable: true,
+    width: 150,
+    filterable: true,
   },
 });
 ```
 
-## Next Steps
+## Layout Options
 
-- **[GridApi](/api/grid-api/)** -- Methods available on the API object.
-- **[Column Definitions](/api/column-definitions/)** -- Full ColumnDef reference.
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `rowHeight` | `number \| ((params: { data: TData; index: number }) => number)` | `40` | Height of each data row in pixels. Use a number for uniform heights (better virtual scroll performance) or a function for variable-height rows. |
+| `headerHeight` | `number` | `40` | Height of the column header row in pixels. |
+| `domLayout` | `'normal' \| 'autoHeight' \| 'print'` | `'normal'` | Controls how the grid DOM height is determined. `'autoHeight'` expands to fit all rows (disables virtual scrolling). `'print'` renders all rows for print layout. |
+
+```ts title="Layout options"
+const engine = createGrid({
+  columns,
+  rowData,
+  rowHeight: 48,
+  headerHeight: 56,
+  domLayout: 'normal',
+});
+
+// Variable row heights
+const engine2 = createGrid({
+  columns,
+  rowData,
+  rowHeight: ({ data }) => data.hasDetails ? 80 : 40,
+});
+```
+
+## Pinned Rows
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `pinnedTopRowData` | `TData[]` | `undefined` | Rows pinned at the top of the grid. Not affected by sorting, filtering, or scrolling. |
+| `pinnedBottomRowData` | `TData[]` | `undefined` | Rows pinned at the bottom of the grid. Not affected by sorting, filtering, or scrolling. |
+
+```ts title="Pinned rows"
+const engine = createGrid({
+  columns,
+  rowData,
+  pinnedTopRowData: [{ name: 'Header Row', salary: null }],
+  pinnedBottomRowData: [{ name: 'Total', salary: 1250000 }],
+});
+```
+
+## Scrolling Options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `suppressScrollX` | `boolean` | `false` | When `true`, suppresses horizontal scrolling. Columns are forced to fit within the grid width. |
+| `suppressScrollY` | `boolean` | `false` | When `true`, suppresses vertical scrolling. Use with `domLayout: 'autoHeight'` for full-height rendering. |
+
+## Pagination Options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `pagination` | `boolean` | `false` | When `true`, enables client-side pagination. |
+| `paginationPageSize` | `number` | `100` | Number of rows per page when pagination is enabled. |
+
+```ts title="Pagination"
+const engine = createGrid({
+  columns,
+  rowData,
+  pagination: true,
+  paginationPageSize: 25,
+});
+```
+
+## Selection Options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `rowSelection` | `'single' \| 'multiple' \| false` | `false` | Configures row selection behavior. `'single'` allows one row at a time. `'multiple'` allows Ctrl/Shift+click multi-select. `false` disables selection. |
+
+```ts title="Selection"
+const engine = createGrid({
+  columns,
+  rowData,
+  rowSelection: 'multiple',
+});
+```
+
+## Editing Options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `editType` | `'cell' \| 'fullRow'` | `'cell'` | Controls editing mode. `'cell'` edits one cell at a time. `'fullRow'` makes the entire row editable when editing starts. |
+| `undoRedoCellEditing` | `boolean` | `false` | When `true`, enables undo/redo for cell edits via Ctrl+Z / Ctrl+Y. |
+
+```ts title="Editing"
+const engine = createGrid({
+  columns: [
+    { field: 'name', editable: true },
+    { field: 'salary', editable: true, cellEditor: 'number' },
+  ],
+  rowData,
+  editType: 'cell',
+  undoRedoCellEditing: true,
+});
+```
+
+## Styling Options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `theme` | `string` | `'gridstorm-light'` | Theme identifier applied to the grid. Corresponds to a CSS class from `@gridstorm/theme-default` or a custom theme package. |
+| `animateRows` | `boolean` | `true` | When `true`, enables row transition animations during sorting, filtering, and reordering. |
+
+```ts title="Theming"
+const engine = createGrid({
+  columns,
+  rowData,
+  theme: 'gridstorm-dark',
+  animateRows: true,
+});
+```
+
+## Accessibility and Locale
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `ariaLabel` | `string` | `undefined` | ARIA label applied to the grid root element for screen readers. |
+| `locale` | `string` | `'en-US'` | BCP 47 locale tag for number formatting, date formatting, and text collation. |
+
+```ts title="Accessibility"
+const engine = createGrid({
+  columns,
+  rowData,
+  ariaLabel: 'Employee data table',
+  locale: 'de-DE',
+});
+```
+
+## Callback Options
+
+| Option | Type | Description |
+|---|---|---|
+| `onGridReady` | `(api: GridApi<TData>) => void` | Called once when the grid is fully initialized and the API is ready. Recommended place for initial API calls. |
+| `onRowDataChanged` | `(event: { rowData: TData[] }) => void` | Called when row data changes via `setRowData()` or data source updates. |
+| `onSelectionChanged` | `(event: { selectedNodes: RowNode<TData>[]; source: SelectionSource }) => void` | Called when the set of selected rows changes. |
+| `onSortChanged` | `(event: { sortModel: SortModelItem[] }) => void` | Called when the sort model changes. |
+| `onFilterChanged` | `(event: { filterModel: Record<string, FilterModel> }) => void` | Called when the filter model changes. |
+| `onCellValueChanged` | `(event: { node: RowNode<TData>; colId: string; oldValue: any; newValue: any }) => void` | Called when a cell value is changed through editing. |
+
+```ts title="Callbacks"
+const engine = createGrid({
+  columns,
+  rowData,
+  onGridReady: (api) => {
+    api.setFilterModel({ status: { filterType: 'text', filter: 'active' } });
+  },
+  onSelectionChanged: (event) => {
+    console.log('Selected:', event.selectedNodes.length, 'rows');
+  },
+  onSortChanged: (event) => {
+    console.log('Sort model:', event.sortModel);
+  },
+  onFilterChanged: (event) => {
+    console.log('Filters:', Object.keys(event.filterModel));
+  },
+  onCellValueChanged: (event) => {
+    console.log(`Cell ${event.colId} changed from`, event.oldValue, 'to', event.newValue);
+  },
+});
+```
+
+## Plugins
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `plugins` | `GridPlugin<TData>[]` | `[]` | Array of plugins to install during grid initialization. Plugins are installed in dependency-resolved order via topological sort. |
+
+```ts title="Plugins"
+import { sortingPlugin } from '@gridstorm/plugin-sorting';
+import { filterPlugin } from '@gridstorm/plugin-filtering';
+import { selectionPlugin } from '@gridstorm/plugin-selection';
+import { editingPlugin } from '@gridstorm/plugin-editing';
+
+const engine = createGrid({
+  columns,
+  rowData,
+  plugins: [
+    sortingPlugin(),
+    filterPlugin(),
+    selectionPlugin(),
+    editingPlugin(),
+  ],
+});
+```
+
+## Supporting Types
+
+### GetRowIdParams
+
+```ts title="GetRowIdParams"
+interface GetRowIdParams<TData> {
+  data: TData;           // The row data object
+  index: number;         // Zero-based index in the input data array
+  parentKeys?: string[]; // Parent group keys for grouped/tree data
+}
+```
+
+### DataSource
+
+```ts title="DataSource"
+interface DataSource<TData> {
+  getRows(params: DataSourceRequest): Promise<DataSourceResult<TData>>;
+  destroy?(): void;
+}
+```
+
+### DataSourceRequest
+
+```ts title="DataSourceRequest"
+interface DataSourceRequest {
+  startRow: number;                          // First row index (inclusive, zero-based)
+  endRow: number;                            // Last row index (exclusive)
+  sortModel: SortModelItem[];                // Current sort model
+  filterModel: Record<string, FilterModel>;  // Current filter model
+  groupKeys: string[];                       // Expanded group path
+  pivotCols: string[];                       // Pivot column IDs
+  pivotMode: boolean;                        // Whether pivot mode is active
+  valueCols: string[];                       // Value columns for aggregation
+  rowGroupCols: string[];                    // Row grouping columns
+}
+```
+
+### DataSourceResult
+
+```ts title="DataSourceResult"
+interface DataSourceResult<TData> {
+  rowData: TData[];   // Row data for the requested range
+  rowCount: number;   // Number of rows returned
+  lastRow?: number;   // Total dataset size (omit for infinite scrolling)
+}
+```
+
+## Full Example
+
+```ts title="Complete GridConfig"
+import { createGrid } from '@gridstorm/core';
+import { sortingPlugin } from '@gridstorm/plugin-sorting';
+import { selectionPlugin } from '@gridstorm/plugin-selection';
+import { paginationPlugin } from '@gridstorm/plugin-pagination';
+
+interface Employee {
+  id: number;
+  name: string;
+  department: string;
+  salary: number;
+}
+
+const engine = createGrid<Employee>({
+  columns: [
+    { field: 'name', headerName: 'Full Name', sortable: true, flex: 1 },
+    { field: 'department', sortable: true, width: 150 },
+    { field: 'salary', sortable: true, width: 120,
+      valueFormatter: ({ value }) => `$${value.toLocaleString()}` },
+  ],
+  rowData: employees,
+  getRowId: (params) => String(params.data.id),
+  plugins: [sortingPlugin(), selectionPlugin(), paginationPlugin()],
+  defaultColDef: { resizable: true, filterable: true },
+  rowHeight: 44,
+  headerHeight: 48,
+  rowSelection: 'multiple',
+  pagination: true,
+  paginationPageSize: 50,
+  animateRows: true,
+  ariaLabel: 'Employee directory',
+  locale: 'en-US',
+  theme: 'gridstorm-light',
+  onGridReady: (api) => {
+    api.setSortModel([{ colId: 'name', sort: 'asc' }]);
+  },
+  onSelectionChanged: ({ selectedNodes }) => {
+    console.log(selectedNodes.length, 'rows selected');
+  },
+});
+```

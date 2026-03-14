@@ -1,111 +1,126 @@
 ---
 title: Column Pinning
-description: Pin columns to the left or right edge of the grid so they remain visible during horizontal scrolling.
+description: Pin columns to the left or right edge of your GridStorm data grid so they remain visible during horizontal scrolling.
 ---
 
-The Column Pinning plugin enables columns to be fixed to the left or right edge of the grid. Pinned columns stay visible as the user scrolls horizontally through the remaining columns.
+The Column Pinning plugin enables columns to be fixed to the left or right edge of the grid. Pinned columns remain visible as the user scrolls horizontally. The plugin enforces configurable limits on the number of pinned columns and automatically reorders columns into left-pinned, center, and right-pinned zones.
 
 ## Installation
 
-```bash
+```bash title="Terminal"
 npm install @gridstorm/plugin-column-pinning
 ```
 
-```ts title="Setup"
+## Setup
+
+```typescript title="setup.ts"
+import { createGrid } from '@gridstorm/core';
 import { ColumnPinningPlugin } from '@gridstorm/plugin-column-pinning';
 
-const engine = createGrid({
+const grid = createGrid({
   columns: [
-    { field: 'id', pinned: 'left' },
-    { field: 'name' },
-    { field: 'email' },
-    { field: 'phone' },
-    { field: 'actions', pinned: 'right' },
+    { colId: 'id', field: 'id', headerName: 'ID', pinned: 'left' },
+    { colId: 'name', field: 'name', headerName: 'Name' },
+    { colId: 'email', field: 'email', headerName: 'Email' },
+    { colId: 'phone', field: 'phone', headerName: 'Phone' },
+    { colId: 'actions', field: 'actions', headerName: 'Actions', pinned: 'right' },
   ],
-  rowData: [...],
-  plugins: [ColumnPinningPlugin()],
+  rowData: [],
+  plugins: [
+    ColumnPinningPlugin({
+      maxPinnedLeft: 2,
+      maxPinnedRight: 1,
+    }),
+  ],
 });
 ```
 
 ## Plugin Options
 
-```ts title="ColumnPinningPluginOptions"
-interface ColumnPinningPluginOptions {
-  maxPinnedLeft?: number;   // Maximum left-pinned columns (default: Infinity)
-  maxPinnedRight?: number;  // Maximum right-pinned columns (default: Infinity)
-}
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| `maxPinnedLeft` | `number` | `Infinity` | Maximum number of columns that can be pinned to the left. New pin requests are rejected when the limit is reached. |
+| `maxPinnedRight` | `number` | `Infinity` | Maximum number of columns that can be pinned to the right. |
+
+## Usage Examples
+
+### Pin a Column Programmatically
+
+```typescript title="pin-column.ts"
+// Pin to left
+grid.commandBus.dispatch('column:pin', { colId: 'email', pinned: 'left' });
+
+// Pin to right
+grid.commandBus.dispatch('column:pin', { colId: 'phone', pinned: 'right' });
+
+// Unpin
+grid.commandBus.dispatch('column:pin', { colId: 'email', pinned: null });
 ```
 
-Limit the number of pinned columns to prevent excessive pinning:
-
-```ts
-ColumnPinningPlugin({ maxPinnedLeft: 2, maxPinnedRight: 1 })
-```
-
-## Pinning via Column Definitions
-
-Set the initial pin state in the column definition:
-
-```ts title="Column definition"
-{ field: 'id', pinned: 'left' }
-{ field: 'actions', pinned: 'right' }
-{ field: 'name', pinned: null }  // Not pinned (default)
-```
-
-### Lock Pinned State
-
-Prevent users from unpinning a column:
-
-```ts
-{ field: 'id', pinned: 'left', lockPinned: true }
-```
-
-## Programmatic Pinning
-
-### Pin a Column
-
-```ts
-api.setColumnPinned('email', 'left');
-api.setColumnPinned('phone', 'right');
-```
-
-### Unpin a Column
-
-```ts
-api.setColumnPinned('email', null);
-```
+After pinning, the plugin automatically reorders the column array so left-pinned columns come first, center columns in the middle, and right-pinned columns last.
 
 ### Unpin All Columns
 
-Via command:
-
-```ts
-engine.commandBus.dispatch('column:unpinAll', {});
+```typescript title="unpin-all.ts"
+grid.commandBus.dispatch('column:unpinAll', {});
 ```
 
-## Column Reordering with Pins
+This uses `store.batch()` to unpin all columns in a single update.
 
-When a column is pinned, the plugin automatically reorders the column array so that:
-1. Left-pinned columns appear first
-2. Unpinned (center) columns appear in the middle
-3. Right-pinned columns appear last
+### Set Initial Pinning via Column Definitions
 
-This reordering is internal and does not affect the order you defined in your column definitions.
+```typescript title="initial-pinning.ts"
+const columns = [
+  { colId: 'id', field: 'id', headerName: 'ID', pinned: 'left' },
+  { colId: 'total', field: 'total', headerName: 'Total', pinned: 'right' },
+];
+```
 
 ## Commands
 
-| Command | Payload | Description |
-|---|---|---|
-| `column:pin` | `{ colId, pinned: 'left' \| 'right' \| null }` | Pin or unpin a column |
-| `column:unpinAll` | `{}` | Unpin all columns |
+| Name | Payload | Description |
+| --- | --- | --- |
+| `column:pin` | `{ colId: string; pinned: 'left' \| 'right' \| null }` | Pin or unpin a column. Enforces `maxPinnedLeft` / `maxPinnedRight` limits. Reorders columns after pinning. |
+| `column:unpinAll` | `{}` | Unpin all currently pinned columns in a single batch. |
 
 ## Events
 
-| Event | Payload | Description |
-|---|---|---|
-| `column:pinned` | `{ column, pinned }` | Column pin state changed |
+| Name | Payload | Description |
+| --- | --- | --- |
+| `column:pinned` | `{ column: ColumnState; pinned: 'left' \| 'right' \| null }` | Emitted by the core API after a column's pin state changes. |
+
+## React Integration
+
+```tsx title="PinnableGrid.tsx"
+import { GridStorm, useGridApi } from '@gridstorm/react';
+import { ColumnPinningPlugin } from '@gridstorm/plugin-column-pinning';
+
+function PinnableGrid({ rowData, columns }) {
+  const apiRef = useGridApi();
+
+  const pinLeft = (colId: string) => {
+    apiRef.current?.commandBus.dispatch('column:pin', { colId, pinned: 'left' });
+  };
+
+  const unpinAll = () => {
+    apiRef.current?.commandBus.dispatch('column:unpinAll', {});
+  };
+
+  return (
+    <>
+      <button onClick={unpinAll}>Unpin All</button>
+      <GridStorm
+        rowData={rowData}
+        columns={columns}
+        plugins={[ColumnPinningPlugin({ maxPinnedLeft: 3 })]}
+      />
+    </>
+  );
+}
+```
 
 ## Next Steps
 
-- **[Column Resize](/plugins/column-resize/)** -- Resize pinned and unpinned columns.
-- **[Column Reorder](/plugins/column-reorder/)** -- Drag columns to reorder.
+- [Column Resize Plugin](/plugins/column-resize/) -- resize pinned and unpinned columns.
+- [Column Reorder Plugin](/plugins/column-reorder/) -- drag columns to reorder within pin zones.
+- [Context Menu Plugin](/plugins/context-menu/) -- add pin/unpin actions to the right-click menu.

@@ -1,178 +1,140 @@
 ---
 title: Selection
-description: Configure single and multiple row selection, checkbox selection, keyboard selection, and programmatic selection.
+description: Add row selection with single, multiple, range, and checkbox modes to your GridStorm data grid.
 ---
 
-The Selection plugin provides row selection via mouse clicks, keyboard shortcuts, and programmatic API calls. It supports single selection, multiple selection with Ctrl+Click and Shift+Click, and optional checkbox columns.
+The Selection plugin provides row selection with support for single select, multi-select (Ctrl+Click), range select (Shift+Click), and programmatic selection. It also manages cell focus for keyboard navigation.
 
 ## Installation
 
-```bash
+```bash title="Terminal"
 npm install @gridstorm/plugin-selection
 ```
 
-```ts title="Setup"
+## Setup
+
+```typescript title="setup.ts"
+import { createGrid } from '@gridstorm/core';
 import { SelectionPlugin } from '@gridstorm/plugin-selection';
 
-const engine = createGrid({
-  columns: [...],
-  rowData: [...],
-  plugins: [SelectionPlugin({ mode: 'multiple' })],
+const grid = createGrid({
+  columns: [
+    { colId: 'name', field: 'name', headerName: 'Name' },
+    { colId: 'email', field: 'email', headerName: 'Email' },
+  ],
+  rowData: [],
+  plugins: [
+    SelectionPlugin({
+      mode: 'multiple',
+      checkbox: false,
+      enableDeselection: true,
+      suppressRowClickSelection: false,
+    }),
+  ],
 });
 ```
 
 ## Plugin Options
 
-```ts title="SelectionPluginOptions"
-interface SelectionPluginOptions {
-  mode?: 'single' | 'multiple';       // Selection mode (default: 'multiple')
-  checkbox?: boolean;                   // Show checkbox column (default: false)
-  enableDeselection?: boolean;          // Allow deselecting by clicking (default: true)
-  suppressRowClickSelection?: boolean;  // Disable click-to-select (default: false)
-}
-```
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| `mode` | `'single' \| 'multiple'` | `'multiple'` | Selection mode. `'single'` allows only one row at a time. |
+| `checkbox` | `boolean` | `false` | Add a checkbox column as the first column for selection. |
+| `enableDeselection` | `boolean` | `true` | Allow clicking a selected row to deselect it. |
+| `suppressRowClickSelection` | `boolean` | `false` | When `true`, row clicks do not trigger selection. Useful for checkbox-only mode. |
 
-### Single Selection
+## Usage Examples
 
-Only one row can be selected at a time. Clicking a new row deselects the previous one:
+### Select a Row Programmatically
 
-```ts
-SelectionPlugin({ mode: 'single' })
-```
-
-### Multiple Selection
-
-Multiple rows can be selected. Supports keyboard modifiers:
-
-- **Click** -- Select one row, deselect others
-- **Ctrl+Click** (Cmd+Click on Mac) -- Toggle selection on a row
-- **Shift+Click** -- Range select all rows between the last selected and the clicked row
-
-```ts
-SelectionPlugin({ mode: 'multiple' })
-```
-
-### Checkbox Selection
-
-Add a checkbox column as the first column:
-
-```ts
-SelectionPlugin({ mode: 'multiple', checkbox: true })
-```
-
-### Suppress Row Click
-
-Use only checkboxes for selection (clicking the row body does not select):
-
-```ts
-SelectionPlugin({
-  mode: 'multiple',
-  checkbox: true,
-  suppressRowClickSelection: true,
-})
-```
-
-## Programmatic Selection
-
-### Select All / Deselect All
-
-```ts
-api.selectAll();
-api.deselectAll();
-```
-
-### Get Selected Rows
-
-```ts
-const rows = api.getSelectedRows();       // Returns TData[]
-const nodes = api.getSelectedNodes();     // Returns RowNode<TData>[]
-```
-
-### Select a Specific Row
-
-Via command:
-
-```ts
-engine.commandBus.dispatch('selection:select', {
-  rowId: 'emp-123',
+```typescript title="select-row.ts"
+grid.commandBus.dispatch('selection:select', {
+  rowId: 'row-1',
   source: 'api',
 });
 ```
 
-With Ctrl (toggle) behavior:
+### Multi-Select and Range Select
 
-```ts
-engine.commandBus.dispatch('selection:select', {
-  rowId: 'emp-123',
+```typescript title="multi-select.ts"
+// Toggle a row in multi-select mode (like Ctrl+Click)
+grid.commandBus.dispatch('selection:select', {
+  rowId: 'row-2',
   multiSelect: true,
+});
+
+// Range select (like Shift+Click) -- selects all rows between last selected and target
+grid.commandBus.dispatch('selection:select', {
+  rowId: 'row-5',
+  rangeSelect: true,
+});
+```
+
+Range selection walks through `displayedRowIds` between the last selected row and the target, selecting all rows whose `selectable` property is `true`.
+
+### Controlled Selection (Replace Entire Selection)
+
+Set the entire selection state at once with `selection:set`. This filters the provided IDs to only include rows that exist and are selectable.
+
+```typescript title="controlled-selection.ts"
+grid.commandBus.dispatch('selection:set', {
+  selectedRowIds: ['row-1', 'row-3', 'row-5'],
   source: 'api',
 });
 ```
 
 ## Commands
 
-| Command | Payload | Description |
-|---|---|---|
-| `selection:select` | `{ rowId, multiSelect?, rangeSelect?, source? }` | Select a row |
-| `selection:selectAll` | `{}` | Select all visible rows |
-| `selection:deselectAll` | `{}` | Deselect all rows |
-| `focus:set` | `{ position }` | Set the focused cell position |
+| Name | Payload | Description |
+| --- | --- | --- |
+| `selection:select` | `{ rowId: string; multiSelect?: boolean; rangeSelect?: boolean; source?: SelectionSource }` | Select a row. Supports toggle (Ctrl) and range (Shift) behavior. Only selects rows where `node.selectable` is `true`. |
+| `selection:set` | `{ selectedRowIds: Set<string> \| string[]; source?: SelectionSource }` | Replace the entire selection. Accepts a `Set` or array of row IDs. |
+| `selection:selectAll` | `{}` | Select all displayed rows (multiple mode only). Calls `api.selectAll()`. |
+| `selection:deselectAll` | `{}` | Deselect all rows. Calls `api.deselectAll()`. |
+| `focus:set` | `{ position: CellPosition \| null }` | Set the focused cell position for keyboard navigation. Emits `cell:focused`. |
 
 ## Events
 
-| Event | Payload | Description |
-|---|---|---|
-| `selection:changed` | `{ selectedNodes, source }` | Selection changed |
-| `cell:focused` | `{ position, previousPosition }` | Focused cell changed |
-
-The `source` field indicates what triggered the change: `'api'`, `'click'`, `'checkbox'`, `'keyboard'`, or `'selectAll'`.
+| Name | Payload | Description |
+| --- | --- | --- |
+| `selection:changed` | `{ selectedNodes: RowNode[]; source: SelectionSource }` | Emitted whenever the selection changes. `source` indicates what triggered the change (`'click'`, `'api'`, etc.). |
+| `cell:focused` | `{ position: CellPosition \| null; previousPosition: CellPosition \| null }` | Emitted when the focused cell changes via `focus:set`. |
+| `row:clicked` | `{ node: RowNode; event: MouseEvent \| null }` | Listened to internally to trigger selection on row clicks (unless `suppressRowClickSelection` is `true`). |
 
 ## React Integration
 
-Use the `useGridSelection` hook:
+```tsx title="SelectableGrid.tsx"
+import { GridStorm, useGridApi } from '@gridstorm/react';
+import { SelectionPlugin } from '@gridstorm/plugin-selection';
 
-```tsx title="useGridSelection"
-import { useGridSelection } from '@gridstorm/react';
+function SelectableGrid({ rowData, columns }) {
+  const apiRef = useGridApi();
 
-function SelectionInfo() {
-  const {
-    selectedCount,
-    selectedRowIds,
-    isRowSelected,
-    getSelectedRows,
-    selectAll,
-    deselectAll,
-  } = useGridSelection();
+  const getSelected = () => {
+    const nodes = apiRef.current?.getSelectedNodes() ?? [];
+    console.log('Selected:', nodes.map((n) => n.id));
+  };
+
+  const selectAll = () => {
+    apiRef.current?.commandBus.dispatch('selection:selectAll', {});
+  };
 
   return (
-    <div>
-      <p>{selectedCount} rows selected</p>
+    <>
       <button onClick={selectAll}>Select All</button>
-      <button onClick={deselectAll}>Clear Selection</button>
-    </div>
+      <button onClick={getSelected}>Log Selection</button>
+      <GridStorm
+        rowData={rowData}
+        columns={columns}
+        plugins={[SelectionPlugin({ mode: 'multiple', checkbox: true })]}
+      />
+    </>
   );
 }
 ```
 
-### Controlled Selection in React
-
-Use controlled state to own the selection externally:
-
-```tsx title="Controlled selection"
-const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-<GridStorm
-  columns={columns}
-  rowData={data}
-  plugins={plugins}
-  selectedRowIds={selectedIds}
-  onSelectedRowIdsChange={(ids, source) => {
-    setSelectedIds(ids);
-  }}
-/>
-```
-
 ## Next Steps
 
-- **[Editing](/plugins/editing/)** -- Inline cell editing.
-- **[Clipboard](/plugins/clipboard/)** -- Copy/paste selected rows.
+- [Editing Plugin](/plugins/editing/) -- edit selected cells.
+- [Clipboard Plugin](/plugins/clipboard/) -- copy/paste selected rows (requires Selection).
+- [Context Menu Plugin](/plugins/context-menu/) -- right-click actions on selected rows.

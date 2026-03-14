@@ -1,208 +1,142 @@
 ---
 title: Filtering
-description: Configure column filters, quick filter, built-in filter types, and custom filter predicates.
+description: Add column-level and quick-filter text filtering to your GridStorm data grid.
 ---
 
-The Filtering plugin provides column-level filtering and a global quick filter. It manages the filter model state and integrates with the core row processing pipeline.
+The Filtering plugin provides column-level filtering and a global quick filter. It registers command handlers for setting, clearing, and querying filters while the core engine handles the actual predicate evaluation via `filterRowNodes()`.
 
 ## Installation
 
-```bash
+```bash title="Terminal"
 npm install @gridstorm/plugin-filtering
 ```
 
-```ts title="Setup"
+## Setup
+
+```typescript title="setup.ts"
+import { createGrid } from '@gridstorm/core';
 import { FilteringPlugin } from '@gridstorm/plugin-filtering';
 
-const engine = createGrid({
+const grid = createGrid({
   columns: [
-    { field: 'name', filterable: true },
-    { field: 'age', filterable: true },
-    { field: 'status', filterable: true },
+    { colId: 'name', field: 'name', headerName: 'Name' },
+    { colId: 'status', field: 'status', headerName: 'Status' },
+    { colId: 'age', field: 'age', headerName: 'Age' },
   ],
-  rowData: [...],
-  plugins: [FilteringPlugin()],
+  rowData: [],
+  plugins: [
+    FilteringPlugin({
+      quickFilterDebounce: 300,
+      keepFilterOnColumnsChange: true,
+      caseSensitive: false,
+    }),
+  ],
 });
 ```
 
 ## Plugin Options
 
-```ts title="FilteringPluginOptions"
-interface FilteringPluginOptions {
-  quickFilterDebounce?: number;         // Debounce delay in ms (default: 300)
-  keepFilterOnColumnsChange?: boolean;  // Preserve filters on column change (default: true)
-  caseSensitive?: boolean;              // Case-sensitive filtering (default: false)
-}
-```
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| `quickFilterDebounce` | `number` | `300` | Debounce delay in milliseconds for quick filter input. |
+| `keepFilterOnColumnsChange` | `boolean` | `true` | Preserve filter state when column definitions change. When `false`, stale filters for removed columns are pruned automatically on the `columns:changed` event. |
+| `caseSensitive` | `boolean` | `false` | Enable case-sensitive filtering. |
 
-## Filter Model
+## Usage Examples
 
-The filter model is a record keyed by column ID. Each entry describes the filter applied to that column:
+### Set a Column Filter
 
-```ts title="FilterModel"
-interface FilterModel {
-  filterType: 'text' | 'number' | 'date' | 'set' | 'custom';
-  type?: FilterOperator;
-  filter?: string | number | null;
-  filterTo?: string | number | null;
-  dateFrom?: string | null;
-  dateTo?: string | null;
-  values?: any[];
-  operator?: 'AND' | 'OR';
-  conditions?: FilterModel[];
-}
-```
+Apply a filter model to a specific column using the `filter:set` command with a `colId` and `model` payload. Pass `model: null` to remove the filter for that column.
 
-### Filter Operators
-
-| Operator | Applies to | Description |
-|---|---|---|
-| `equals` | text, number | Exact match |
-| `notEqual` | text, number | Not equal |
-| `contains` | text | Substring match |
-| `notContains` | text | Excludes substring |
-| `startsWith` | text | Starts with string |
-| `endsWith` | text | Ends with string |
-| `lessThan` | number, date | Less than value |
-| `lessThanOrEqual` | number, date | Less than or equal |
-| `greaterThan` | number, date | Greater than value |
-| `greaterThanOrEqual` | number, date | Greater than or equal |
-| `inRange` | number, date | Between two values |
-| `blank` | all | Is null/undefined/empty |
-| `notBlank` | all | Is not null/undefined/empty |
-
-## Setting Filters Programmatically
-
-### Set the Full Filter Model
-
-```ts title="Set all filters"
-api.setFilterModel({
-  name: {
-    filterType: 'text',
-    type: 'contains',
-    filter: 'john',
-  },
-  age: {
-    filterType: 'number',
-    type: 'greaterThan',
-    filter: 25,
-  },
-});
-```
-
-### Set a Single Column Filter
-
-Via command:
-
-```ts title="Per-column filter"
-engine.commandBus.dispatch('filter:setColumn', {
+```typescript title="column-filter.ts"
+// Set a filter on the "status" column
+grid.commandBus.dispatch('filter:set', {
   colId: 'status',
-  model: { filterType: 'text', type: 'equals', filter: 'active' },
+  model: { type: 'equals', filter: 'active' },
+});
+
+// Remove the filter for "status"
+grid.commandBus.dispatch('filter:set', {
+  colId: 'status',
+  model: null,
 });
 ```
 
-### Remove a Column Filter
+### Quick Filter (Global Text Search)
 
-```ts
-engine.commandBus.dispatch('filter:removeColumn', { colId: 'status' });
+The quick filter searches across all columns using a single text input.
+
+```typescript title="quick-filter.ts"
+grid.commandBus.dispatch('filter:quickFilter', { text: 'search term' });
+
+// Clear the quick filter
+grid.commandBus.dispatch('filter:quickFilter', { text: '' });
 ```
 
-### Clear All Filters
+### Check if a Column Has an Active Filter
 
-```ts
-api.setFilterModel({});
-```
-
-Or via command:
-
-```ts
-engine.commandBus.dispatch('filter:clear', {});
-```
-
-## Quick Filter
-
-The quick filter searches across all columns:
-
-```ts title="Quick filter"
-api.setQuickFilter('search term');
-```
-
-Via command:
-
-```ts
-engine.commandBus.dispatch('filter:quickFilter', { text: 'search term' });
-```
-
-Clear the quick filter:
-
-```ts
-api.setQuickFilter('');
-```
-
-## Combined Conditions
-
-Use the `conditions` array with an `operator` for AND/OR logic on a single column:
-
-```ts title="Combined conditions"
-api.setFilterModel({
-  salary: {
-    filterType: 'number',
-    operator: 'AND',
-    conditions: [
-      { filterType: 'number', type: 'greaterThan', filter: 50000 },
-      { filterType: 'number', type: 'lessThan', filter: 100000 },
-    ],
+```typescript title="check-filter.ts"
+grid.commandBus.dispatch('filter:isActive', {
+  colId: 'status',
+  callback: (isActive) => {
+    console.log('Status filter active:', isActive);
   },
 });
-```
-
-## Check Filter State
-
-```ts
-const isFiltered = api.isAnyFilterPresent();
-const model = api.getFilterModel();
 ```
 
 ## Commands
 
-| Command | Payload | Description |
-|---|---|---|
-| `filter:set` | `{ colId, model }` | Set filter on a column |
-| `filter:clear` | `{}` | Clear all filters |
-| `filter:quickFilter` | `{ text }` | Set quick filter text |
-| `filter:setColumn` | `{ colId, model }` | Set filter for one column |
-| `filter:removeColumn` | `{ colId }` | Remove filter from one column |
+| Name | Payload | Description |
+| --- | --- | --- |
+| `filter:set` | `{ colId: string; model: FilterModel \| null }` | Set or remove a filter on a specific column. Pass `model: null` to remove. |
+| `filter:setColumn` | `{ colId: string; model: FilterModel }` | Convenience command to set a filter on a column (merges with existing filters). |
+| `filter:removeColumn` | `{ colId: string }` | Remove the filter for a specific column. |
+| `filter:clear` | `{}` | Clear all column filters at once. |
+| `filter:quickFilter` | `{ text: string }` | Set the global quick filter text. Pass an empty string to clear. |
+| `filter:isActive` | `{ colId: string; callback: (active: boolean) => void }` | Query whether a column has an active filter. Result is returned via the callback. |
 
 ## Events
 
-| Event | Payload | Description |
-|---|---|---|
-| `filter:changed` | `{ filterModel }` | Column filter model changed |
-| `quickFilter:changed` | `{ text }` | Quick filter text changed |
+| Name | Payload | Description |
+| --- | --- | --- |
+| `filter:changed` | `{ filterModel: Record<string, FilterModel> }` | Emitted by the core API after the filter model is updated. |
+| `columns:changed` | `{ columns: ColumnState[] }` | Listened to internally when `keepFilterOnColumnsChange` is `false` to prune stale filters. |
 
 ## React Integration
 
-Use the `useGridFilter` hook:
+```tsx title="FilterableGrid.tsx"
+import { GridStorm, useGridApi } from '@gridstorm/react';
+import { FilteringPlugin } from '@gridstorm/plugin-filtering';
 
-```tsx title="useGridFilter"
-import { useGridFilter } from '@gridstorm/react';
+function FilterableGrid({ rowData, columns }) {
+  const apiRef = useGridApi();
 
-function FilterControls() {
-  const { isFiltered, filterModel, setQuickFilter, clearFilters } = useGridFilter();
+  const onQuickFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
+    apiRef.current?.commandBus.dispatch('filter:quickFilter', {
+      text: e.target.value,
+    });
+  };
+
+  const clearAll = () => {
+    apiRef.current?.commandBus.dispatch('filter:clear', {});
+  };
 
   return (
-    <div>
-      <input
-        placeholder="Search..."
-        onChange={(e) => setQuickFilter(e.target.value)}
+    <>
+      <input placeholder="Search..." onChange={onQuickFilter} />
+      <button onClick={clearAll}>Clear Filters</button>
+      <GridStorm
+        rowData={rowData}
+        columns={columns}
+        plugins={[FilteringPlugin({ quickFilterDebounce: 200 })]}
       />
-      {isFiltered && <button onClick={clearFilters}>Clear Filters</button>}
-    </div>
+    </>
   );
 }
 ```
 
 ## Next Steps
 
-- **[Selection](/plugins/selection/)** -- Row selection modes and API.
-- **[Sorting](/plugins/sorting/)** -- Column sorting.
+- [Sorting Plugin](/plugins/sorting/) -- sort filtered results.
+- [Pagination Plugin](/plugins/pagination/) -- paginate filtered rows.
+- [Grouping Plugin](/plugins/grouping/) -- grouped views respect active filters automatically.

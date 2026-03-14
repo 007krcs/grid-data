@@ -1,450 +1,628 @@
 ---
-title: React
-description: Complete guide to using GridStorm with React 18+, including hooks, custom renderers, controlled state, portals, and TypeScript types.
+title: React Adapter
+description: Use GridStorm in React applications with the @gridstorm/react package, featuring hooks, portals, controlled state, and full TypeScript support.
 ---
 
-The `@gridstorm/react` package provides a production-grade React wrapper around the headless GridStorm core. It includes the `<GridStorm>` component, a suite of hooks for accessing grid state, portal-based custom renderers, an error boundary, and full TypeScript support.
+The `@gridstorm/react` package provides a first-class React wrapper around the GridStorm headless engine. It includes the `<GridStorm>` component, reactive hooks powered by `useSyncExternalStore`, a portal system for rendering React components inside grid cells, and full support for controlled and uncontrolled state patterns.
 
 ## Installation
 
-```bash
+```bash title="Terminal"
 npm install @gridstorm/core @gridstorm/dom-renderer @gridstorm/react @gridstorm/theme-default
+```
+
+Import the default theme CSS in your application entry point:
+
+```tsx title="main.tsx"
+import '@gridstorm/theme-default';
 ```
 
 ## Basic Usage
 
-```tsx title="App.tsx"
+```tsx title="EmployeeGrid.tsx"
 import { GridStorm } from '@gridstorm/react';
-import '@gridstorm/theme-default/css';
+import type { ReactColumnDef } from '@gridstorm/react';
 
 interface Employee {
+  id: string;
   name: string;
-  age: number;
   department: string;
+  salary: number;
 }
 
-const columns = [
-  { field: 'name' as const, headerName: 'Name', sortable: true },
-  { field: 'age' as const, headerName: 'Age', width: 100 },
-  { field: 'department' as const, headerName: 'Department' },
+const columns: ReactColumnDef<Employee>[] = [
+  { field: 'name', headerName: 'Name', width: 200 },
+  { field: 'department', headerName: 'Department', width: 150 },
+  { field: 'salary', headerName: 'Salary', width: 120 },
 ];
 
-const data: Employee[] = [
-  { name: 'Alice', age: 30, department: 'Engineering' },
-  { name: 'Bob', age: 25, department: 'Design' },
+const rowData: Employee[] = [
+  { id: '1', name: 'Alice', department: 'Engineering', salary: 95000 },
+  { id: '2', name: 'Bob', department: 'Design', salary: 85000 },
 ];
 
-export default function App() {
-  return <GridStorm<Employee> columns={columns} rowData={data} height={400} />;
+export function EmployeeGrid() {
+  return (
+    <GridStorm<Employee>
+      columns={columns}
+      rowData={rowData}
+      getRowId={(params) => params.data.id}
+      height={400}
+    />
+  );
 }
 ```
 
-## GridStorm Component Props
+## Props Reference
 
-The `<GridStorm>` component accepts all `GridConfig` properties plus React-specific additions:
+The `<GridStorm>` component accepts all core `GridConfig` props plus React-specific props for layout, controlled state, events, and renderer configuration.
 
-| Prop | Type | Default | Description |
-|---|---|---|---|
-| `columns` | `ReactColumnDef[]` | Required | Column definitions (supports React renderers) |
-| `rowData` | `TData[]` | `undefined` | Row data array |
-| `plugins` | `GridPlugin[]` | `[]` | Plugins to install |
-| `height` | `number \| string` | `400` | Container height |
-| `width` | `number \| string` | `'100%'` | Container width |
-| `containerClass` | `string` | `undefined` | CSS class for the container |
-| `containerStyle` | `CSSProperties` | `undefined` | Inline styles for the container |
-| `theme` | `string` | `undefined` | Theme name (`'light'`, `'dark'`, `'high-contrast'`) |
-| `contextMenu` | `ReactContextMenu` | `undefined` | React context menu component |
-| `children` | `ReactNode` | `undefined` | Children (for context consumers) |
+### Core Grid Props
 
-Plus all `GridConfig` properties (`rowHeight`, `headerHeight`, `defaultColDef`, `getRowId`, `pagination`, `paginationPageSize`, etc.) and all event callback props.
+| Name | Type | Description |
+|------|------|-------------|
+| `columns` | `ReactColumnDef<TData>[]` | Column definitions. Supports React component renderers. |
+| `rowData` | `TData[]` | Client-side row data array. |
+| `dataSource` | `DataSource` | Server-side data source (alternative to `rowData`). |
+| `rowModelType` | `string` | Row model type. Default: `'clientSide'`. |
+| `getRowId` | `(params) => string` | Callback to generate a unique ID for each row. |
+| `plugins` | `GridPlugin[]` | Array of plugins to register during initialization. |
+| `defaultColDef` | `Partial<ColumnDef>` | Default column definition applied to all columns. |
+| `rowHeight` | `number` | Row height in pixels. |
+| `headerHeight` | `number` | Header row height in pixels. |
+| `domLayout` | `'normal' \| 'autoHeight' \| 'print'` | Controls how the grid DOM height is determined. |
+| `pinnedTopRowData` | `TData[]` | Rows pinned to the top of the grid. |
+| `pinnedBottomRowData` | `TData[]` | Rows pinned to the bottom of the grid. |
+| `suppressScrollX` | `boolean` | Suppress horizontal scrollbar. |
+| `suppressScrollY` | `boolean` | Suppress vertical scrollbar. |
+| `rowSelection` | `'single' \| 'multiple' \| false` | Row selection mode. |
+| `editType` | `string` | Cell editing type. |
+| `undoRedoCellEditing` | `boolean` | Enable undo/redo for cell editing. |
+| `pagination` | `boolean` | Enable pagination. |
+| `paginationPageSize` | `number` | Rows per page. |
+| `animateRows` | `boolean` | Enable row animation on sort/filter changes. |
+| `ariaLabel` | `string` | ARIA label for the grid root element. |
+| `locale` | `string` | Locale identifier for i18n. |
+| `theme` | `string` | Theme name applied to the grid. |
 
-## Event Callback Props
+### Component Layout Props
 
-```tsx title="Event callbacks"
-<GridStorm
-  columns={columns}
-  rowData={data}
-  onGridReady={(api) => console.log('Grid ready')}
-  onRowDataChanged={(e) => console.log('Data changed')}
-  onSelectionChanged={(e) => console.log('Selection:', e.selectedNodes.length)}
-  onSortChanged={(e) => console.log('Sort:', e.sortModel)}
-  onFilterChanged={(e) => console.log('Filter:', e.filterModel)}
-  onCellValueChanged={(e) => console.log('Cell:', e.colId, e.newValue)}
-  onCellClicked={(e) => console.log('Click:', e.colId)}
-  onCellDoubleClicked={(e) => console.log('DblClick:', e.colId)}
-  onRowClicked={(e) => console.log('Row:', e.node.id)}
-  onCellEditingStarted={(e) => console.log('Edit start:', e.colId)}
-  onCellEditingStopped={(e) => console.log('Edit stop:', e.cancelled)}
-  onPaginationChanged={(e) => console.log('Page:', e.currentPage)}
-  onColumnResized={(e) => console.log('Resize:', e.column.colId)}
-/>
-```
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `height` | `number \| string` | `400` | Container height. Numbers are treated as pixels. |
+| `width` | `number \| string` | `'100%'` | Container width. Numbers are treated as pixels. |
+| `containerClass` | `string` | `undefined` | Additional CSS class on the container `<div>`. |
+| `containerStyle` | `CSSProperties` | `undefined` | Additional inline styles on the container. |
+| `contextMenu` | `ReactContextMenu<TData>` | `undefined` | Custom context menu React component. |
+| `children` | `ReactNode` | `undefined` | Children rendered inside the `GridContext.Provider`. |
 
-## Hooks Reference
+### Renderer Config Props
 
-All hooks must be used inside a `<GridStorm>` component (or its children), which provides the required React context.
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `enableCellEditing` | `boolean` | auto-detect | Enable inline cell editing overlay. |
+| `enableGrouping` | `boolean` | auto-detect | Enable row grouping visuals (chevron, indent, group label). |
+| `groupIndent` | `number` | `24` | Indentation per group level in pixels. |
+| `checkboxSelection` | `boolean` | `false` | Show checkbox selection column as the first column. |
+| `checkboxColumnWidth` | `number` | `48` | Width of the checkbox column in pixels. |
+| `floatingFilter` | `boolean` | `false` | Show floating filter inputs below the header. |
+| `floatingFilterDebounce` | `number` | `300` | Debounce delay for filter input in milliseconds. |
+| `enablePagination` | `boolean` | auto-detect | Show pagination bar below the grid. |
+| `pageSizeOptions` | `number[]` | `[25, 50, 100, 250]` | Available page size options for the page size selector. |
+
+### Controlled State Props
+
+| Name | Type | Description |
+|------|------|-------------|
+| `sortModel` | `SortModelItem[]` | Controlled sort model. Grid will not update sort internally. |
+| `onSortModelChange` | `(sortModel) => void` | Called when the user changes sort in controlled mode. |
+| `filterModel` | `Record<string, FilterModel>` | Controlled filter model. |
+| `onFilterModelChange` | `(filterModel) => void` | Called when the user changes filters in controlled mode. |
+| `selectedRowIds` | `Set<string>` | Controlled selection (set of row IDs). |
+| `onSelectedRowIdsChange` | `(ids, source) => void` | Called when the user changes selection in controlled mode. |
+| `currentPage` | `number` | Controlled pagination page (0-indexed). |
+| `onCurrentPageChange` | `(page) => void` | Called when the user changes page in controlled mode. |
+
+### Event Callback Props
+
+| Name | Core Event | Description |
+|------|-----------|-------------|
+| `onGridReady` | -- | Fires when the engine is initialized. Receives `GridApi`. |
+| `onRowDataChanged` | `rowData:changed` | Row data was updated. |
+| `onSelectionChanged` | `selection:changed` | Selection state changed. |
+| `onSortChanged` | `column:sort:changed` | Sort model changed. |
+| `onFilterChanged` | `filter:changed` | Filter model changed. |
+| `onCellValueChanged` | `cell:valueChanged` | A cell value was edited. |
+| `onCellClicked` | `cell:clicked` | A cell was clicked. |
+| `onCellDoubleClicked` | `cell:doubleClicked` | A cell was double-clicked. |
+| `onRowClicked` | `row:clicked` | A row was clicked. |
+| `onCellEditingStarted` | `cell:editingStarted` | Cell editing began. |
+| `onCellEditingStopped` | `cell:editingStopped` | Cell editing ended. |
+| `onPaginationChanged` | `pagination:changed` | Pagination state changed. |
+| `onColumnResized` | `column:resized` | A column was resized. |
+
+## Hooks
+
+All hooks must be called inside a child of `<GridStorm>`, where they have access to the `GridContext`. They use `useSyncExternalStore` internally, so they are SSR-compatible and React StrictMode-safe.
 
 ### useGridApi
 
-Access the `GridApi` instance for programmatic control:
+Returns the `GridApi` instance for imperative actions.
 
-```tsx title="useGridApi"
+```tsx title="ToolbarActions.tsx"
 import { useGridApi } from '@gridstorm/react';
 
-function Toolbar() {
+function ExportButton() {
   const api = useGridApi();
 
   return (
-    <button onClick={() => api.setRowData(newData)}>
-      Refresh Data
+    <button onClick={() => console.log(api.getSelectedRows())}>
+      Log Selected
     </button>
   );
 }
 ```
 
+| Return | Type | Description |
+|--------|------|-------------|
+| `api` | `GridApi<TData>` | The grid API instance. |
+
+### useGridState
+
+Selector-based reactive state subscription. Re-renders only when the selected value changes (reference equality).
+
+```tsx title="RowCounter.tsx"
+import { useGridState } from '@gridstorm/react';
+
+function RowCounter() {
+  const rowCount = useGridState((state) => state.displayedRowIds.length);
+  return <span>{rowCount} rows</span>;
+}
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `selector` | `(state: GridState<TData>) => TResult` | Selector function that extracts a value from grid state. |
+
+| Return | Type | Description |
+|--------|------|-------------|
+| `result` | `TResult` | The selected state value. |
+
+### useGridColumn
+
+Access column state and manipulation actions.
+
+```tsx title="ColumnToggle.tsx"
+import { useGridColumn } from '@gridstorm/react';
+
+function ColumnToggle({ colId }: { colId: string }) {
+  const { visibleColumns, setColumnVisible, getColumn } = useGridColumn();
+  const col = getColumn(colId);
+
+  return (
+    <label>
+      <input
+        type="checkbox"
+        checked={!col?.hide}
+        onChange={(e) => setColumnVisible(colId, e.target.checked)}
+      />
+      {col?.headerName}
+    </label>
+  );
+}
+```
+
+| Return Property | Type | Description |
+|----------------|------|-------------|
+| `allColumns` | `ColumnState[]` | All columns including hidden ones. |
+| `visibleColumns` | `ColumnState[]` | Only visible columns. |
+| `setColumnVisible` | `(colId, visible) => void` | Toggle column visibility. |
+| `setColumnWidth` | `(colId, width) => void` | Set a column's width. |
+| `moveColumn` | `(colId, toIndex) => void` | Move a column to a new index. |
+| `setColumnPinned` | `(colId, pinned) => void` | Pin a column (`'left'`, `'right'`, or `null`). |
+| `getColumn` | `(colId) => ColumnState \| undefined` | Get a single column by ID. |
+
 ### useGridSort
 
-Reactive sort model state and actions:
+Access sort model state and actions.
 
-```tsx title="useGridSort"
+```tsx title="SortControls.tsx"
 import { useGridSort } from '@gridstorm/react';
 
 function SortControls() {
-  const { sortModel, isSorted, setSortModel, toggleSort, clearSort } = useGridSort();
+  const { sortModel, isSorted, toggleSort, clearSort } = useGridSort();
 
   return (
     <div>
-      <span>Sorted by {sortModel.length} columns</span>
-      <button onClick={() => toggleSort('name')}>Sort Name</button>
-      <button onClick={() => toggleSort('age', true)}>Add Age Sort</button>
-      <button onClick={clearSort}>Clear</button>
+      <button onClick={() => toggleSort('name')}>Sort by Name</button>
+      <button onClick={() => toggleSort('salary', true)}>Add Salary Sort</button>
+      {isSorted && <button onClick={clearSort}>Clear Sort</button>}
     </div>
   );
 }
 ```
 
+| Return Property | Type | Description |
+|----------------|------|-------------|
+| `sortModel` | `SortModelItem[]` | Current sort model array. |
+| `isSorted` | `boolean` | Whether any sort is active. |
+| `setSortModel` | `(model) => void` | Set the sort model directly. |
+| `toggleSort` | `(colId, multiSort?) => void` | Toggle sort on a column. Pass `true` for multi-sort. |
+| `clearSort` | `() => void` | Clear all sorting. |
+
 ### useGridFilter
 
-Reactive filter model and quick filter:
+Access filter model state and actions.
 
-```tsx title="useGridFilter"
+```tsx title="FilterBar.tsx"
 import { useGridFilter } from '@gridstorm/react';
 
-function FilterBar() {
-  const { isFiltered, filterModel, setQuickFilter, setFilterModel, clearFilters } = useGridFilter();
+function QuickSearch() {
+  const { isFiltered, setQuickFilter, clearFilters } = useGridFilter();
 
   return (
     <div>
-      <input placeholder="Search..." onChange={(e) => setQuickFilter(e.target.value)} />
+      <input
+        placeholder="Search..."
+        onChange={(e) => setQuickFilter(e.target.value)}
+      />
       {isFiltered && <button onClick={clearFilters}>Clear</button>}
     </div>
   );
 }
 ```
 
+| Return Property | Type | Description |
+|----------------|------|-------------|
+| `filterModel` | `Record<string, FilterModel>` | Current filter model keyed by column ID. |
+| `quickFilterText` | `string` | Current quick filter text. |
+| `isFiltered` | `boolean` | Whether any filter is active. |
+| `setFilterModel` | `(model) => void` | Set the filter model. |
+| `setQuickFilter` | `(text) => void` | Set the quick filter text. |
+| `clearFilters` | `() => void` | Clear all filters and quick filter text. |
+
+### useGridPagination
+
+Access pagination state and navigation actions.
+
+```tsx title="Pager.tsx"
+import { useGridPagination } from '@gridstorm/react';
+
+function Pager() {
+  const {
+    currentPage, totalPages, hasNextPage, hasPreviousPage,
+    nextPage, previousPage, firstPage, lastPage,
+  } = useGridPagination();
+
+  return (
+    <nav>
+      <button onClick={firstPage} disabled={!hasPreviousPage}>First</button>
+      <button onClick={previousPage} disabled={!hasPreviousPage}>Prev</button>
+      <span>Page {currentPage + 1} of {totalPages}</span>
+      <button onClick={nextPage} disabled={!hasNextPage}>Next</button>
+      <button onClick={lastPage} disabled={!hasNextPage}>Last</button>
+    </nav>
+  );
+}
+```
+
+| Return Property | Type | Description |
+|----------------|------|-------------|
+| `currentPage` | `number` | Current page (0-indexed). |
+| `totalPages` | `number` | Total number of pages. |
+| `pageSize` | `number` | Rows per page. |
+| `totalRows` | `number` | Total row count after filtering. |
+| `hasNextPage` | `boolean` | Whether there is a next page. |
+| `hasPreviousPage` | `boolean` | Whether there is a previous page. |
+| `goToPage` | `(page) => void` | Go to a specific page. |
+| `nextPage` | `() => void` | Go to the next page. |
+| `previousPage` | `() => void` | Go to the previous page. |
+| `firstPage` | `() => void` | Go to the first page. |
+| `lastPage` | `() => void` | Go to the last page. |
+
 ### useGridSelection
 
-Selection state and actions:
+Access selection state and actions.
 
-```tsx title="useGridSelection"
+```tsx title="SelectionInfo.tsx"
 import { useGridSelection } from '@gridstorm/react';
 
-function SelectionBar() {
-  const { selectedCount, selectAll, deselectAll, isRowSelected, getSelectedRows } = useGridSelection();
+function SelectionInfo() {
+  const { selectedCount, selectAll, deselectAll, getSelectedRows } =
+    useGridSelection<Employee>();
 
   return (
     <div>
       <span>{selectedCount} selected</span>
       <button onClick={selectAll}>Select All</button>
-      <button onClick={deselectAll}>Deselect</button>
-      <button onClick={() => console.log(getSelectedRows())}>Log Selected</button>
+      <button onClick={deselectAll}>Deselect All</button>
+      <button onClick={() => console.log(getSelectedRows())}>Log Data</button>
     </div>
   );
 }
 ```
 
-### useGridPagination
-
-Pagination state and navigation:
-
-```tsx title="useGridPagination"
-import { useGridPagination } from '@gridstorm/react';
-
-function Pager() {
-  const { currentPage, totalPages, hasNextPage, hasPreviousPage, nextPage, previousPage } = useGridPagination();
-
-  return (
-    <div>
-      <button onClick={previousPage} disabled={!hasPreviousPage}>Prev</button>
-      <span>Page {currentPage + 1} of {totalPages}</span>
-      <button onClick={nextPage} disabled={!hasNextPage}>Next</button>
-    </div>
-  );
-}
-```
-
-### useGridColumn
-
-Column state and manipulation:
-
-```tsx title="useGridColumn"
-import { useGridColumn } from '@gridstorm/react';
-
-function ColumnToggle() {
-  const { allColumns, visibleColumns, setColumnVisible, setColumnWidth } = useGridColumn();
-
-  return (
-    <div>
-      {allColumns.map((col) => (
-        <label key={col.colId}>
-          <input
-            type="checkbox"
-            checked={!col.hide}
-            onChange={(e) => setColumnVisible(col.colId, e.target.checked)}
-          />
-          {col.headerName}
-        </label>
-      ))}
-    </div>
-  );
-}
-```
+| Return Property | Type | Description |
+|----------------|------|-------------|
+| `selectedRowIds` | `Set<string>` | Set of selected row IDs. |
+| `selectedCount` | `number` | Number of selected rows. |
+| `getSelectedRows` | `() => TData[]` | Get selected row data objects. |
+| `getSelectedNodes` | `() => RowNode<TData>[]` | Get selected RowNode objects. |
+| `isRowSelected` | `(rowId) => boolean` | Check if a specific row is selected. |
+| `selectAll` | `() => void` | Select all visible rows. |
+| `deselectAll` | `() => void` | Deselect all rows. |
 
 ### useGridEvent
 
-Subscribe to any grid event with automatic cleanup:
+Subscribe to typed grid events. The handler ref prevents stale closures without re-subscribing.
 
-```tsx title="useGridEvent"
+```tsx title="EventLogger.tsx"
 import { useGridEvent } from '@gridstorm/react';
 
-function CellLogger() {
+function CellClickLogger() {
   useGridEvent('cell:clicked', (event) => {
     console.log('Clicked:', event.colId, event.value);
-  });
-
-  useGridEvent('cell:valueChanged', (event) => {
-    console.log('Changed:', event.colId, event.oldValue, '->', event.newValue);
   });
 
   return null;
 }
 ```
 
-### useGridState
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `event` | `keyof GridEventMap` | The event name to subscribe to. |
+| `handler` | `(payload) => void` | Callback invoked when the event fires. |
 
-Low-level access to the reactive grid state:
+## Custom Cell Renderers
 
-```tsx title="useGridState"
-import { useGridState } from '@gridstorm/react';
+You can use React components as cell renderers. The `PortalManager` automatically detects React renderers and portals them into grid cells.
 
-function RowCounter() {
-  const { engine } = useGridContext();
-  // Direct store subscription for custom state slices
-  const totalRows = useSyncExternalStore(
-    (cb) => engine.store.subscribe(cb),
-    () => engine.store.getState().pagination.totalRows,
-  );
-
-  return <span>{totalRows} total rows</span>;
-}
-```
-
-## Custom Cell Renderers (React Components)
-
-Pass React components as cell renderers for rich cell content:
-
-```tsx title="React cell renderer"
+```tsx title="StatusCell.tsx"
 import type { CellRendererProps } from '@gridstorm/react';
 
-function StatusBadge({ value }: CellRendererProps) {
-  const color = value === 'active' ? 'green' : value === 'inactive' ? 'red' : 'orange';
-  return (
-    <span style={{
-      padding: '2px 8px',
-      borderRadius: '12px',
-      background: color,
-      color: 'white',
-      fontSize: '12px',
-    }}>
-      {value}
-    </span>
-  );
+function StatusBadge({ value }: CellRendererProps<Employee, string>) {
+  const color = value === 'Active' ? 'green' : 'gray';
+  return <span style={{ color, fontWeight: 600 }}>{value}</span>;
 }
 
-// Use in column definition:
-const columns = [
+const columns: ReactColumnDef<Employee>[] = [
   { field: 'name', headerName: 'Name' },
   { field: 'status', headerName: 'Status', cellRenderer: StatusBadge },
 ];
 ```
 
-The `CellRendererProps` include:
+### CellRendererProps Reference
 
-| Prop | Type | Description |
-|---|---|---|
-| `value` | `TValue` | Cell value (after valueGetter) |
-| `formattedValue` | `string` | Formatted display value |
-| `data` | `TData \| undefined` | Row data object |
-| `node` | `RowNode` | Row node |
-| `colDef` | `ColumnDef` | Column definition |
-| `colId` | `string` | Column ID |
-| `rowIndex` | `number` | Display row index |
-| `api` | `GridApi` | Grid API |
+| Property | Type | Description |
+|----------|------|-------------|
+| `value` | `TValue` | The cell's current value (after `valueGetter`). |
+| `formattedValue` | `string` | The formatted display value (after `valueFormatter`). |
+| `data` | `TData \| undefined` | The row data object. |
+| `node` | `RowNode<TData>` | The RowNode for this row. |
+| `colDef` | `ColumnDef<TData, TValue>` | The column definition. |
+| `colId` | `string` | Column ID. |
+| `rowIndex` | `number` | Display row index. |
+| `api` | `GridApi<TData>` | Grid API reference. |
 
-## Custom Header Renderers
+### Custom Header Renderers
 
-```tsx title="React header renderer"
+```tsx title="CustomHeader.tsx"
 import type { HeaderRendererProps } from '@gridstorm/react';
 
 function SortableHeader({ displayName, sortDirection, onSortRequested }: HeaderRendererProps) {
-  const arrow = sortDirection === 'asc' ? ' ^' : sortDirection === 'desc' ? ' v' : '';
+  const icon = sortDirection === 'asc' ? ' ^' : sortDirection === 'desc' ? ' v' : '';
   return (
-    <div
-      style={{ cursor: 'pointer', userSelect: 'none' }}
-      onClick={(e) => onSortRequested(e.shiftKey)}
-    >
-      {displayName}{arrow}
+    <div onClick={() => onSortRequested(false)}>
+      {displayName}{icon}
     </div>
   );
 }
-
-{ field: 'name', headerRenderer: SortableHeader }
 ```
 
-## Custom Cell Editors
+### HeaderRendererProps Reference
 
-```tsx title="React cell editor"
+| Property | Type | Description |
+|----------|------|-------------|
+| `colDef` | `ColumnDef<TData>` | Column definition. |
+| `colId` | `string` | Column ID. |
+| `displayName` | `string` | Display name for the header. |
+| `sortDirection` | `SortDirection` | Current sort direction (`'asc'`, `'desc'`, or `null`). |
+| `sortIndex` | `number \| null` | Sort priority index for multi-sort. |
+| `api` | `GridApi<TData>` | Grid API reference. |
+| `onSortRequested` | `(multiSort: boolean) => void` | Request a sort toggle on this column. |
+
+### Custom Cell Editors
+
+```tsx title="NumericEditor.tsx"
 import type { CellEditorProps } from '@gridstorm/react';
 
-function TagEditor({ value, onValueChange, stopEditing }: CellEditorProps) {
-  const [text, setText] = useState(value ?? '');
-
+function NumericEditor({ value, onValueChange, stopEditing }: CellEditorProps<Employee, number>) {
   return (
     <input
+      type="number"
+      defaultValue={value}
       autoFocus
-      value={text}
-      onChange={(e) => { setText(e.target.value); onValueChange(e.target.value); }}
+      onChange={(e) => onValueChange(Number(e.target.value))}
       onKeyDown={(e) => {
         if (e.key === 'Enter') stopEditing();
         if (e.key === 'Escape') stopEditing(true);
       }}
-      onBlur={() => stopEditing()}
     />
   );
 }
 
-{ field: 'tags', editable: true, cellEditorComponent: TagEditor }
+const columns: ReactColumnDef<Employee>[] = [
+  { field: 'salary', headerName: 'Salary', editable: true, cellEditorComponent: NumericEditor },
+];
 ```
 
-## Controlled State
+### CellEditorProps Reference
 
-The `<GridStorm>` component supports both uncontrolled (grid manages state internally) and controlled (parent owns state) modes.
+| Property | Type | Description |
+|----------|------|-------------|
+| `value` | `TValue` | Current cell value. |
+| `data` | `TData` | Row data object. |
+| `colId` | `string` | Column ID. |
+| `rowId` | `string` | Row ID. |
+| `column` | `ColumnState` | Column state object. |
+| `editorParams` | `Record<string, unknown>` | Additional editor params from column def. |
+| `onValueChange` | `(value: TValue) => void` | Callback to update the value while editing. |
+| `stopEditing` | `(cancel?: boolean) => void` | Stop editing. Pass `true` to cancel without saving. |
+| `api` | `GridApi<TData>` | Grid API reference. |
 
-### Controlled Sort
+### Context Menu Component
 
-```tsx title="Controlled sort"
-const [sortModel, setSortModel] = useState<SortModelItem[]>([]);
-
-<GridStorm
-  columns={columns}
-  rowData={data}
-  plugins={plugins}
-  sortModel={sortModel}
-  onSortModelChange={setSortModel}
-/>
-```
-
-### Controlled Filter
-
-```tsx title="Controlled filter"
-const [filterModel, setFilterModel] = useState({});
-
-<GridStorm
-  columns={columns}
-  rowData={data}
-  plugins={plugins}
-  filterModel={filterModel}
-  onFilterModelChange={setFilterModel}
-/>
-```
-
-### Controlled Selection
-
-```tsx title="Controlled selection"
-const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-<GridStorm
-  columns={columns}
-  rowData={data}
-  plugins={plugins}
-  selectedRowIds={selectedIds}
-  onSelectedRowIdsChange={(ids, source) => setSelectedIds(ids)}
-/>
-```
-
-### Controlled Pagination
-
-```tsx title="Controlled pagination"
-const [page, setPage] = useState(0);
-
-<GridStorm
-  columns={columns}
-  rowData={data}
-  plugins={plugins}
-  currentPage={page}
-  onCurrentPageChange={setPage}
-/>
-```
-
-## Context Menu with React
-
-Provide a custom React component as the context menu:
-
-```tsx title="React context menu"
+```tsx title="CustomMenu.tsx"
 import type { ContextMenuProps } from '@gridstorm/react';
 
 function MyMenu({ node, colId, value, api, closeMenu }: ContextMenuProps) {
   return (
-    <div className="custom-menu">
-      <button onClick={() => {
-        navigator.clipboard.writeText(String(value));
-        closeMenu();
-      }}>
+    <div className="gs-context-menu">
+      <button
+        className="gs-context-menu-item"
+        onClick={() => {
+          navigator.clipboard.writeText(String(value));
+          closeMenu();
+        }}
+      >
         Copy Value
       </button>
-      <button onClick={closeMenu}>Close</button>
+      <button className="gs-context-menu-item" onClick={closeMenu}>
+        Close
+      </button>
     </div>
   );
 }
 
-<GridStorm columns={columns} rowData={data} contextMenu={MyMenu} />
+<GridStorm columns={columns} rowData={rowData} contextMenu={MyMenu} />
 ```
 
-## Error Boundary
+### ContextMenuProps Reference
 
-The `<GridStorm>` component wraps itself in a `GridErrorBoundary` that catches rendering errors and displays a fallback UI instead of crashing the entire application.
+| Property | Type | Description |
+|----------|------|-------------|
+| `position` | `CellPosition` | The cell position that was right-clicked. |
+| `node` | `RowNode<TData>` | The row node. |
+| `colId` | `string` | Column ID. |
+| `value` | `any` | Cell value. |
+| `api` | `GridApi<TData>` | Grid API reference. |
+| `closeMenu` | `() => void` | Close the context menu. |
 
-## TypeScript
+## Portal System
 
-The `<GridStorm>` component is fully generic:
+The `PortalManager` is the mechanism that bridges React components with the DOM-based grid renderer. You do not need to configure it manually -- it is included automatically when you use the `<GridStorm>` component.
 
-```tsx
-<GridStorm<Employee>
-  columns={columns}    // Type-checked against Employee
-  rowData={employees}  // Must be Employee[]
-  onCellValueChanged={(e) => {
-    e.node.data // TypeScript knows this is Employee | undefined
-  }}
+How it works:
+
+1. A `MutationObserver` watches the `.gs-body` element for DOM changes from `DomRenderer`.
+2. When rows are added or removed, the `PortalManager` scans visible cells for columns that have React renderers.
+3. For each matching cell, a stable wrapper `<div style="display:contents">` is created inside the cell, and a React portal renders the component into that wrapper.
+4. When `DomRenderer` destroys or recycles cells during virtual scrolling, the wrapper is detached but React can still safely unmount its children.
+5. Header renderer portals work the same way, re-scanning when sort or column changes occur.
+6. Editor portals are created when `cell:editingStarted` fires and destroyed when `cell:editingStopped` fires.
+7. Context menu portals are created on right-click and destroyed when the menu is closed.
+
+## Controlled vs Uncontrolled Modes
+
+By default, GridStorm manages its own state (uncontrolled). You can take control of specific state slices by providing the controlled props and their corresponding change handlers.
+
+### Uncontrolled (default)
+
+```tsx title="Uncontrolled.tsx"
+<GridStorm
+  columns={columns}
+  rowData={rowData}
+  onSortChanged={(e) => console.log('Sort changed:', e.sortModel)}
 />
 ```
 
-The `ReactColumnDef<TData>` type extends the core `ColumnDef` to also accept React component types for `cellRenderer`, `headerRenderer`, and `cellEditorComponent`.
+### Controlled Sort
+
+```tsx title="ControlledSort.tsx"
+import { useState } from 'react';
+import type { SortModelItem } from '@gridstorm/core';
+
+function ControlledSortGrid() {
+  const [sortModel, setSortModel] = useState<SortModelItem[]>([]);
+
+  return (
+    <GridStorm
+      columns={columns}
+      rowData={rowData}
+      sortModel={sortModel}
+      onSortModelChange={(newModel) => {
+        // Validate, transform, or persist before applying
+        setSortModel(newModel);
+      }}
+    />
+  );
+}
+```
+
+### Controlled Selection
+
+```tsx title="ControlledSelection.tsx"
+function ControlledSelectionGrid() {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  return (
+    <GridStorm
+      columns={columns}
+      rowData={rowData}
+      rowSelection="multiple"
+      selectedRowIds={selectedIds}
+      onSelectedRowIdsChange={(ids, source) => {
+        console.log('Selection source:', source);
+        setSelectedIds(ids);
+      }}
+    />
+  );
+}
+```
+
+### Controlled Pagination
+
+```tsx title="ControlledPagination.tsx"
+function ControlledPaginationGrid() {
+  const [page, setPage] = useState(0);
+
+  return (
+    <GridStorm
+      columns={columns}
+      rowData={rowData}
+      pagination
+      paginationPageSize={25}
+      currentPage={page}
+      onCurrentPageChange={setPage}
+    />
+  );
+}
+```
+
+### Controlled Filter
+
+```tsx title="ControlledFilter.tsx"
+function ControlledFilterGrid() {
+  const [filterModel, setFilterModel] = useState({});
+
+  return (
+    <GridStorm
+      columns={columns}
+      rowData={rowData}
+      filterModel={filterModel}
+      onFilterModelChange={(newModel) => {
+        setFilterModel(newModel);
+      }}
+    />
+  );
+}
+```
 
 ## Children and Context
 
-The `<GridStorm>` component provides a React context. Any children rendered inside it can use all GridStorm hooks:
+The `<GridStorm>` component provides a React context via `GridContext.Provider`. Any children rendered inside it can use all GridStorm hooks:
 
-```tsx title="Children pattern"
+```tsx title="ChildrenPattern.tsx"
 <GridStorm columns={columns} rowData={data} plugins={plugins}>
   <Toolbar />       {/* Can use useGridApi(), useGridSort(), etc. */}
   <StatusBar />
@@ -452,8 +630,49 @@ The `<GridStorm>` component provides a React context. Any children rendered insi
 </GridStorm>
 ```
 
+## SSR Support
+
+All hooks use `useSyncExternalStore` with a `getServerSnapshot` parameter that returns the same snapshot as the client. The grid engine is created in a `useEffect`, so it only runs on the client. During SSR, the component renders an empty container `<div>`.
+
+## React StrictMode Compatibility
+
+The `<GridStorm>` component is fully compatible with React StrictMode. The internal `useGridEngine` hook creates the engine in a `useEffect` so that StrictMode's cleanup-then-remount cycle creates a fresh engine each time. The previous engine is destroyed in the cleanup function, preventing memory leaks.
+
+## Error Boundary
+
+The `<GridStorm>` component wraps itself in a `GridErrorBoundary` that catches rendering errors and displays a fallback UI instead of crashing the entire application.
+
+## TypeScript Generics
+
+The `<GridStorm>` component and all hooks accept a generic `TData` parameter for row data typing:
+
+```tsx title="TypedGrid.tsx"
+interface Trade {
+  id: string;
+  symbol: string;
+  price: number;
+  quantity: number;
+}
+
+// Component is fully typed
+<GridStorm<Trade>
+  columns={[
+    { field: 'symbol', headerName: 'Symbol' },
+    { field: 'price', headerName: 'Price' },
+  ]}
+  rowData={trades}
+  getRowId={(p) => p.data.id}
+/>
+
+// Hooks infer TData from context
+const rows = useGridSelection<Trade>().getSelectedRows();
+// rows is Trade[]
+```
+
 ## Next Steps
 
-- **[Quick Start](/getting-started/quick-start/)** -- Get a grid on screen.
-- **[Plugins](/plugins/plugin-system/)** -- Install and configure plugins.
-- **[API Reference](/api/grid-api/)** -- Full GridApi method reference.
+- [Theming](/core-concepts/theming/) -- customize the grid appearance with CSS tokens
+- [Columns](/core-concepts/columns/) -- learn about column definitions and features
+- [Events & Commands](/core-concepts/events-commands/) -- listen to grid events and dispatch commands
+- [Vanilla JS](/frameworks/vanilla/) -- use GridStorm without a framework
+- [Angular](/frameworks/angular/) -- use GridStorm with Angular

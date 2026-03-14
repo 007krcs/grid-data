@@ -1,191 +1,146 @@
 ---
 title: Editing
-description: Enable inline cell editing with built-in text, number, and select editors, custom editors, and edit validation.
+description: Add inline cell editing with built-in editors, undo/redo, and double-click activation to your GridStorm data grid.
 ---
 
-The Editing plugin provides inline cell editing with a complete lifecycle: start editing, modify the value, and commit or cancel. It ships with built-in editors for text, number, and select inputs, and supports custom editor components.
+The Editing plugin provides inline cell editing with built-in editors for text, number, and select fields. It manages the full editing lifecycle (start, value change, stop/commit/cancel), supports undo/redo history, and activates editing on double-click.
 
 ## Installation
 
-```bash
+```bash title="Terminal"
 npm install @gridstorm/plugin-editing
 ```
 
-```ts title="Setup"
+## Setup
+
+```typescript title="setup.ts"
+import { createGrid } from '@gridstorm/core';
 import { EditingPlugin } from '@gridstorm/plugin-editing';
 
-const engine = createGrid({
+const grid = createGrid({
   columns: [
-    { field: 'name', editable: true },
-    { field: 'age', editable: true, cellEditor: 'number' },
-    { field: 'status', editable: true, cellEditor: 'select',
-      cellEditorParams: { values: ['active', 'inactive', 'pending'] } },
+    { colId: 'name', field: 'name', headerName: 'Name', editable: true },
+    { colId: 'price', field: 'price', headerName: 'Price', editable: true, cellEditor: 'number' },
+    {
+      colId: 'status',
+      field: 'status',
+      headerName: 'Status',
+      editable: true,
+      cellEditor: 'select',
+      cellEditorParams: { values: ['Active', 'Inactive', 'Pending'] },
+    },
   ],
-  rowData: [...],
-  plugins: [EditingPlugin()],
+  rowData: [],
+  plugins: [
+    EditingPlugin({
+      defaultEditor: 'text',
+      stopEditingWhenCellLoseFocus: true,
+      undoRedo: true,
+    }),
+  ],
 });
 ```
 
 ## Plugin Options
 
-```ts title="EditingPluginOptions"
-interface EditingPluginOptions {
-  defaultEditor?: string;                // Default editor type (default: 'text')
-  stopEditingWhenCellLoseFocus?: boolean; // Stop on blur (default: true)
-  undoRedo?: boolean;                     // Enable Ctrl+Z/Y (default: false)
-}
-```
-
-## Making Columns Editable
-
-Set `editable: true` on columns that should support editing:
-
-```ts title="Editable columns"
-{ field: 'name', editable: true }
-```
-
-### Conditional Editability
-
-Pass a function to control editability per row:
-
-```ts title="Conditional editable"
-{
-  field: 'salary',
-  editable: (params) => params.data?.role !== 'intern',
-}
-```
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| `defaultEditor` | `string` | `'text'` | Default editor type when a column does not specify `cellEditor`. |
+| `stopEditingWhenCellLoseFocus` | `boolean` | `true` | Automatically stop editing when the user clicks outside the editing cell. |
+| `undoRedo` | `boolean` | `false` | Enable undo/redo support. Tracks edit history and responds to `editing:undo` / `editing:redo` commands. |
 
 ## Built-in Editors
 
-### Text Editor
+The plugin registers three cell editors out of the box:
 
-The default editor. Renders a text input:
+| Editor Key | Description |
+| --- | --- |
+| `'text'` | Standard text input. Used as the default when no `cellEditor` is specified. |
+| `'number'` | Numeric input with type validation. |
+| `'select'` | Dropdown select. Configure options via `cellEditorParams: { values: [...] }`. |
 
-```ts
-{ field: 'name', editable: true }
-// or explicitly:
-{ field: 'name', editable: true, cellEditor: 'text' }
-```
+## Usage Examples
 
-### Number Editor
+### Start Editing a Cell
 
-Renders a number input with arrow key increment/decrement:
+Double-clicking a cell automatically starts editing via the `cell:doubleClicked` event listener. You can also trigger it programmatically.
 
-```ts
-{ field: 'age', editable: true, cellEditor: 'number' }
-```
-
-### Select Editor
-
-Renders a dropdown select:
-
-```ts
-{
-  field: 'status',
-  editable: true,
-  cellEditor: 'select',
-  cellEditorParams: {
-    values: ['active', 'inactive', 'pending'],
-  },
-}
-```
-
-## Editing Lifecycle
-
-1. **Start** -- User double-clicks a cell (or programmatic trigger). The plugin reads the current value and enters editing state.
-2. **Modify** -- The editor component updates the value in real time via the `editing:setValue` command.
-3. **Commit** -- User presses Enter or tabs away. The new value is written to the row data.
-4. **Cancel** -- User presses Escape. The original value is restored.
-
-## Programmatic Editing
-
-### Start Editing
-
-```ts
-api.startEditingCell({ rowIndex: 0, colId: 'name' });
-```
-
-Or via command:
-
-```ts
-engine.commandBus.dispatch('editing:start', {
-  rowId: 'row-0',
+```typescript title="start-editing.ts"
+grid.commandBus.dispatch('editing:start', {
+  rowId: 'row-1',
   colId: 'name',
 });
 ```
 
+The plugin checks the column's `editable` property (which can be a boolean or a function) before entering edit mode. It reads the current cell value using `valueGetter` if defined, otherwise falls back to `node.data[field]`.
+
 ### Stop Editing
 
-```ts
-api.stopEditing();        // Commit
-api.stopEditing(true);    // Cancel
+```typescript title="stop-editing.ts"
+// Commit the current value
+grid.commandBus.dispatch('editing:stop', { cancel: false });
+
+// Cancel and revert to original value
+grid.commandBus.dispatch('editing:stop', { cancel: true });
 ```
 
-## Value Pipeline Integration
+### Undo and Redo
 
-During editing, values flow through the column's value pipeline:
+When `undoRedo` is enabled, every committed edit is pushed to an internal `EditHistory` stack. Undo restores the old value and triggers `rows:reprocess`.
 
-1. **Value Parser** -- Parses user input (e.g., string to number)
-2. **Value Setter** -- Writes the parsed value to the row data (can reject invalid values)
-
-```ts title="Validated editing"
-{
-  field: 'price',
-  editable: true,
-  cellEditor: 'number',
-  valueParser: (params) => parseFloat(params.newValue),
-  valueSetter: (params) => {
-    if (params.newValue < 0) return false; // reject negative
-    params.data.price = params.newValue;
-    return true;
-  },
-}
+```typescript title="undo-redo.ts"
+grid.commandBus.dispatch('editing:undo', {});
+grid.commandBus.dispatch('editing:redo', {});
 ```
 
 ## Commands
 
-| Command | Payload | Description |
-|---|---|---|
-| `editing:start` | `{ rowId, colId }` | Start editing a cell |
-| `editing:stop` | `{ cancel? }` | Stop editing (commit or cancel) |
-| `editing:setValue` | `{ value }` | Update value during editing |
+| Name | Payload | Description |
+| --- | --- | --- |
+| `editing:start` | `{ rowId: string; colId: string }` | Start editing a specific cell. Checks column `editable` property first. |
+| `editing:stop` | `{ cancel?: boolean }` | Stop editing. Pass `cancel: true` to revert to the original value. |
+| `editing:setValue` | `{ value: any }` | Update the current editing value without committing. |
+| `editing:getEditorDef` | `{ colId: string; callback: (def: CellEditorDef \| null) => void }` | Retrieve the editor definition for a column via callback. |
+| `editing:undo` | `{}` | Undo the last edit (requires `undoRedo: true`). Restores the previous value and reprocesses rows. |
+| `editing:redo` | `{}` | Redo the last undone edit (requires `undoRedo: true`). |
 
 ## Events
 
-| Event | Payload | Description |
-|---|---|---|
-| `cell:editingStarted` | `{ node, colId, value }` | Editing began |
-| `cell:editingStopped` | `{ node, colId, oldValue, newValue, cancelled }` | Editing ended |
-| `cell:valueChanged` | `{ node, colId, oldValue, newValue }` | Value committed |
+| Name | Payload | Description |
+| --- | --- | --- |
+| `cell:editingStarted` | `{ node: RowNode; colId: string; value: any }` | Emitted when a cell enters edit mode. |
+| `cell:editingStopped` | `{ node: RowNode; colId: string; oldValue: any; newValue: any; cancelled: boolean }` | Emitted when editing stops. The `cancelled` flag indicates whether the edit was reverted. |
+| `cell:valueChanged` | `{ node: RowNode; colId: string; oldValue: any; newValue: any }` | Emitted when a cell value changes, including via undo/redo. |
+| `cell:doubleClicked` | `{ node: RowNode; colId: string }` | Listened to internally to start editing on double-click. |
 
-## React Custom Editors
+## React Integration
 
-In the React adapter, provide React components as cell editors:
+```tsx title="EditableGrid.tsx"
+import { GridStorm, useGridApi } from '@gridstorm/react';
+import { EditingPlugin } from '@gridstorm/plugin-editing';
 
-```tsx title="React cell editor"
-import type { CellEditorProps } from '@gridstorm/react';
+function EditableGrid({ rowData, columns }) {
+  const apiRef = useGridApi();
 
-function RatingEditor({ value, onValueChange, stopEditing }: CellEditorProps) {
+  const undo = () => apiRef.current?.commandBus.dispatch('editing:undo', {});
+  const redo = () => apiRef.current?.commandBus.dispatch('editing:redo', {});
+
   return (
-    <select
-      value={value}
-      onChange={(e) => onValueChange(Number(e.target.value))}
-      onBlur={() => stopEditing()}
-      autoFocus
-    >
-      {[1, 2, 3, 4, 5].map((n) => (
-        <option key={n} value={n}>{n} Star{n > 1 ? 's' : ''}</option>
-      ))}
-    </select>
+    <>
+      <button onClick={undo}>Undo</button>
+      <button onClick={redo}>Redo</button>
+      <GridStorm
+        rowData={rowData}
+        columns={columns}
+        plugins={[EditingPlugin({ undoRedo: true })]}
+      />
+    </>
   );
 }
-
-// Use in column def:
-{ field: 'rating', editable: true, cellEditorComponent: RatingEditor }
 ```
 
 ## Next Steps
 
-- **[Selection](/plugins/selection/)** -- Row selection for editing workflows.
-- **[Clipboard](/plugins/clipboard/)** -- Copy/paste edited data.
-- **[React Guide](/frameworks/react/)** -- Custom editor components with React.
+- [Selection Plugin](/plugins/selection/) -- select cells before editing.
+- [Clipboard Plugin](/plugins/clipboard/) -- copy and paste edited values.
+- [Context Menu Plugin](/plugins/context-menu/) -- add edit actions to the right-click menu.

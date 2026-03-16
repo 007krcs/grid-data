@@ -25,6 +25,9 @@ export const DOC_SECTIONS: DocSection[] = [
       { slug: 'core-concepts/row-data', title: 'Row Data' },
       { slug: 'core-concepts/theming', title: 'Theming' },
       { slug: 'core-concepts/events-commands', title: 'Events & Commands' },
+      { slug: 'core-concepts/store', title: 'Store' },
+      { slug: 'core-concepts/dom-renderer', title: 'DOM Renderer' },
+      { slug: 'core-concepts/plugin-system', title: 'Plugin System (Deep Dive)' },
     ],
   },
   {
@@ -43,18 +46,31 @@ export const DOC_SECTIONS: DocSection[] = [
       { slug: 'plugins/grouping', title: 'Grouping' },
       { slug: 'plugins/aggregation', title: 'Aggregation' },
       { slug: 'plugins/clipboard', title: 'Clipboard' },
+      { slug: 'plugins/pivoting', title: 'Pivoting' },
+      { slug: 'plugins/master-detail', title: 'Master Detail' },
+      { slug: 'plugins/ssrm', title: 'Server-Side Row Model' },
+      { slug: 'plugins/row-reorder', title: 'Row Reorder' },
+      { slug: 'plugins/excel-export', title: 'Excel Export' },
     ],
   },
   {
     label: 'Framework Guides',
     items: [
       { slug: 'frameworks/react', title: 'React' },
+      { slug: 'frameworks/vanilla', title: 'Vanilla JS' },
+      { slug: 'frameworks/angular', title: 'Angular' },
     ],
   },
   {
     label: 'Guides',
     items: [
       { slug: 'guides/migration-from-ag-grid', title: 'Migrate from AG Grid' },
+      { slug: 'guides/mcp-server', title: 'MCP Server (AI Integration)' },
+      { slug: 'guides/pdf-toolkit', title: 'PDF Toolkit' },
+      { slug: 'guides/integration-guide', title: 'Integration Guide' },
+      { slug: 'guides/custom-plugins', title: 'Custom Plugins' },
+      { slug: 'guides/performance', title: 'Performance' },
+      { slug: 'guides/accessibility', title: 'Accessibility' },
     ],
   },
   {

@@ -53,6 +53,10 @@ export function EmployeeGrid() {
 }
 ```
 
+:::example{title="React Integration Demo" href="/react-demo/"}
+See the full React integration with hooks, custom cell renderers, portals, and error boundaries.
+:::
+
 ## Props Reference
 
 The `<GridStorm>` component accepts all core `GridConfig` props plus React-specific props for layout, controlled state, events, and renderer configuration.

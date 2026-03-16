@@ -41,6 +41,10 @@ const grid = createGrid({
 });
 ```
 
+:::example{title="Live Editing Demo" href="/cookbook/#editing-basic"}
+Double-click any cell to start editing. Press Enter to confirm or Escape to cancel. Try the value pipeline with valueParser and valueSetter.
+:::
+
 ## Plugin Options
 
 | Name | Type | Default | Description |

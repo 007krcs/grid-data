@@ -51,6 +51,10 @@ export default function App() {
 
 That is a fully working grid with header rendering, virtual scrolling, keyboard navigation, and ARIA accessibility attributes.
 
+:::example{title="Interactive Playground" href="/playground/"}
+Try GridStorm in the browser with our Monaco-powered playground. Edit column definitions and see instant results.
+:::
+
 ## Add Sorting
 
 Install the sorting plugin:

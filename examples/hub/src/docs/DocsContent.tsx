@@ -40,17 +40,48 @@ function transformCallouts(md: string): string {
   );
 }
 
+/**
+ * Transform :::example blocks into interactive example cards with links
+ * to the cookbook/playground. Format:
+ * :::example{title="Sorting" href="/cookbook/#sorting-basic"}
+ * Code or description here
+ * :::
+ */
+function transformExamples(md: string): string {
+  return md.replace(
+    /^:::example\{([^}]*)\}\s*\n([\s\S]*?)^:::\s*$/gm,
+    (_match, attrs: string, body: string) => {
+      const titleMatch = attrs.match(/title="([^"]*)"/);
+      const hrefMatch = attrs.match(/href="([^"]*)"/);
+      const title = titleMatch?.[1] || 'Live Example';
+      const href = hrefMatch?.[1] || '/cookbook/';
+      const trimmed = body.trim();
+      return `<div class="example-embed">
+<div class="example-embed-header">
+<span class="example-embed-icon">\u25B6</span>
+<strong>${title}</strong>
+<a href="${href}" target="_blank" rel="noopener noreferrer" class="example-embed-link">Open in Cookbook \u2192</a>
+</div>
+
+${trimmed}
+
+</div>`;
+    },
+  );
+}
+
 export const DocsContent: React.FC<DocsContentProps> = ({ content }) => {
   const processedContent = useMemo(() => {
     let md = stripFrontmatter(content);
     md = transformCallouts(md);
+    md = transformExamples(md);
     return md;
   }, [content]);
 
   const components: Components = {
     a({ href, children, ...props }) {
       // Rewrite internal links to hash-based doc routes
-      if (href && href.startsWith('/') && !href.startsWith('/feature-showcase') && !href.startsWith('/playground') && !href.startsWith('/pdf-viewer') && !href.startsWith('/financial-trading') && !href.startsWith('/analytics-explorer') && !href.startsWith('/spreadsheet') && !href.startsWith('/react-demo')) {
+      if (href && href.startsWith('/') && !href.startsWith('/feature-showcase') && !href.startsWith('/playground') && !href.startsWith('/pdf-viewer') && !href.startsWith('/financial-trading') && !href.startsWith('/analytics-explorer') && !href.startsWith('/spreadsheet') && !href.startsWith('/react-demo') && !href.startsWith('/cookbook')) {
         // Strip leading slash and trailing slash
         const cleaned = href.replace(/^\//, '').replace(/\/$/, '');
         return (

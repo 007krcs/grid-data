@@ -1252,6 +1252,59 @@ body {
   background: rgba(249, 115, 22, 0.08);
 }
 
+/* ── Example Embeds ── */
+.docs-content .example-embed {
+  border: 1px solid var(--hub-border);
+  border-radius: 10px;
+  margin: 24px 0;
+  overflow: hidden;
+  background: var(--hub-card-bg);
+}
+.docs-content .example-embed-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--hub-accent-glow);
+  border-bottom: 1px solid var(--hub-border);
+  font-size: 14px;
+}
+.docs-content .example-embed-icon {
+  color: var(--hub-accent);
+  font-size: 12px;
+}
+.docs-content .example-embed-header strong {
+  flex: 1;
+  color: var(--hub-fg);
+}
+.docs-content .example-embed-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--hub-accent) !important;
+  text-decoration: none !important;
+  white-space: nowrap;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: var(--hub-accent-glow);
+  border: 1px solid var(--hub-accent);
+  transition: background 0.15s;
+}
+.docs-content .example-embed-link:hover {
+  background: var(--hub-accent);
+  color: #fff !important;
+}
+.docs-content .example-embed > pre,
+.docs-content .example-embed > .code-block-wrapper {
+  margin: 0;
+  border-radius: 0;
+}
+.docs-content .example-embed > p {
+  padding: 12px 16px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--hub-muted);
+}
+
 /* Horizontal rules */
 .docs-content hr {
   border: none;

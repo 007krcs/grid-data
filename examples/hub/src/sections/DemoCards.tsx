@@ -81,6 +81,17 @@ const demos: DemoCard[] = [
       'Excel-like spreadsheet with inline cell editing, clipboard copy/paste, column resizing, and selection ranges.',
     tags: [{ label: 'Editing' }, { label: 'Clipboard' }],
   },
+  {
+    href: '/cookbook/',
+    icon: 'book-open',
+    iconBg: 'rgba(234, 179, 8, 0.12)',
+    iconColor: '#eab308',
+    title: 'Cookbook',
+    description:
+      '31 self-contained code examples covering every GridStorm feature. Copy-paste ready recipes.',
+    tags: [{ label: '31 Examples' }, { label: 'Copy-Paste Ready', isNew: true }],
+    isNew: true,
+  },
 ];
 
 export function DemoCards() {
@@ -94,6 +105,8 @@ export function DemoCards() {
           <a
             key={demo.title}
             href={demo.href}
+            target="_blank"
+            rel="noopener noreferrer"
             className={`card${demo.isNew ? ' card-new' : ''}`}
           >
             <div className="card-header">

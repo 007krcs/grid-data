@@ -35,6 +35,10 @@ const grid = createGrid({
 });
 ```
 
+:::example{title="Live Sorting Demo" href="/cookbook/#sorting-basic"}
+Try sorting with single and multi-column configurations. Click column headers to sort ascending, descending, or unsorted.
+:::
+
 ## Plugin Options
 
 | Name | Type | Default | Description |

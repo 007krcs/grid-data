@@ -34,6 +34,10 @@ const grid = createGrid({
 });
 ```
 
+:::example{title="Live Filtering Demo" href="/cookbook/#filtering-text"}
+See text, number, and date filters in action. Type in the filter input to filter rows in real-time.
+:::
+
 ## Plugin Options
 
 | Name | Type | Default | Description |

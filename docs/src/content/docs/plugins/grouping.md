@@ -36,6 +36,10 @@ const grid = createGrid({
 
 Columns with `rowGroup: true` are automatically detected on install and used as the initial group columns, sorted by `rowGroupIndex`.
 
+:::example{title="Live Grouping Demo" href="/cookbook/#grouping-basic"}
+Group rows by department or status. Expand and collapse groups, and see aggregated values for each group.
+:::
+
 ## Plugin Options
 
 | Name | Type | Default | Description |

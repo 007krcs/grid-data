@@ -11,6 +11,10 @@ The `@gridstorm/mcp-server` package exposes GridStorm's grid, PDF, and AI capabi
 pnpm add @gridstorm/mcp-server
 ```
 
+:::example{title="MCP Server Demo" href="/feature-showcase/"}
+See GridStorm features in action through the Feature Showcase. The MCP server exposes these same capabilities to AI assistants.
+:::
+
 ## Quick Start
 
 ```typescript title="Create and use the MCP server"

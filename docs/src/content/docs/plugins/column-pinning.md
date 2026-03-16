@@ -35,6 +35,10 @@ const grid = createGrid({
 });
 ```
 
+:::example{title="Column Pinning Demo" href="/cookbook/#column-pinning"}
+Pin columns to the left or right side of the grid. Pinned columns stay visible while scrolling horizontally.
+:::
+
 ## Plugin Options
 
 | Name | Type | Default | Description |

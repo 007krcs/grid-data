@@ -37,6 +37,10 @@ const grid = createGrid({
 
 Columns must have `resizable: true` for resize handles to appear.
 
+:::example{title="Column Resize Demo" href="/cookbook/#column-resize"}
+Drag column borders to resize. Double-click to auto-fit column width to content.
+:::
+
 ## Plugin Options
 
 | Name | Type | Default | Description |

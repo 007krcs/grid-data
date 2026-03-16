@@ -38,6 +38,10 @@ const grid = createGrid({
 });
 ```
 
+:::example{title="Live Clipboard Demo" href="/cookbook/#clipboard-basic"}
+Select cells, then use Ctrl+C to copy and Ctrl+V to paste. Supports TSV format for Excel compatibility.
+:::
+
 ## Plugin Options
 
 | Name | Type | Default | Description |

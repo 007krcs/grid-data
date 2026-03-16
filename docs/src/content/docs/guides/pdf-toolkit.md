@@ -23,6 +23,10 @@ pnpm add @gridstorm/pdf-plugin-intelligence
 pnpm add @gridstorm/pdf-plugin-pii
 ```
 
+:::example{title="PDF Viewer Demo" href="/pdf-viewer/"}
+Interactive PDF viewer with canvas rendering, text search, annotations, and theme switching. Built on @gridstorm/pdf-core.
+:::
+
 ## Architecture
 
 The PDF toolkit follows the same headless architecture as the grid:

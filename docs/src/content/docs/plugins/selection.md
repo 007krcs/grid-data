@@ -34,6 +34,10 @@ const grid = createGrid({
 });
 ```
 
+:::example{title="Live Selection Demo" href="/cookbook/#selection-modes"}
+Click rows to select, Ctrl+Click for multi-select, Shift+Click for range selection. Toggle between single, multiple, and range modes.
+:::
+
 ## Plugin Options
 
 | Name | Type | Default | Description |

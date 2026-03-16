@@ -17,6 +17,10 @@ Import the theme in your entry point. This single import includes light, dark, h
 import '@gridstorm/theme-default';
 ```
 
+:::example{title="Theme Customization Demo" href="/cookbook/#theme-switching"}
+Switch between light, dark, and high-contrast themes in real-time. See how CSS custom properties power the theming system.
+:::
+
 ## CSS Custom Properties Approach
 
 Every visual property in GridStorm -- colors, spacing, typography, borders, shadows -- is defined as a CSS custom property with the `--gs-` prefix. These tokens are set on `:root` and `.gs-root`, so they cascade naturally through the DOM. To customize the grid, you override the tokens you want to change on the `.gs-root` element or any ancestor.

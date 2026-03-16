@@ -33,6 +33,10 @@ const grid = createGrid({
 });
 ```
 
+:::example{title="Live Pagination Demo" href="/cookbook/#pagination-basic"}
+Navigate through pages with configurable page sizes. See page controls with first, prev, next, last buttons.
+:::
+
 ## Plugin Options
 
 | Name | Type | Default | Description |

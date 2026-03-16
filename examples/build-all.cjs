@@ -9,7 +9,7 @@ const fs = require('fs');
 
 const SCRIPT_DIR = __dirname;
 const ROOT_DIR = path.dirname(SCRIPT_DIR);
-const OUT_DIR = path.join(SCRIPT_DIR, 'dist');
+const OUT_DIR = path.join(SCRIPT_DIR, 'analytics-explorer', 'dist');
 
 console.log('Building GridStorm demos...');
 console.log('Root:', ROOT_DIR);

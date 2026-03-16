@@ -9,7 +9,8 @@ const fs = require('fs');
 
 const SCRIPT_DIR = __dirname;
 const ROOT_DIR = path.dirname(SCRIPT_DIR);
-const OUT_DIR = path.join(SCRIPT_DIR, 'analytics-explorer', 'dist');
+// Output to repo root /dist — Vercel resolves outputDirectory relative to Root Directory
+const OUT_DIR = path.join(ROOT_DIR, 'dist');
 
 console.log('Building GridStorm demos...');
 console.log('Root:', ROOT_DIR);
@@ -64,5 +65,14 @@ for (const app of APPS) {
 }
 
 console.log('\nAll demos built successfully!');
+console.log('Final output directory:', OUT_DIR);
+console.log('Directory exists:', fs.existsSync(OUT_DIR));
 const entries = fs.readdirSync(OUT_DIR);
 console.log('Output contents:', entries.join(', '));
+
+// Debug: show where Vercel might look for output
+const vercelRoot = path.join(ROOT_DIR, 'examples', 'analytics-explorer');
+console.log('\nVercel Root Directory:', vercelRoot);
+console.log('Vercel expects dist at:', path.join(vercelRoot, 'dist'));
+console.log('Actual dist at:', OUT_DIR);
+console.log('../../dist from Vercel root:', path.resolve(vercelRoot, '../../dist'));

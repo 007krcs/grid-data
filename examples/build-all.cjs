@@ -25,7 +25,13 @@ fs.mkdirSync(OUT_DIR, { recursive: true });
 function run(cmd, cwd) {
   console.log(`\n> ${cmd}`);
   console.log(`  cwd: ${cwd}`);
-  execSync(cmd, { cwd, stdio: 'inherit', env: { ...process.env, NODE_ENV: 'production' } });
+  try {
+    execSync(cmd, { cwd, stdio: 'inherit', env: { ...process.env, NODE_ENV: 'production' } });
+  } catch (err) {
+    console.error(`\n✗ Command failed: ${cmd}`);
+    console.error(`  Exit code: ${err.status}`);
+    throw err;
+  }
 }
 
 // Build hub (React SPA) — outputs to dist root (index.html + hub-assets/)

@@ -812,6 +812,19 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  packages/plugin-ai:
+    dependencies:
+      '@gridstorm/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      tsup:
+        specifier: ^8.2.0
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   packages/plugin-charts:
     dependencies:
       '@gridstorm/core':
@@ -833,6 +846,19 @@ importers:
       '@gridstorm/license':
         specifier: workspace:*
         version: link:../license
+    devDependencies:
+      tsup:
+        specifier: ^8.2.0
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  packages/plugin-column-autosize:
+    dependencies:
+      '@gridstorm/core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       tsup:
         specifier: ^8.2.0
@@ -868,6 +894,19 @@ importers:
         version: 5.9.3
 
   packages/plugin-column-resize:
+    dependencies:
+      '@gridstorm/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      tsup:
+        specifier: ^8.2.0
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  packages/plugin-conditional-formatting:
     dependencies:
       '@gridstorm/core':
         specifier: workspace:*
@@ -1006,6 +1045,19 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  packages/plugin-row-pinning:
+    dependencies:
+      '@gridstorm/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      tsup:
+        specifier: ^8.2.0
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   packages/plugin-row-reorder:
     dependencies:
       '@gridstorm/core':
@@ -1066,6 +1118,45 @@ importers:
       '@gridstorm/license':
         specifier: workspace:*
         version: link:../license
+    devDependencies:
+      tsup:
+        specifier: ^8.2.0
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  packages/plugin-state-persistence:
+    dependencies:
+      '@gridstorm/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      tsup:
+        specifier: ^8.2.0
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  packages/plugin-status-bar:
+    dependencies:
+      '@gridstorm/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      tsup:
+        specifier: ^8.2.0
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  packages/plugin-streaming:
+    dependencies:
+      '@gridstorm/core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       tsup:
         specifier: ^8.2.0

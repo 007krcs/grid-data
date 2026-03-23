@@ -34,6 +34,10 @@ const grid = createGrid({
 });
 ```
 
+:::example{title="Row Reorder Demo" href="/cookbook/#row-reorder"}
+Drag rows to reorder them with visual drop indicators. Supports drag handles, group boundary protection, and persistent custom ordering.
+:::
+
 ## Plugin Options
 
 | Name | Type | Default | Description |

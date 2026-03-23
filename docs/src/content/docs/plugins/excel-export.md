@@ -35,6 +35,10 @@ const grid = createGrid({
 });
 ```
 
+:::example{title="Excel Export Demo" href="/cookbook/#excel-export"}
+Export grid data to CSV or XLSX format with column selection, custom cell processing, and support for exporting only selected rows.
+:::
+
 ## Plugin Options (Default Export Options)
 
 Options passed to `ExcelExportPlugin()` serve as defaults. They can be overridden per-export via command payloads.

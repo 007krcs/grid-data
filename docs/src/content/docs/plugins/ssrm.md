@@ -47,6 +47,10 @@ const grid = createGrid({
 });
 ```
 
+:::example{title="Server-Side Row Model Demo" href="/cookbook/#ssrm"}
+Lazy-load data blocks from a server as the user scrolls, with automatic cache invalidation on sort and filter changes.
+:::
+
 ## Plugin Options
 
 | Name | Type | Default | Description |

@@ -31,7 +31,7 @@ export const DOC_SECTIONS: DocSection[] = [
     ],
   },
   {
-    label: 'Plugins',
+    label: 'Plugins — Core',
     items: [
       { slug: 'plugins/plugin-system', title: 'Plugin System' },
       { slug: 'plugins/sorting', title: 'Sorting' },
@@ -43,20 +43,52 @@ export const DOC_SECTIONS: DocSection[] = [
       { slug: 'plugins/column-resize', title: 'Column Resize' },
       { slug: 'plugins/column-reorder', title: 'Column Reorder' },
       { slug: 'plugins/context-menu', title: 'Context Menu' },
+      { slug: 'plugins/clipboard', title: 'Clipboard' },
+    ],
+  },
+  {
+    label: 'Plugins — Enterprise',
+    items: [
       { slug: 'plugins/grouping', title: 'Grouping' },
       { slug: 'plugins/aggregation', title: 'Aggregation' },
-      { slug: 'plugins/clipboard', title: 'Clipboard' },
       { slug: 'plugins/pivoting', title: 'Pivoting' },
       { slug: 'plugins/master-detail', title: 'Master Detail' },
-      { slug: 'plugins/ssrm', title: 'Server-Side Row Model' },
+      { slug: 'plugins/tree-data', title: 'Tree Data' },
       { slug: 'plugins/row-reorder', title: 'Row Reorder' },
       { slug: 'plugins/excel-export', title: 'Excel Export' },
+      { slug: 'plugins/pdf-export', title: 'PDF Export' },
+      { slug: 'plugins/sparklines', title: 'Sparklines' },
+      { slug: 'plugins/charts', title: 'Charts' },
+      { slug: 'plugins/ssrm', title: 'Server-Side Row Model' },
+    ],
+  },
+  {
+    label: 'Plugins — Next-Gen',
+    items: [
+      { slug: 'plugins/status-bar', title: 'Status Bar' },
+      { slug: 'plugins/state-persistence', title: 'State Persistence' },
+      { slug: 'plugins/column-autosize', title: 'Column AutoSize' },
+      { slug: 'plugins/row-pinning', title: 'Row Pinning' },
+      { slug: 'plugins/conditional-formatting', title: 'Conditional Formatting' },
+      { slug: 'plugins/streaming', title: 'Streaming / Live Data' },
+      { slug: 'plugins/ai', title: 'AI Integration' },
+    ],
+  },
+  {
+    label: 'Plugins — Differentiators',
+    items: [
+      { slug: 'plugins/formula', title: 'Formula Engine' },
+      { slug: 'plugins/time-travel', title: 'Time Travel' },
+      { slug: 'plugins/cell-range', title: 'Cell Range Selection' },
+      { slug: 'plugins/validation', title: 'Data Validation' },
     ],
   },
   {
     label: 'Framework Guides',
     items: [
       { slug: 'frameworks/react', title: 'React' },
+      { slug: 'frameworks/vue', title: 'Vue' },
+      { slug: 'frameworks/svelte', title: 'Svelte' },
       { slug: 'frameworks/vanilla', title: 'Vanilla JS' },
       { slug: 'frameworks/angular', title: 'Angular' },
     ],

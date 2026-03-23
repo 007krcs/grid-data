@@ -1,0 +1,68 @@
+{
+  "name": "@gridstorm/plugin-validation",
+  "version": "0.1.0",
+  "description": "Data validation with 10+ built-in validators, cross-cell rules, and editing integration",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "source": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@gridstorm/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.2.0",
+    "typescript": "^5.5.0"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "keywords": [
+    "datagrid",
+    "validation",
+    "data-validation",
+    "cell-validation",
+    "plugin",
+    "gridstorm"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/007krcs/grid-data.git",
+    "directory": "packages/plugin-validation"
+  },
+  "bugs": {
+    "url": "https://github.com/007krcs/grid-data/issues"
+  },
+  "homepage": "https://grid-data-analytics-explorer.vercel.app/",
+  "author": {
+    "name": "GridStorm",
+    "url": "https://grid-data-analytics-explorer.vercel.app/"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "name": "gridstorm",
+  "version": "0.2.0",
+  "description": "GridStorm — The complete enterprise data grid. One package, everything included: core engine, 32 plugins (incl. Formula Engine, Time Travel, Cell Range, Validation), DOM renderer, theming, i18n, and PDF toolkit.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./react": {
+      "import": {
+        "types": "./dist/react.d.ts",
+        "default": "./dist/react.js"
+      },
+      "require": {
+        "types": "./dist/react.d.cts",
+        "default": "./dist/react.cjs"
+      }
+    },
+    "./plugins": {
+      "import": {
+        "types": "./dist/plugins.d.ts",
+        "default": "./dist/plugins.js"
+      },
+      "require": {
+        "types": "./dist/plugins.d.cts",
+        "default": "./dist/plugins.cjs"
+      }
+    },
+    "./pdf": {
+      "import": {
+        "types": "./dist/pdf.d.ts",
+        "default": "./dist/pdf.js"
+      },
+      "require": {
+        "types": "./dist/pdf.d.cts",
+        "default": "./dist/pdf.cjs"
+      }
+    },
+    "./theme": {
+      "import": "./dist/theme.css",
+      "require": "./dist/theme.css"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "data-grid",
+    "datagrid",
+    "table",
+    "grid",
+    "enterprise",
+    "virtual-scroll",
+    "sorting",
+    "filtering",
+    "grouping",
+    "pivoting",
+    "excel-export",
+    "pdf",
+    "react",
+    "typescript",
+    "headless",
+    "plugin-system",
+    "real-time",
+    "streaming",
+    "ai",
+    "analytics"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/007krcs/grid-data.git"
+  },
+  "homepage": "https://grid-data-analytics-explorer.vercel.app/",
+  "bugs": {
+    "url": "https://github.com/007krcs/grid-data/issues"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true },
+    "react-dom": { "optional": true }
+  }
+}

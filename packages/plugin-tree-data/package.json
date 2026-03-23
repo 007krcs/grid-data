@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-tree-data",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Tree data plugin for GridStorm — hierarchical parent-child row display",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -59,10 +59,10 @@
   "bugs": {
     "url": "https://github.com/007krcs/grid-data/issues"
   },
-  "homepage": "https://gridstorm.dev",
+  "homepage": "https://grid-data-analytics-explorer.vercel.app/",
   "author": {
     "name": "GridStorm",
-    "url": "https://gridstorm.dev"
+    "url": "https://grid-data-analytics-explorer.vercel.app/"
   },
   "funding": {
     "type": "github",

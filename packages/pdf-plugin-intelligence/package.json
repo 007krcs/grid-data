@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/pdf-plugin-intelligence",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "GridStorm PDF document intelligence plugin — classify, extract, and summarize documents",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -40,12 +40,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nicktesh/gridstorm.git",
+    "url": "https://github.com/007krcs/grid-data.git",
     "directory": "packages/pdf-plugin-intelligence"
   },
-  "homepage": "https://gridstorm.dev",
+  "homepage": "https://grid-data-analytics-explorer.vercel.app/",
   "bugs": {
-    "url": "https://github.com/nicktesh/gridstorm/issues"
+    "url": "https://github.com/007krcs/grid-data/issues"
   },
   "engines": {
     "node": ">=18.0.0"

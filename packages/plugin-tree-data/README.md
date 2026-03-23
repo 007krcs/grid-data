@@ -2,7 +2,7 @@
 
 Hierarchical parent-child row display for GridStorm.
 
-> **Enterprise Plugin** -- Requires a [GridStorm license key](https://gridstorm.dev/pricing).
+> **Enterprise Plugin** -- Requires a [GridStorm license key](https://grid-data-analytics-explorer.vercel.app//pricing).
 
 ## Install
 
@@ -39,8 +39,8 @@ const engine = createGridEngine({
 
 ## Documentation
 
-[Tree Data Guide](https://gridstorm.dev/docs/tree-data) | [API Reference](https://gridstorm.dev/api/plugin-tree-data)
+[Tree Data Guide](https://grid-data-analytics-explorer.vercel.app//docs/tree-data) | [API Reference](https://grid-data-analytics-explorer.vercel.app//api/plugin-tree-data)
 
 ## License
 
-Commercial -- [Enterprise License Required](https://gridstorm.dev/pricing)
+Commercial -- [Enterprise License Required](https://grid-data-analytics-explorer.vercel.app//pricing)

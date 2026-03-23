@@ -21,12 +21,12 @@ setLicenseKey('YOUR_LICENSE_KEY');
 
 Enterprise plugins (aggregation, pivoting, clipboard, tree data, server-side row model) require a valid license key. This package provides the validation logic that enterprise plugins depend on.
 
-- [Get a Trial Key](https://gridstorm.dev/trial)
-- [View Enterprise Plans](https://gridstorm.dev/pricing)
+- [Get a Trial Key](https://grid-data-analytics-explorer.vercel.app//trial)
+- [View Enterprise Plans](https://grid-data-analytics-explorer.vercel.app//pricing)
 
 ## Documentation
 
-[Enterprise Licensing Guide](https://gridstorm.dev/docs/enterprise/licensing)
+[Enterprise Licensing Guide](https://grid-data-analytics-explorer.vercel.app//docs/enterprise/licensing)
 
 ## License
 

@@ -8,6 +8,8 @@ const path = require('path');
 const fs = require('fs');
 
 const DRY_RUN = process.argv.includes('--dry-run');
+const OTP_ARG = process.argv.find(a => a.startsWith('--otp='));
+const OTP = OTP_ARG ? OTP_ARG.split('=')[1] : null;
 const ROOT = path.join(__dirname, '..');
 
 // Publish order: dependencies first, then dependents
@@ -63,14 +65,22 @@ const PUBLISH_ORDER = [
   'codemod',
 
   // Layer 4: Framework adapters (depend on core + dom-renderer)
-  'react',
-  'vue',
-  'angular',
+  'react-adapter',
+  'vue-adapter',
+  'angular-adapter',
   'svelte-adapter',
+
+  // Layer 5: Unified package (depends on everything)
+  'gridstorm',
 ];
 
 console.log(`\n📦 GridStorm npm publish${DRY_RUN ? ' (DRY RUN)' : ''}`);
 console.log(`${'='.repeat(50)}\n`);
+
+function sleep(ms) {
+  const end = Date.now() + ms;
+  while (Date.now() < end) { /* busy wait */ }
+}
 
 let published = 0;
 let skipped = 0;
@@ -90,7 +100,7 @@ for (const dir of PUBLISH_ORDER) {
 
   // Check if already published
   try {
-    const info = execSync(`npm view ${name}@${version} version 2>/dev/null`, { encoding: 'utf8' }).trim();
+    const info = execSync(`npm view ${name}@${version} version`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
     if (info === version) {
       console.log(`✓ ${name}@${version} (already published)`);
       skipped++;
@@ -110,22 +120,47 @@ for (const dir of PUBLISH_ORDER) {
     }
   }
 
+  const otpFlag = OTP ? ` --otp=${OTP}` : '';
   const cmd = DRY_RUN
-    ? `npm publish --access public --no-git-checks --dry-run`
-    : `npm publish --access public --no-git-checks`;
+    ? `npm publish --access public --no-git-checks --dry-run${otpFlag}`
+    : `npm publish --access public --no-git-checks${otpFlag}`;
 
-  try {
-    console.log(`📤 Publishing ${name}@${version}...`);
-    execSync(cmd, {
-      cwd: path.join(ROOT, 'packages', dir),
-      stdio: 'pipe',
-      encoding: 'utf8'
-    });
-    console.log(`✅ ${name}@${version}`);
-    published++;
-  } catch (err) {
-    console.error(`❌ ${name}@${version}: ${err.stderr?.split('\n').find(l => l.includes('npm error')) || err.message}`);
-    failed++;
+  // Retry up to 3 times with increasing delay for rate limits
+  let retries = 0;
+  const maxRetries = 3;
+  let success = false;
+
+  while (retries <= maxRetries && !success) {
+    try {
+      if (retries > 0) {
+        const retryDelay = retries * 60;
+        console.log(`   🔄 Retry ${retries}/${maxRetries} — waiting ${retryDelay}s...`);
+        sleep(retryDelay * 1000);
+      }
+      console.log(`📤 Publishing ${name}@${version}...`);
+      execSync(cmd, {
+        cwd: path.join(ROOT, 'packages', dir),
+        stdio: 'pipe',
+        encoding: 'utf8'
+      });
+      console.log(`✅ ${name}@${version}`);
+      published++;
+      success = true;
+      // Wait 30 seconds between publishes to avoid npm rate limiting (E429)
+      if (!DRY_RUN) {
+        console.log('   ⏳ Waiting 30s (rate limit)...');
+        sleep(30000);
+      }
+    } catch (err) {
+      const errMsg = err.stderr?.split('\n').find(l => l.includes('npm error')) || err.message;
+      if (errMsg.includes('E429') && retries < maxRetries) {
+        retries++;
+      } else {
+        console.error(`❌ ${name}@${version}: ${errMsg}`);
+        failed++;
+        break;
+      }
+    }
   }
 }
 

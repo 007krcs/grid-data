@@ -14,26 +14,26 @@ for (const dir of pkgDirs) {
 
   let changed = false;
 
-  // Add repository if missing
-  if (!pkg.repository) {
+  // Fix repository URL (always update to correct URL)
+  if (!pkg.repository || (pkg.repository.url && pkg.repository.url.includes('nicktesh'))) {
     pkg.repository = {
       type: 'git',
-      url: 'https://github.com/nicktesh/gridstorm.git',
+      url: 'https://github.com/007krcs/grid-data.git',
       directory: `packages/${dir}`
     };
     changed = true;
   }
 
-  // Add homepage if missing
-  if (!pkg.homepage) {
-    pkg.homepage = 'https://gridstorm.dev';
+  // Fix homepage URL
+  if (!pkg.homepage || pkg.homepage === 'https://gridstorm.dev') {
+    pkg.homepage = 'https://grid-data-analytics-explorer.vercel.app/';
     changed = true;
   }
 
-  // Add bugs if missing
-  if (!pkg.bugs) {
+  // Fix bugs URL
+  if (!pkg.bugs || (pkg.bugs.url && pkg.bugs.url.includes('nicktesh'))) {
     pkg.bugs = {
-      url: 'https://github.com/nicktesh/gridstorm/issues'
+      url: 'https://github.com/007krcs/grid-data/issues'
     };
     changed = true;
   }

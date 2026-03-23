@@ -37,7 +37,7 @@ engine.dispatchCommand('columnResize:set', { field: 'name', width: 200 });
 
 ## Documentation
 
-[Column Resize Guide](https://gridstorm.dev/docs/column-resize) | [API Reference](https://gridstorm.dev/api/plugin-column-resize)
+[Column Resize Guide](https://grid-data-analytics-explorer.vercel.app//docs/column-resize) | [API Reference](https://grid-data-analytics-explorer.vercel.app//api/plugin-column-resize)
 
 ## License
 

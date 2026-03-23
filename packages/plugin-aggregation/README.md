@@ -2,7 +2,7 @@
 
 Aggregate values (sum, avg, min, max, count) for grouped rows in GridStorm.
 
-> **Enterprise Plugin** -- Requires a [GridStorm license key](https://gridstorm.dev/pricing).
+> **Enterprise Plugin** -- Requires a [GridStorm license key](https://grid-data-analytics-explorer.vercel.app//pricing).
 
 ## Install
 
@@ -40,8 +40,8 @@ const engine = createGridEngine({
 
 ## Documentation
 
-[Aggregation Guide](https://gridstorm.dev/docs/aggregation) | [API Reference](https://gridstorm.dev/api/plugin-aggregation)
+[Aggregation Guide](https://grid-data-analytics-explorer.vercel.app//docs/aggregation) | [API Reference](https://grid-data-analytics-explorer.vercel.app//api/plugin-aggregation)
 
 ## License
 
-Commercial -- [Enterprise License Required](https://gridstorm.dev/pricing)
+Commercial -- [Enterprise License Required](https://grid-data-analytics-explorer.vercel.app//pricing)

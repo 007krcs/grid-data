@@ -34,7 +34,7 @@ engine.dispatchCommand('selection:selectRows', { rowIds: ['1', '3'] });
 
 ## Documentation
 
-[Selection Guide](https://gridstorm.dev/docs/selection) | [API Reference](https://gridstorm.dev/api/plugin-selection)
+[Selection Guide](https://grid-data-analytics-explorer.vercel.app//docs/selection) | [API Reference](https://grid-data-analytics-explorer.vercel.app//api/plugin-selection)
 
 ## License
 

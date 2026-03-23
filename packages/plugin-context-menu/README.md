@@ -40,7 +40,7 @@ const engine = createGridEngine({
 
 ## Documentation
 
-[Context Menu Guide](https://gridstorm.dev/docs/context-menu) | [API Reference](https://gridstorm.dev/api/plugin-context-menu)
+[Context Menu Guide](https://grid-data-analytics-explorer.vercel.app//docs/context-menu) | [API Reference](https://grid-data-analytics-explorer.vercel.app//api/plugin-context-menu)
 
 ## License
 

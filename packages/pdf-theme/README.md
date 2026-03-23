@@ -22,7 +22,7 @@ import '@gridstorm/pdf-theme/dist/index.css';
 
 ## Documentation
 
-[Full Documentation](https://gridstorm.dev) | [GitHub](https://github.com/nicktesh/gridstorm)
+[Full Documentation](https://grid-data-analytics-explorer.vercel.app/) | [GitHub](https://github.com/007krcs/grid-data)
 
 ## License
 

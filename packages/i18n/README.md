@@ -30,7 +30,7 @@ const engine = createGridEngine({
 
 ## Documentation
 
-[Internationalization Guide](https://gridstorm.dev/docs/i18n) | [RTL Support](https://gridstorm.dev/docs/rtl)
+[Internationalization Guide](https://grid-data-analytics-explorer.vercel.app//docs/i18n) | [RTL Support](https://grid-data-analytics-explorer.vercel.app//docs/rtl)
 
 ## License
 

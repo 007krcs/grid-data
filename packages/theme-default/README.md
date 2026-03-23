@@ -37,7 +37,7 @@ import '@gridstorm/theme-default/spacious';
 
 ## Documentation
 
-[Theming Guide](https://gridstorm.dev/docs/theming) | [Custom Theme Tutorial](https://gridstorm.dev/docs/custom-themes)
+[Theming Guide](https://grid-data-analytics-explorer.vercel.app//docs/theming) | [Custom Theme Tutorial](https://grid-data-analytics-explorer.vercel.app//docs/custom-themes)
 
 ## License
 

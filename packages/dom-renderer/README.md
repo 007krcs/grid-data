@@ -34,7 +34,7 @@ renderer.mount();
 
 ## Documentation
 
-[Full API Reference](https://gridstorm.dev/api/dom-renderer) | [Virtual Scrolling Guide](https://gridstorm.dev/docs/virtual-scroll)
+[Full API Reference](https://grid-data-analytics-explorer.vercel.app//api/dom-renderer) | [Virtual Scrolling Guide](https://grid-data-analytics-explorer.vercel.app//docs/virtual-scroll)
 
 ## License
 

@@ -38,7 +38,7 @@ engine.dispatchCommand('columnPinning:pin', { field: 'name', side: 'left' });
 
 ## Documentation
 
-[Column Pinning Guide](https://gridstorm.dev/docs/column-pinning) | [API Reference](https://gridstorm.dev/api/plugin-column-pinning)
+[Column Pinning Guide](https://grid-data-analytics-explorer.vercel.app//docs/column-pinning) | [API Reference](https://grid-data-analytics-explorer.vercel.app//api/plugin-column-pinning)
 
 ## License
 

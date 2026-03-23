@@ -37,7 +37,7 @@ engine.dispatchCommand('columnReorder:move', { field: 'email', toIndex: 0 });
 
 ## Documentation
 
-[Column Reorder Guide](https://gridstorm.dev/docs/column-reorder) | [API Reference](https://gridstorm.dev/api/plugin-column-reorder)
+[Column Reorder Guide](https://grid-data-analytics-explorer.vercel.app//docs/column-reorder) | [API Reference](https://grid-data-analytics-explorer.vercel.app//api/plugin-column-reorder)
 
 ## License
 

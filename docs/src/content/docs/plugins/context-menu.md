@@ -49,6 +49,10 @@ const grid = createGrid({
 });
 ```
 
+:::example{title="Context Menu Demo" href="/cookbook/#context-menu"}
+Right-click cells to see custom menus with icons, keyboard shortcuts, submenus, and dynamic visibility based on cell context.
+:::
+
 ## Plugin Options
 
 | Name | Type | Default | Description |

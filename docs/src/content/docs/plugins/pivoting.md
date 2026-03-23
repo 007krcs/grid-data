@@ -41,6 +41,10 @@ const grid = createGrid({
 
 Columns with `pivot: true` are auto-detected on install and used as the initial pivot columns, sorted by `pivotIndex`.
 
+:::example{title="Pivoting Demo" href="/cookbook/#pivoting"}
+Transform row data into cross-tabulated pivot tables with dynamically generated columns and aggregated cell values.
+:::
+
 ## Plugin Options
 
 | Name | Type | Default | Description |

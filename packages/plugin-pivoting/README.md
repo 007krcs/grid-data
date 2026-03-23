@@ -2,7 +2,7 @@
 
 Pivot row data into dynamic columns in GridStorm.
 
-> **Enterprise Plugin** -- Requires a [GridStorm license key](https://gridstorm.dev/pricing).
+> **Enterprise Plugin** -- Requires a [GridStorm license key](https://grid-data-analytics-explorer.vercel.app//pricing).
 
 ## Install
 
@@ -40,8 +40,8 @@ const engine = createGridEngine({
 
 ## Documentation
 
-[Pivoting Guide](https://gridstorm.dev/docs/pivoting) | [API Reference](https://gridstorm.dev/api/plugin-pivoting)
+[Pivoting Guide](https://grid-data-analytics-explorer.vercel.app//docs/pivoting) | [API Reference](https://grid-data-analytics-explorer.vercel.app//api/plugin-pivoting)
 
 ## License
 
-Commercial -- [Enterprise License Required](https://gridstorm.dev/pricing)
+Commercial -- [Enterprise License Required](https://grid-data-analytics-explorer.vercel.app//pricing)

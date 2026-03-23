@@ -127,9 +127,21 @@ importers:
       '@gridstorm/plugin-aggregation':
         specifier: workspace:*
         version: link:../../packages/plugin-aggregation
+      '@gridstorm/plugin-ai':
+        specifier: workspace:*
+        version: link:../../packages/plugin-ai
+      '@gridstorm/plugin-cell-range':
+        specifier: workspace:*
+        version: link:../../packages/plugin-cell-range
+      '@gridstorm/plugin-charts':
+        specifier: workspace:*
+        version: link:../../packages/plugin-charts
       '@gridstorm/plugin-clipboard':
         specifier: workspace:*
         version: link:../../packages/plugin-clipboard
+      '@gridstorm/plugin-column-autosize':
+        specifier: workspace:*
+        version: link:../../packages/plugin-column-autosize
       '@gridstorm/plugin-column-pinning':
         specifier: workspace:*
         version: link:../../packages/plugin-column-pinning
@@ -139,6 +151,9 @@ importers:
       '@gridstorm/plugin-column-resize':
         specifier: workspace:*
         version: link:../../packages/plugin-column-resize
+      '@gridstorm/plugin-conditional-formatting':
+        specifier: workspace:*
+        version: link:../../packages/plugin-conditional-formatting
       '@gridstorm/plugin-context-menu':
         specifier: workspace:*
         version: link:../../packages/plugin-context-menu
@@ -151,6 +166,9 @@ importers:
       '@gridstorm/plugin-filtering':
         specifier: workspace:*
         version: link:../../packages/plugin-filtering
+      '@gridstorm/plugin-formula':
+        specifier: workspace:*
+        version: link:../../packages/plugin-formula
       '@gridstorm/plugin-grouping':
         specifier: workspace:*
         version: link:../../packages/plugin-grouping
@@ -163,6 +181,9 @@ importers:
       '@gridstorm/plugin-pivoting':
         specifier: workspace:*
         version: link:../../packages/plugin-pivoting
+      '@gridstorm/plugin-row-pinning':
+        specifier: workspace:*
+        version: link:../../packages/plugin-row-pinning
       '@gridstorm/plugin-row-reorder':
         specifier: workspace:*
         version: link:../../packages/plugin-row-reorder
@@ -172,9 +193,30 @@ importers:
       '@gridstorm/plugin-sorting':
         specifier: workspace:*
         version: link:../../packages/plugin-sorting
+      '@gridstorm/plugin-sparklines':
+        specifier: workspace:*
+        version: link:../../packages/plugin-sparklines
       '@gridstorm/plugin-ssrm':
         specifier: workspace:*
         version: link:../../packages/plugin-ssrm
+      '@gridstorm/plugin-state-persistence':
+        specifier: workspace:*
+        version: link:../../packages/plugin-state-persistence
+      '@gridstorm/plugin-status-bar':
+        specifier: workspace:*
+        version: link:../../packages/plugin-status-bar
+      '@gridstorm/plugin-streaming':
+        specifier: workspace:*
+        version: link:../../packages/plugin-streaming
+      '@gridstorm/plugin-time-travel':
+        specifier: workspace:*
+        version: link:../../packages/plugin-time-travel
+      '@gridstorm/plugin-tree-data':
+        specifier: workspace:*
+        version: link:../../packages/plugin-tree-data
+      '@gridstorm/plugin-validation':
+        specifier: workspace:*
+        version: link:../../packages/plugin-validation
       '@gridstorm/react':
         specifier: workspace:*
         version: link:../../packages/react-adapter
@@ -679,6 +721,15 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  packages/gridstorm:
+    dependencies:
+      react:
+        specifier: '>=18.0.0'
+        version: 18.3.1
+      react-dom:
+        specifier: '>=18.0.0'
+        version: 18.3.1(react@18.3.1)
+
   packages/i18n:
     devDependencies:
       tsup:
@@ -813,6 +864,19 @@ importers:
         version: 5.9.3
 
   packages/plugin-ai:
+    dependencies:
+      '@gridstorm/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      tsup:
+        specifier: ^8.2.0
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  packages/plugin-cell-range:
     dependencies:
       '@gridstorm/core':
         specifier: workspace:*
@@ -962,6 +1026,19 @@ importers:
         version: 5.9.3
 
   packages/plugin-filtering:
+    dependencies:
+      '@gridstorm/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      tsup:
+        specifier: ^8.2.0
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  packages/plugin-formula:
     dependencies:
       '@gridstorm/core':
         specifier: workspace:*
@@ -1165,6 +1242,19 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  packages/plugin-time-travel:
+    dependencies:
+      '@gridstorm/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      tsup:
+        specifier: ^8.2.0
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   packages/plugin-tree-data:
     dependencies:
       '@gridstorm/core':
@@ -1173,6 +1263,19 @@ importers:
       '@gridstorm/license':
         specifier: workspace:*
         version: link:../license
+    devDependencies:
+      tsup:
+        specifier: ^8.2.0
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  packages/plugin-validation:
+    dependencies:
+      '@gridstorm/core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       tsup:
         specifier: ^8.2.0

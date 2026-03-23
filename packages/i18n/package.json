@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/i18n",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Internationalization support for GridStorm",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -50,13 +50,16 @@
   "bugs": {
     "url": "https://github.com/007krcs/grid-data/issues"
   },
-  "homepage": "https://gridstorm.dev",
+  "homepage": "https://grid-data-analytics-explorer.vercel.app/",
   "author": {
     "name": "GridStorm",
-    "url": "https://gridstorm.dev"
+    "url": "https://grid-data-analytics-explorer.vercel.app/"
   },
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/gridstorm"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

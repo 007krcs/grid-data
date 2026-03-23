@@ -37,7 +37,7 @@ engine.dispatchCommand('editing:startCell', { rowId: '1', field: 'name' });
 
 ## Documentation
 
-[Editing Guide](https://gridstorm.dev/docs/editing) | [API Reference](https://gridstorm.dev/api/plugin-editing)
+[Editing Guide](https://grid-data-analytics-explorer.vercel.app//docs/editing) | [API Reference](https://grid-data-analytics-explorer.vercel.app//api/plugin-editing)
 
 ## License
 

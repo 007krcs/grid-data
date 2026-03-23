@@ -74,7 +74,7 @@
   overflow: auto;
   position: relative;
   flex: 1;
-  contain: strict;
+  contain: layout style;
 }
 
 .gs-body {

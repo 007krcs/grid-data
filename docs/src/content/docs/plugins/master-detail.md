@@ -38,6 +38,10 @@ const grid = createGrid({
 });
 ```
 
+:::example{title="Master Detail Demo" href="/cookbook/#master-detail"}
+Expand rows to reveal detail grids with async data fetching, configurable row heights, and optional caching of detail data.
+:::
+
 ## Plugin Options
 
 | Name | Type | Default | Description |

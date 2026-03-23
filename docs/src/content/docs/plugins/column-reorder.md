@@ -35,6 +35,10 @@ const grid = createGrid({
 });
 ```
 
+:::example{title="Column Reorder Demo" href="/cookbook/#column-reorder"}
+Drag column headers to rearrange their order. Columns with `lockPosition` stay fixed, and pinned zones are protected from cross-zone dragging.
+:::
+
 ## Plugin Options
 
 | Name | Type | Default | Description |

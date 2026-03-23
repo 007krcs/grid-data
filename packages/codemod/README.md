@@ -30,7 +30,7 @@ gridstorm-codemod ./src --include "**/*.tsx"
 
 ## Documentation
 
-[Migration Guide](https://gridstorm.dev/docs/migration) | [Codemod Reference](https://gridstorm.dev/docs/codemod)
+[Migration Guide](https://grid-data-analytics-explorer.vercel.app//docs/migration) | [Codemod Reference](https://grid-data-analytics-explorer.vercel.app//docs/codemod)
 
 ## License
 

@@ -36,7 +36,7 @@ engine.dispatchCommand('sort:set', { field: 'name', direction: 'asc' });
 
 ## Documentation
 
-[Sorting Guide](https://gridstorm.dev/docs/sorting) | [API Reference](https://gridstorm.dev/api/plugin-sorting)
+[Sorting Guide](https://grid-data-analytics-explorer.vercel.app//docs/sorting) | [API Reference](https://grid-data-analytics-explorer.vercel.app//api/plugin-sorting)
 
 ## License
 

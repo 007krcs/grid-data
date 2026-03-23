@@ -1,6 +1,6 @@
 # @gridstorm/vue
 
-Vue 3 adapter for [GridStorm](https://gridstorm.dev) -- a high-performance, headless data grid engine.
+Vue 3 adapter for [GridStorm](https://grid-data-analytics-explorer.vercel.app/) -- a high-performance, headless data grid engine.
 
 ## Installation
 

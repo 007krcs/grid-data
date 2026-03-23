@@ -99,15 +99,8 @@ export function PaginationPlugin(options: PaginationPluginOptions = {}): GridPlu
             },
           }));
 
-          const state = ctx.store.getState();
-          const totalPages = Math.ceil(
-            state.pagination.totalRows / payload.pageSize,
-          );
-          ctx.eventBus.emit('pagination:changed', {
-            currentPage: 0,
-            totalPages,
-            pageSize: payload.pageSize,
-          });
+          // Trigger reprocess to apply new page size
+          ctx.api.paginationGoToPage(0);
         },
       );
 

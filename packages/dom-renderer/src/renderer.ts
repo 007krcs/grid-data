@@ -490,7 +490,7 @@ export class DomRenderer {
         sortIndex: col.sortIndex,
       });
       if (typeof result === 'string') {
-        if (col.originalDef.dangerouslySetInnerHTML) {
+        if (col.originalDef.dangerouslySetInnerHTML || (result.includes('<') && result.includes('>'))) {
           cell.innerHTML = result;
         } else {
           cell.textContent = result;
@@ -1406,7 +1406,8 @@ export class DomRenderer {
           rowIndex,
         });
         if (typeof result === 'string') {
-          if (col.originalDef.dangerouslySetInnerHTML) {
+          // Auto-detect HTML strings (starts with < and ends with >), or honor explicit flag
+          if (col.originalDef.dangerouslySetInnerHTML || (result.includes('<') && result.includes('>'))) {
             cell.innerHTML = result;
           } else {
             cell.textContent = result;
@@ -1718,7 +1719,8 @@ export class DomRenderer {
     const state = this.engine.store.getState();
 
     if (state.editing && !this.activeEditor) {
-      this.startEditorOverlay();
+      // Use microtask to ensure DOM has been updated with latest row data
+      queueMicrotask(() => this.startEditorOverlay());
     } else if (!state.editing && this.activeEditor) {
       this.removeEditorOverlay();
     }

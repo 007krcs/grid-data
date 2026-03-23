@@ -38,7 +38,7 @@ engine.dispatchCommand('grouping:setColumns', { columns: ['department'] });
 
 ## Documentation
 
-[Grouping Guide](https://gridstorm.dev/docs/grouping) | [API Reference](https://gridstorm.dev/api/plugin-grouping)
+[Grouping Guide](https://grid-data-analytics-explorer.vercel.app//docs/grouping) | [API Reference](https://grid-data-analytics-explorer.vercel.app//api/plugin-grouping)
 
 ## License
 

@@ -38,7 +38,7 @@ const rows = engine.getDisplayedRows();
 
 ## Documentation
 
-[Full API Reference](https://gridstorm.dev/api/core) | [Architecture Guide](https://gridstorm.dev/docs/architecture)
+[Full API Reference](https://grid-data-analytics-explorer.vercel.app//api/core) | [Architecture Guide](https://grid-data-analytics-explorer.vercel.app//docs/architecture)
 
 ## License
 

@@ -1,6 +1,6 @@
 # @gridstorm/angular
 
-Angular adapter for [GridStorm](https://gridstorm.dev) -- a high-performance, headless data grid engine.
+Angular adapter for [GridStorm](https://grid-data-analytics-explorer.vercel.app/) -- a high-performance, headless data grid engine.
 
 Provides a standalone Angular component (`<gridstorm>`) that wraps the GridStorm core engine and DOM renderer. Requires Angular 16+ (standalone component support).
 

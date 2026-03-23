@@ -44,6 +44,10 @@ const grid = createGrid({
 });
 ```
 
+:::example{title="Aggregation Demo" href="/cookbook/#aggregation"}
+See sum, avg, count, and other aggregate values computed automatically on grouped data with custom aggregation function support.
+:::
+
 ## Plugin Options
 
 | Name | Type | Default | Description |

@@ -40,7 +40,7 @@ export default function App() {
 
 ## Documentation
 
-[Full API Reference](https://gridstorm.dev/api/react) | [React Guide](https://gridstorm.dev/docs/react)
+[Full API Reference](https://grid-data-analytics-explorer.vercel.app//api/react) | [React Guide](https://grid-data-analytics-explorer.vercel.app//docs/react)
 
 ## License
 

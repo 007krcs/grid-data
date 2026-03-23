@@ -108,14 +108,23 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
     // Assign display positions
     assignDisplayPositions(nodes);
 
-    const displayedIds = nodes.map((n) => n.id);
+    const allIds = nodes.map((n) => n.id);
+
+    // Apply pagination if enabled
+    const paginationEnabled = state.pagination.pageSize > 0;
+    let displayedIds = allIds;
+    if (paginationEnabled) {
+      const { currentPage, pageSize } = state.pagination;
+      const start = currentPage * pageSize;
+      displayedIds = allIds.slice(start, start + pageSize);
+    }
 
     store.setState((prev) => ({
       ...prev,
       displayedRowIds: displayedIds,
       pagination: {
         ...prev.pagination,
-        totalRows: displayedIds.length,
+        totalRows: allIds.length,
       },
     }));
   }
@@ -611,6 +620,8 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
         ...prev,
         pagination: { ...prev.pagination, currentPage: clamped },
       }));
+      // Re-slice displayedRowIds for the new page
+      reprocessRows();
       eventBus.emit('pagination:changed', {
         currentPage: clamped,
         totalPages,

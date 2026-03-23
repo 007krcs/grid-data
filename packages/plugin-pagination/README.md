@@ -34,7 +34,7 @@ engine.dispatchCommand('pagination:nextPage', {});
 
 ## Documentation
 
-[Pagination Guide](https://gridstorm.dev/docs/pagination) | [API Reference](https://gridstorm.dev/api/plugin-pagination)
+[Pagination Guide](https://grid-data-analytics-explorer.vercel.app//docs/pagination) | [API Reference](https://grid-data-analytics-explorer.vercel.app//api/plugin-pagination)
 
 ## License
 

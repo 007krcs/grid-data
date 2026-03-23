@@ -2,7 +2,7 @@
 
 Copy, cut, and paste with keyboard shortcuts for GridStorm.
 
-> **Enterprise Plugin** -- Requires a [GridStorm license key](https://gridstorm.dev/pricing).
+> **Enterprise Plugin** -- Requires a [GridStorm license key](https://grid-data-analytics-explorer.vercel.app//pricing).
 
 ## Install
 
@@ -37,8 +37,8 @@ const engine = createGridEngine({
 
 ## Documentation
 
-[Clipboard Guide](https://gridstorm.dev/docs/clipboard) | [API Reference](https://gridstorm.dev/api/plugin-clipboard)
+[Clipboard Guide](https://grid-data-analytics-explorer.vercel.app//docs/clipboard) | [API Reference](https://grid-data-analytics-explorer.vercel.app//api/plugin-clipboard)
 
 ## License
 
-Commercial -- [Enterprise License Required](https://gridstorm.dev/pricing)
+Commercial -- [Enterprise License Required](https://grid-data-analytics-explorer.vercel.app//pricing)

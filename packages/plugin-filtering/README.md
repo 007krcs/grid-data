@@ -41,7 +41,7 @@ engine.dispatchCommand('filter:set', {
 
 ## Documentation
 
-[Filtering Guide](https://gridstorm.dev/docs/filtering) | [API Reference](https://gridstorm.dev/api/plugin-filtering)
+[Filtering Guide](https://grid-data-analytics-explorer.vercel.app//docs/filtering) | [API Reference](https://grid-data-analytics-explorer.vercel.app//api/plugin-filtering)
 
 ## License
 

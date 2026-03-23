@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/pdf-plugin-text",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Text extraction and search plugin for GridStorm PDF",
   "license": "MIT",
   "type": "module",
@@ -14,7 +14,9 @@
       "require": "./dist/index.cjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch"
@@ -28,5 +30,18 @@
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/007krcs/grid-data.git",
+    "directory": "packages/pdf-plugin-text"
+  },
+  "homepage": "https://grid-data-analytics-explorer.vercel.app/",
+  "bugs": {
+    "url": "https://github.com/007krcs/grid-data/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "sideEffects": false
 }

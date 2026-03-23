@@ -9,17 +9,45 @@
   "source": "./src/index.ts",
   "exports": {
     ".": {
-      "import": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
-      "require": { "types": "./dist/index.d.cts", "default": "./dist/index.cjs" }
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
-  "files": ["dist"],
-  "scripts": { "build": "tsup", "dev": "tsup --watch" },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
   "dependencies": {
     "@gridstorm/pdf-core": "workspace:*"
   },
-  "devDependencies": { "tsup": "^8.2.0", "typescript": "^5.5.0" },
+  "devDependencies": {
+    "tsup": "^8.2.0",
+    "typescript": "^5.5.0"
+  },
   "sideEffects": false,
-  "publishConfig": { "access": "public" },
-  "license": "MIT"
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nicktesh/gridstorm.git",
+    "directory": "packages/pdf-plugin-pii"
+  },
+  "homepage": "https://gridstorm.dev",
+  "bugs": {
+    "url": "https://github.com/nicktesh/gridstorm/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

@@ -71,5 +71,8 @@
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/gridstorm"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

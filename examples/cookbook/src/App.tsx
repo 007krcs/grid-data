@@ -34,6 +34,20 @@ import { MasterDetailPlugin } from '@gridstorm/plugin-master-detail';
 import { SSRMPlugin } from '@gridstorm/plugin-ssrm';
 import { RowReorderPlugin } from '@gridstorm/plugin-row-reorder';
 import { ExcelExportPlugin } from '@gridstorm/plugin-excel-export';
+import { TreeDataPlugin } from '@gridstorm/plugin-tree-data';
+import { SparklinePlugin } from '@gridstorm/plugin-sparklines';
+import { ChartsPlugin } from '@gridstorm/plugin-charts';
+import { StatusBarPlugin } from '@gridstorm/plugin-status-bar';
+import { StatePersistencePlugin } from '@gridstorm/plugin-state-persistence';
+import { ColumnAutoSizePlugin } from '@gridstorm/plugin-column-autosize';
+import { RowPinningPlugin } from '@gridstorm/plugin-row-pinning';
+import { ConditionalFormattingPlugin } from '@gridstorm/plugin-conditional-formatting';
+import { StreamingPlugin } from '@gridstorm/plugin-streaming';
+import { AIPlugin } from '@gridstorm/plugin-ai';
+import { FormulaPlugin } from '@gridstorm/plugin-formula';
+import { TimeTravelPlugin } from '@gridstorm/plugin-time-travel';
+import { CellRangePlugin } from '@gridstorm/plugin-cell-range';
+import { ValidationPlugin } from '@gridstorm/plugin-validation';
 import '@gridstorm/theme-default';
 import {
   generateEmployees,
@@ -147,6 +161,30 @@ const CATEGORIES: ExampleCategory[] = [
     label: 'Vanilla JS',
     items: [
       { id: 'vanilla-js', title: 'No-Framework Example' },
+    ],
+  },
+  {
+    label: 'Enterprise',
+    items: [
+      { id: 'tree-data', title: 'Tree Data' },
+      { id: 'sparklines', title: 'Sparklines' },
+      { id: 'charts', title: 'Charts' },
+      { id: 'conditional-formatting', title: 'Conditional Formatting' },
+      { id: 'streaming', title: 'Streaming Data' },
+    ],
+  },
+  {
+    label: 'Next-Gen',
+    items: [
+      { id: 'status-bar', title: 'Status Bar' },
+      { id: 'state-persistence', title: 'State Persistence' },
+      { id: 'column-autosize', title: 'Column AutoSize' },
+      { id: 'row-pinning', title: 'Row Pinning' },
+      { id: 'ai-integration', title: 'AI Integration' },
+      { id: 'formula-engine', title: 'Formula Engine' },
+      { id: 'time-travel', title: 'Time Travel' },
+      { id: 'cell-range', title: 'Cell Range' },
+      { id: 'data-validation', title: 'Data Validation' },
     ],
   },
 ];
@@ -1481,6 +1519,555 @@ renderer.mount();`}
 }
 
 // ─────────────────────────────────────────────────────────────
+// ENTERPRISE EXAMPLES
+// ─────────────────────────────────────────────────────────────
+
+interface TreeEmployee {
+  name: string;
+  role: string;
+  salary: number;
+  children?: TreeEmployee[];
+}
+
+function TreeDataExample() {
+  const columns: ColumnDef<TreeEmployee>[] = useMemo(() => [
+    { field: 'name', headerName: 'Name', width: 220 },
+    { field: 'role', headerName: 'Role', width: 180 },
+    { field: 'salary', headerName: 'Salary', width: 130 },
+  ], []);
+
+  const treeData: TreeEmployee[] = useMemo(() => [
+    { name: 'CEO Jane', role: 'CEO', salary: 250000, children: [
+      { name: 'VP Engineering', role: 'VP', salary: 180000, children: [
+        { name: 'Alice', role: 'Senior Dev', salary: 120000 },
+        { name: 'Bob', role: 'Senior Dev', salary: 115000 },
+        { name: 'Charlie', role: 'Dev', salary: 95000 },
+      ]},
+      { name: 'VP Sales', role: 'VP', salary: 170000, children: [
+        { name: 'Diana', role: 'Account Exec', salary: 95000 },
+        { name: 'Eve', role: 'Account Exec', salary: 92000 },
+      ]},
+    ]},
+  ], []);
+
+  const plugins = useMemo<GridPlugin[]>(() => [
+    TreeDataPlugin({ childrenField: 'children' }),
+    new SortingPlugin(),
+  ], []);
+
+  return (
+    <ExampleWrapper
+      title="Tree Data"
+      description="Hierarchical org chart data with expandable parent-child rows. Click the chevron to expand/collapse tree nodes."
+    >
+      <GridStorm<TreeEmployee>
+        columns={columns}
+        rowData={treeData}
+        plugins={plugins}
+        height={400}
+      />
+    </ExampleWrapper>
+  );
+}
+
+function SparklineExample() {
+  const data = useMemo(() => EMPLOYEES_20.map(e => ({
+    ...e,
+    revenue: Array.from({ length: 12 }, () => Math.round(Math.random() * 10000)),
+  })), []);
+
+  const columns = useMemo(() => [
+    { field: 'name' as const, headerName: 'Name', width: 180 },
+    { field: 'department' as const, headerName: 'Dept', width: 130 },
+    {
+      colId: 'trend',
+      headerName: 'Revenue Trend',
+      width: 200,
+      cellRenderer: 'sparkline' as const,
+      cellRendererParams: { type: 'line' },
+      valueGetter: ({ data: d }: { data: any }) => d?.revenue,
+    },
+    { field: 'salary' as const, headerName: 'Salary', width: 120 },
+  ], []);
+
+  const plugins = useMemo<GridPlugin[]>(() => [
+    SparklinePlugin(),
+    new SortingPlugin(),
+  ], []);
+
+  return (
+    <ExampleWrapper
+      title="Sparklines"
+      description="Inline sparkline charts inside grid cells. Each row displays a 12-month revenue trend as a line sparkline."
+    >
+      <GridStorm columns={columns as any} rowData={data} plugins={plugins} height={400} />
+    </ExampleWrapper>
+  );
+}
+
+function ChartsExample() {
+  const data = useMemo(() => EMPLOYEES_20.map(e => ({
+    ...e,
+    metrics: [e.salary / 1000, e.age, e.rating * 20],
+  })), []);
+
+  const columns = useMemo(() => [
+    { field: 'name' as const, headerName: 'Name', width: 180 },
+    { field: 'department' as const, headerName: 'Dept', width: 130 },
+    {
+      colId: 'chart',
+      headerName: 'Metrics Chart',
+      width: 200,
+      cellRenderer: 'chart' as const,
+      valueGetter: ({ data: d }: { data: any }) => d?.metrics,
+    },
+    { field: 'salary' as const, headerName: 'Salary', width: 120 },
+  ], []);
+
+  const plugins = useMemo<GridPlugin[]>(() => [
+    ChartsPlugin(),
+    new SortingPlugin(),
+  ], []);
+
+  return (
+    <ExampleWrapper
+      title="Charts"
+      description="Inline chart renderers inside grid cells. Each row shows a mini bar chart of salary, age, and rating metrics."
+    >
+      <GridStorm columns={columns as any} rowData={data} plugins={plugins} height={400} />
+    </ExampleWrapper>
+  );
+}
+
+function ConditionalFormattingExample() {
+  const columns: ColumnDef<Employee>[] = useMemo(() => [
+    { field: 'name', headerName: 'Name', width: 180 },
+    { field: 'department', headerName: 'Department', width: 140 },
+    { field: 'salary', headerName: 'Salary', width: 140 },
+    { field: 'rating', headerName: 'Rating', width: 120 },
+  ], []);
+
+  const plugins = useMemo<GridPlugin[]>(() => [
+    ConditionalFormattingPlugin({
+      rules: [
+        {
+          id: 'high-salary',
+          columns: ['salary'],
+          condition: { type: 'greaterThan', value: 100000 },
+          style: { backgroundColor: '#dcfce7', color: '#166534' },
+        },
+        {
+          id: 'low-salary',
+          columns: ['salary'],
+          condition: { type: 'lessThan', value: 60000 },
+          style: { backgroundColor: '#fee2e2', color: '#991b1b' },
+        },
+      ],
+    }),
+    new SortingPlugin(),
+  ], []);
+
+  return (
+    <ExampleWrapper
+      title="Conditional Formatting"
+      description="Cells are dynamically styled based on value rules. Salary > $100K shows green, salary < $60K shows red."
+    >
+      <GridStorm<Employee>
+        columns={columns}
+        rowData={EMPLOYEES_50}
+        plugins={plugins}
+        height={400}
+      />
+    </ExampleWrapper>
+  );
+}
+
+function StreamingExample() {
+  const [data, setData] = useState(() =>
+    EMPLOYEES_20.map(e => ({ ...e, price: Math.round(Math.random() * 500 * 100) / 100 }))
+  );
+
+  const columns = useMemo(() => [
+    { field: 'name' as const, headerName: 'Name', width: 180 },
+    { field: 'department' as const, headerName: 'Dept', width: 130 },
+    { field: 'price' as const, headerName: 'Price', width: 120 },
+    { field: 'salary' as const, headerName: 'Salary', width: 120 },
+  ], []);
+
+  const plugins = useMemo<GridPlugin[]>(() => [
+    StreamingPlugin({ batchInterval: 500 }),
+    new SortingPlugin(),
+  ], []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setData(prev => prev.map(row => ({
+        ...row,
+        price: Math.round((row.price + (Math.random() - 0.5) * 10) * 100) / 100,
+      })));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <ExampleWrapper
+      title="Streaming Data"
+      description="Live-updating grid data. Prices change every second simulating a real-time data feed with batched updates."
+    >
+      <GridStorm columns={columns} rowData={data} plugins={plugins} height={400} />
+    </ExampleWrapper>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// NEXT-GEN EXAMPLES
+// ─────────────────────────────────────────────────────────────
+
+function StatusBarExample() {
+  const columns: ColumnDef<Employee>[] = useMemo(() => [
+    { field: 'name', headerName: 'Name', width: 180 },
+    { field: 'department', headerName: 'Department', width: 140 },
+    { field: 'salary', headerName: 'Salary', width: 140 },
+    { field: 'age', headerName: 'Age', width: 100 },
+    { field: 'rating', headerName: 'Rating', width: 120 },
+  ], []);
+
+  const plugins = useMemo<GridPlugin[]>(() => [
+    StatusBarPlugin({ defaultAggregations: ['sum', 'avg', 'count'] }),
+    new SelectionPlugin({ mode: 'multiple' }),
+    new SortingPlugin(),
+  ], []);
+
+  return (
+    <ExampleWrapper
+      title="Status Bar"
+      description="Aggregation summary footer showing sum, average, and count. Select rows to see aggregations update for the selection."
+    >
+      <GridStorm<Employee>
+        columns={columns}
+        rowData={EMPLOYEES_50}
+        plugins={plugins}
+        rowSelection="multiple"
+        height={450}
+      />
+    </ExampleWrapper>
+  );
+}
+
+function StatePersistenceExample() {
+  const columns: ColumnDef<Employee>[] = useMemo(() => [
+    { field: 'name', headerName: 'Name', width: 180, sortable: true },
+    { field: 'department', headerName: 'Department', width: 140, filterable: true },
+    { field: 'role', headerName: 'Role', width: 160 },
+    { field: 'salary', headerName: 'Salary', width: 130, sortable: true },
+  ], []);
+
+  const plugins = useMemo<GridPlugin[]>(() => [
+    StatePersistencePlugin({ storageKey: 'cookbook-state', autoSave: true }),
+    new SortingPlugin(),
+    new FilteringPlugin(),
+  ], []);
+
+  return (
+    <ExampleWrapper
+      title="State Persistence"
+      description="Grid state (sort, filter, column order) is automatically saved to localStorage. Reload the page to see state restored."
+    >
+      <GridStorm<Employee>
+        columns={columns}
+        rowData={EMPLOYEES_50}
+        plugins={plugins}
+        floatingFilter
+        height={400}
+      />
+    </ExampleWrapper>
+  );
+}
+
+function ColumnAutoSizeExample() {
+  const apiRef = useRef<GridApi | null>(null);
+
+  const columns: ColumnDef<Employee>[] = useMemo(() => [
+    { field: 'name', headerName: 'Name', width: 100 },
+    { field: 'email', headerName: 'Email', width: 100 },
+    { field: 'department', headerName: 'Department', width: 100 },
+    { field: 'role', headerName: 'Role', width: 100 },
+    { field: 'city', headerName: 'City', width: 100 },
+  ], []);
+
+  const plugins = useMemo<GridPlugin[]>(() => [
+    ColumnAutoSizePlugin(),
+    new SortingPlugin(),
+  ], []);
+
+  return (
+    <ExampleWrapper
+      title="Column AutoSize"
+      description="Columns start narrow. Click Auto-Size All to fit columns to their content width using character-width estimation."
+    >
+      <div style={{ marginBottom: 12 }}>
+        <button onClick={() => apiRef.current?.dispatchCommand?.('autoSize:all', {})}>
+          Auto-Size All
+        </button>
+      </div>
+      <GridStorm<Employee>
+        columns={columns}
+        rowData={EMPLOYEES_20}
+        plugins={plugins}
+        height={400}
+        onGridReady={(api) => { apiRef.current = api; }}
+      />
+    </ExampleWrapper>
+  );
+}
+
+function RowPinningExample() {
+  const columns: ColumnDef<Employee>[] = useMemo(() => [
+    { field: 'name', headerName: 'Name', width: 180 },
+    { field: 'department', headerName: 'Department', width: 140 },
+    { field: 'role', headerName: 'Role', width: 160 },
+    { field: 'salary', headerName: 'Salary', width: 130 },
+  ], []);
+
+  const plugins = useMemo<GridPlugin[]>(() => [
+    RowPinningPlugin(),
+    new SortingPlugin(),
+    new SelectionPlugin({ mode: 'multiple' }),
+  ], []);
+
+  const apiRef = useRef<GridApi | null>(null);
+
+  return (
+    <ExampleWrapper
+      title="Row Pinning"
+      description="Pin rows to the top or bottom of the grid so they stay visible while scrolling. Select rows then click Pin/Unpin."
+    >
+      <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
+        <button onClick={() => apiRef.current?.dispatchCommand?.('rowPinning:pin', { position: 'top' })}>
+          Pin Top
+        </button>
+        <button onClick={() => apiRef.current?.dispatchCommand?.('rowPinning:pin', { position: 'bottom' })}>
+          Pin Bottom
+        </button>
+        <button onClick={() => apiRef.current?.dispatchCommand?.('rowPinning:unpinAll', {})}>
+          Unpin All
+        </button>
+      </div>
+      <GridStorm<Employee>
+        columns={columns}
+        rowData={EMPLOYEES_50}
+        plugins={plugins}
+        rowSelection="multiple"
+        checkboxSelection
+        height={400}
+        onGridReady={(api) => { apiRef.current = api; }}
+      />
+    </ExampleWrapper>
+  );
+}
+
+function AIExample() {
+  const [query, setQuery] = useState('');
+  const apiRef = useRef<GridApi | null>(null);
+
+  const columns: ColumnDef<Employee>[] = useMemo(() => [
+    { field: 'name', headerName: 'Name', width: 180, sortable: true, filterable: true },
+    { field: 'department', headerName: 'Department', width: 140, sortable: true, filterable: true },
+    { field: 'salary', headerName: 'Salary', width: 130, sortable: true },
+    { field: 'city', headerName: 'City', width: 130, filterable: true },
+  ], []);
+
+  const plugins = useMemo<GridPlugin[]>(() => [
+    AIPlugin(),
+    new SortingPlugin(),
+    new FilteringPlugin(),
+    new GroupingPlugin(),
+  ], []);
+
+  return (
+    <ExampleWrapper
+      title="AI Integration"
+      description="Type a natural language query like 'sort by salary descending' or 'show Engineering department' and press Enter."
+    >
+      <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
+        <input
+          type="text"
+          placeholder="Try: sort by salary descending..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && query.trim()) {
+              apiRef.current?.dispatchCommand?.('ai:query', { text: query });
+            }
+          }}
+          style={{ flex: 1, padding: '6px 10px', border: '1px solid #ccc', borderRadius: 4 }}
+        />
+      </div>
+      <GridStorm<Employee>
+        columns={columns}
+        rowData={EMPLOYEES_50}
+        plugins={plugins}
+        floatingFilter
+        height={400}
+        onGridReady={(api) => { apiRef.current = api; }}
+      />
+    </ExampleWrapper>
+  );
+}
+
+function FormulaExample() {
+  const data = useMemo(() => [
+    { id: 1, a: 10, b: 20, c: 0 },
+    { id: 2, a: 30, b: 40, c: 0 },
+    { id: 3, a: 50, b: 60, c: 0 },
+    { id: 4, a: 70, b: 80, c: 0 },
+    { id: 5, a: 15, b: 25, c: 0 },
+  ], []);
+
+  const columns = useMemo(() => [
+    { field: 'id' as const, headerName: 'ID', width: 70 },
+    { field: 'a' as const, headerName: 'A', width: 100, editable: true },
+    { field: 'b' as const, headerName: 'B', width: 100, editable: true },
+    { field: 'c' as const, headerName: 'C (Result)', width: 140 },
+  ], []);
+
+  const plugins = useMemo<GridPlugin[]>(() => [
+    FormulaPlugin(),
+    new SortingPlugin(),
+    new EditingPlugin(),
+  ], []);
+
+  return (
+    <ExampleWrapper
+      title="Formula Engine"
+      description="Spreadsheet-style formula support. Column C can use formulas like =A1+B1. Edit columns A and B to see results update."
+    >
+      <GridStorm columns={columns} rowData={data} plugins={plugins} enableCellEditing height={300} />
+    </ExampleWrapper>
+  );
+}
+
+function TimeTravelExample() {
+  const apiRef = useRef<GridApi | null>(null);
+
+  const columns: ColumnDef<Employee>[] = useMemo(() => [
+    { field: 'name', headerName: 'Name', width: 180, editable: true },
+    { field: 'department', headerName: 'Department', width: 140, editable: true },
+    { field: 'salary', headerName: 'Salary', width: 130, editable: true },
+    { field: 'role', headerName: 'Role', width: 160 },
+  ], []);
+
+  const plugins = useMemo<GridPlugin[]>(() => [
+    TimeTravelPlugin({ maxSnapshots: 50 }),
+    new SortingPlugin(),
+    new EditingPlugin(),
+  ], []);
+
+  return (
+    <ExampleWrapper
+      title="Time Travel"
+      description="Edit cells then use Undo/Redo to navigate through state history. Each edit is captured as a snapshot."
+    >
+      <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
+        <button onClick={() => apiRef.current?.dispatchCommand?.('timeTravel:undo', {})}>
+          Undo
+        </button>
+        <button onClick={() => apiRef.current?.dispatchCommand?.('timeTravel:redo', {})}>
+          Redo
+        </button>
+        <button onClick={() => apiRef.current?.dispatchCommand?.('timeTravel:snapshot', {})}>
+          Snapshot
+        </button>
+      </div>
+      <GridStorm<Employee>
+        columns={columns}
+        rowData={EMPLOYEES_20}
+        plugins={plugins}
+        enableCellEditing
+        height={400}
+        onGridReady={(api) => { apiRef.current = api; }}
+      />
+    </ExampleWrapper>
+  );
+}
+
+function CellRangeExample() {
+  const apiRef = useRef<GridApi | null>(null);
+
+  const columns: ColumnDef<Employee>[] = useMemo(() => [
+    { field: 'name', headerName: 'Name', width: 180 },
+    { field: 'department', headerName: 'Department', width: 140 },
+    { field: 'salary', headerName: 'Salary', width: 130 },
+    { field: 'rating', headerName: 'Rating', width: 120 },
+  ], []);
+
+  const plugins = useMemo<GridPlugin[]>(() => [
+    CellRangePlugin(),
+    new SortingPlugin(),
+  ], []);
+
+  return (
+    <ExampleWrapper
+      title="Cell Range"
+      description="Select a range of cells by clicking and dragging. Use fill handle to extend patterns. Supports multi-range selection with Ctrl."
+    >
+      <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
+        <button onClick={() => apiRef.current?.dispatchCommand?.('cellRange:selectAll', {})}>
+          Select All
+        </button>
+        <button onClick={() => apiRef.current?.dispatchCommand?.('cellRange:clear', {})}>
+          Clear Selection
+        </button>
+      </div>
+      <GridStorm<Employee>
+        columns={columns}
+        rowData={EMPLOYEES_20}
+        plugins={plugins}
+        height={400}
+        onGridReady={(api) => { apiRef.current = api; }}
+      />
+    </ExampleWrapper>
+  );
+}
+
+function ValidationExample() {
+  const columns: ColumnDef<Employee>[] = useMemo(() => [
+    { field: 'name', headerName: 'Name', width: 180, editable: true },
+    { field: 'email', headerName: 'Email', width: 220, editable: true },
+    { field: 'salary', headerName: 'Salary', width: 130, editable: true },
+    { field: 'department', headerName: 'Department', width: 140 },
+  ], []);
+
+  const plugins = useMemo<GridPlugin[]>(() => [
+    ValidationPlugin({
+      rules: [
+        { id: 'email-required', colId: 'email', type: 'required', params: { type: 'required' }, message: 'Email is required' },
+        { id: 'email-format', colId: 'email', type: 'email', params: { type: 'email' }, message: 'Must be a valid email' },
+        { id: 'salary-range', colId: 'salary', type: 'range', params: { type: 'range', min: 0, max: 500000 }, message: 'Salary must be 0-500,000' },
+      ],
+      validateOnEdit: true,
+    }),
+    new EditingPlugin(),
+    new SortingPlugin(),
+  ], []);
+
+  return (
+    <ExampleWrapper
+      title="Data Validation"
+      description="Edit cells to trigger validation. Email must be valid format, salary must be between 0 and 500,000. Invalid cells are highlighted."
+    >
+      <GridStorm<Employee>
+        columns={columns}
+        rowData={EMPLOYEES_20}
+        plugins={plugins}
+        enableCellEditing
+        height={400}
+      />
+    </ExampleWrapper>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
 // EXAMPLE REGISTRY
 // ─────────────────────────────────────────────────────────────
 
@@ -1528,6 +2115,22 @@ const EXAMPLES: Record<string, () => JSX.Element> = {
   'large-dataset': LargeDatasetExample,
   // Vanilla JS
   'vanilla-js': VanillaJsExample,
+  // Enterprise
+  'tree-data': TreeDataExample,
+  'sparklines': SparklineExample,
+  'charts': ChartsExample,
+  'conditional-formatting': ConditionalFormattingExample,
+  'streaming': StreamingExample,
+  // Next-Gen
+  'status-bar': StatusBarExample,
+  'state-persistence': StatePersistenceExample,
+  'column-autosize': ColumnAutoSizeExample,
+  'row-pinning': RowPinningExample,
+  'ai-integration': AIExample,
+  'formula-engine': FormulaExample,
+  'time-travel': TimeTravelExample,
+  'cell-range': CellRangeExample,
+  'data-validation': ValidationExample,
 };
 
 // ─────────────────────────────────────────────────────────────

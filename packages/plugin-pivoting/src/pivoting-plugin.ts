@@ -50,6 +50,7 @@ export function PivotPlugin(options: PivotPluginOptions = {}): GridPlugin {
 
       if (autoPivotCols.length > 0) {
         initialState.pivotColumns = autoPivotCols;
+        initialState.pivotMode = true;
       }
 
       ctx.registerState('pivoting', initialState);
@@ -138,8 +139,17 @@ export function PivotPlugin(options: PivotPluginOptions = {}): GridPlugin {
         },
       );
 
+      // Auto-enable pivot when pivot columns are detected from column defs
+      let unsubGridReady: (() => void) | undefined;
+      if (autoPivotCols.length > 0) {
+        unsubGridReady = ctx.eventBus.on('grid:ready', () => {
+          ctx.commandBus.dispatch('pivot:enable', {});
+        });
+      }
+
       return () => {
         unsubLicenseWatermark?.();
+        unsubGridReady?.();
         unregEnable();
         unregDisable();
         unregAdd();

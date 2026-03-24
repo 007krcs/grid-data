@@ -745,11 +745,12 @@ function ContextMenuExample() {
 
   const plugins = useMemo<GridPlugin[]>(() => [
     ContextMenuPlugin({
-      items: [
-        { name: 'Copy Cell', action: (params) => { navigator.clipboard.writeText(String(params.value)); } },
-        { name: 'separator' },
-        { name: 'Alert Row', action: (params) => { alert(`Row: ${params.node.data?.name}`); } },
+      menuItems: [
+        { id: 'copy-cell', label: 'Copy Cell', action: (params) => { navigator.clipboard.writeText(String(params.value)); } },
+        { id: 'sep1', label: '', separator: true },
+        { id: 'alert-row', label: 'Alert Row', action: (params) => { alert(`Row: ${params.node?.data?.name}`); } },
       ],
+      hideDefaultItems: true,
     }),
   ], []);
 

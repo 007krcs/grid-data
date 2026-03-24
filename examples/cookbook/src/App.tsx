@@ -311,7 +311,7 @@ function SortingExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new SortingPlugin(),
+    SortingPlugin(),
   ], []);
 
   return (
@@ -339,7 +339,7 @@ function FilteringExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new FilteringPlugin(),
+    FilteringPlugin(),
   ], []);
 
   return (
@@ -370,7 +370,7 @@ function SelectionExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new SelectionPlugin({ mode: 'multi' }),
+    SelectionPlugin({ mode: 'multi' }),
   ], []);
 
   return (
@@ -406,7 +406,7 @@ function EditingExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new EditingPlugin(),
+    EditingPlugin(),
   ], []);
 
   return (
@@ -439,7 +439,7 @@ function PaginationExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new PaginationPlugin(),
+    PaginationPlugin(),
   ], []);
 
   return (
@@ -479,7 +479,7 @@ function PinningExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new ColumnPinningPlugin(),
+    ColumnPinningPlugin(),
   ], []);
 
   return (
@@ -507,7 +507,7 @@ function ResizeExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new ColumnResizePlugin(),
+    ColumnResizePlugin(),
   ], []);
 
   return (
@@ -536,7 +536,7 @@ function ReorderExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new ColumnReorderPlugin(),
+    ColumnReorderPlugin(),
   ], []);
 
   return (
@@ -568,8 +568,8 @@ function GroupingExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new GroupingPlugin(),
-    new SortingPlugin(),
+    GroupingPlugin(),
+    SortingPlugin(),
   ], []);
 
   return (
@@ -598,8 +598,8 @@ function AggregationExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new GroupingPlugin(),
-    new AggregationPlugin(),
+    GroupingPlugin(),
+    AggregationPlugin(),
   ], []);
 
   return (
@@ -627,9 +627,9 @@ function PivotingExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new GroupingPlugin(),
-    new AggregationPlugin(),
-    new PivotPlugin(),
+    GroupingPlugin(),
+    AggregationPlugin(),
+    PivotPlugin(),
   ], []);
 
   return (
@@ -658,16 +658,16 @@ function MasterDetailExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new MasterDetailPlugin({
-      detailGridOptions: {
+    MasterDetailPlugin({
+      detailGridOptions: () => ({
         columns: [
           { field: 'product', headerName: 'Product', width: 180 },
           { field: 'quantity', headerName: 'Qty', width: 100 },
           { field: 'price', headerName: 'Price', width: 120 },
           { field: 'status', headerName: 'Status', width: 120 },
         ],
-      },
-      getDetailData: (_params) => {
+      }),
+      getDetailRowData: (_params) => {
         return generateOrders(5);
       },
     }),
@@ -699,14 +699,8 @@ function SSRMExample() {
 
   const allData = useMemo(() => EMPLOYEES_1K, []);
 
-  const plugins = useMemo<GridPlugin[]>(() => [
-    new SSRMPlugin(),
-    new SortingPlugin(),
-  ], []);
-
   const dataSource = useMemo(() => ({
     getRows: (params: { startRow: number; endRow: number; sortModel?: any[]; filterModel?: any }) => {
-      // Simulate async server call
       return new Promise<{ rowData: Employee[]; rowCount: number }>((resolve) => {
         setTimeout(() => {
           const rows = allData.slice(params.startRow, params.endRow);
@@ -715,6 +709,11 @@ function SSRMExample() {
       });
     },
   }), [allData]);
+
+  const plugins = useMemo<GridPlugin[]>(() => [
+    SSRMPlugin({ dataSource }),
+    SortingPlugin(),
+  ], [dataSource]);
 
   return (
     <ExampleWrapper
@@ -725,8 +724,6 @@ function SSRMExample() {
         columns={columns}
         rowData={[]}
         plugins={plugins}
-        rowModelType="serverSide"
-        dataSource={dataSource}
         height={400}
       />
     </ExampleWrapper>
@@ -747,7 +744,7 @@ function ContextMenuExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new ContextMenuPlugin({
+    ContextMenuPlugin({
       items: [
         { name: 'Copy Cell', action: (params) => { navigator.clipboard.writeText(String(params.value)); } },
         { name: 'separator' },
@@ -781,8 +778,8 @@ function ClipboardExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new SelectionPlugin({ mode: 'multi' }),
-    new ClipboardPlugin(),
+    SelectionPlugin({ mode: 'multiple' }),
+    ClipboardPlugin(),
   ], []);
 
   return (
@@ -810,7 +807,7 @@ function RowReorderExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new RowReorderPlugin(),
+    RowReorderPlugin(),
   ], []);
 
   return (
@@ -841,7 +838,7 @@ function ExcelExportExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new ExcelExportPlugin(),
+    ExcelExportPlugin(),
   ], []);
 
   return (
@@ -850,7 +847,7 @@ function ExcelExportExample() {
       description="Click the Export button to download grid data as a CSV/Excel file. The export respects current column order and visibility."
     >
       <div style={{ marginBottom: 12 }}>
-        <button onClick={() => apiRef.current?.exportDataAsCsv?.()}>
+        <button onClick={() => apiRef.current?.dispatchCommand?.('excel:exportCsv', {})}>
           Export to CSV
         </button>
       </div>
@@ -1120,8 +1117,8 @@ function HookUseGridStateExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new SortingPlugin(),
-    new FilteringPlugin(),
+    SortingPlugin(),
+    FilteringPlugin(),
   ], []);
 
   return (
@@ -1166,7 +1163,7 @@ function HookUseGridSortExample() {
     { field: 'rating', headerName: 'Rating', width: 100, sortable: true },
   ], []);
 
-  const plugins = useMemo<GridPlugin[]>(() => [new SortingPlugin()], []);
+  const plugins = useMemo<GridPlugin[]>(() => [SortingPlugin()], []);
 
   return (
     <ExampleWrapper
@@ -1212,7 +1209,7 @@ function HookUseGridFilterExample() {
     { field: 'salary', headerName: 'Salary', width: 130 },
   ], []);
 
-  const plugins = useMemo<GridPlugin[]>(() => [new FilteringPlugin()], []);
+  const plugins = useMemo<GridPlugin[]>(() => [FilteringPlugin()], []);
 
   return (
     <ExampleWrapper
@@ -1259,7 +1256,7 @@ function HookUseGridPaginationExample() {
     { field: 'salary', headerName: 'Salary', width: 130 },
   ], []);
 
-  const plugins = useMemo<GridPlugin[]>(() => [new PaginationPlugin()], []);
+  const plugins = useMemo<GridPlugin[]>(() => [PaginationPlugin()], []);
 
   return (
     <ExampleWrapper
@@ -1302,7 +1299,7 @@ function HookUseGridSelectionExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new SelectionPlugin({ mode: 'multi' }),
+    SelectionPlugin({ mode: 'multi' }),
   ], []);
 
   return (
@@ -1416,7 +1413,7 @@ function LargeDatasetExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    new SortingPlugin(),
+    SortingPlugin(),
   ], []);
 
   return (
@@ -1461,7 +1458,7 @@ function VanillaJsExample() {
         { field: 'city', headerName: 'City', width: 130 },
       ],
       rowData: EMPLOYEES_50,
-      plugins: [new SortingPlugin()],
+      plugins: [SortingPlugin()],
     });
 
     const renderer = new DomRenderer({
@@ -1504,7 +1501,7 @@ const engine = createGrid({
     { field: 'department', headerName: 'Department', width: 140 },
   ],
   rowData: myData,
-  plugins: [new SortingPlugin()],
+  plugins: [SortingPlugin()],
 });
 
 const renderer = new DomRenderer({
@@ -1552,7 +1549,7 @@ function TreeDataExample() {
 
   const plugins = useMemo<GridPlugin[]>(() => [
     TreeDataPlugin({ childrenField: 'children' }),
-    new SortingPlugin(),
+    SortingPlugin(),
   ], []);
 
   return (
@@ -1592,7 +1589,7 @@ function SparklineExample() {
 
   const plugins = useMemo<GridPlugin[]>(() => [
     SparklinePlugin(),
-    new SortingPlugin(),
+    SortingPlugin(),
   ], []);
 
   return (
@@ -1626,7 +1623,7 @@ function ChartsExample() {
 
   const plugins = useMemo<GridPlugin[]>(() => [
     ChartsPlugin(),
-    new SortingPlugin(),
+    SortingPlugin(),
   ], []);
 
   return (
@@ -1664,7 +1661,7 @@ function ConditionalFormattingExample() {
         },
       ],
     }),
-    new SortingPlugin(),
+    SortingPlugin(),
   ], []);
 
   return (
@@ -1696,7 +1693,7 @@ function StreamingExample() {
 
   const plugins = useMemo<GridPlugin[]>(() => [
     StreamingPlugin({ batchInterval: 500 }),
-    new SortingPlugin(),
+    SortingPlugin(),
   ], []);
 
   useEffect(() => {
@@ -1734,8 +1731,8 @@ function StatusBarExample() {
 
   const plugins = useMemo<GridPlugin[]>(() => [
     StatusBarPlugin({ defaultAggregations: ['sum', 'avg', 'count'] }),
-    new SelectionPlugin({ mode: 'multiple' }),
-    new SortingPlugin(),
+    SelectionPlugin({ mode: 'multiple' }),
+    SortingPlugin(),
   ], []);
 
   return (
@@ -1764,8 +1761,8 @@ function StatePersistenceExample() {
 
   const plugins = useMemo<GridPlugin[]>(() => [
     StatePersistencePlugin({ storageKey: 'cookbook-state', autoSave: true }),
-    new SortingPlugin(),
-    new FilteringPlugin(),
+    SortingPlugin(),
+    FilteringPlugin(),
   ], []);
 
   return (
@@ -1797,7 +1794,7 @@ function ColumnAutoSizeExample() {
 
   const plugins = useMemo<GridPlugin[]>(() => [
     ColumnAutoSizePlugin(),
-    new SortingPlugin(),
+    SortingPlugin(),
   ], []);
 
   return (
@@ -1831,8 +1828,8 @@ function RowPinningExample() {
 
   const plugins = useMemo<GridPlugin[]>(() => [
     RowPinningPlugin(),
-    new SortingPlugin(),
-    new SelectionPlugin({ mode: 'multiple' }),
+    SortingPlugin(),
+    SelectionPlugin({ mode: 'multiple' }),
   ], []);
 
   const apiRef = useRef<GridApi | null>(null);
@@ -1843,11 +1840,25 @@ function RowPinningExample() {
       description="Pin rows to the top or bottom of the grid so they stay visible while scrolling. Select rows then click Pin/Unpin."
     >
       <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
-        <button onClick={() => apiRef.current?.dispatchCommand?.('rowPinning:pin', { position: 'top' })}>
-          Pin Top
+        <button onClick={() => {
+          const state = apiRef.current?.getState?.();
+          const selected = state?.selection?.selectedRowIds;
+          if (selected?.size) {
+            const rowData = Array.from(selected).map(id => state?.rowNodes?.get(id)?.data).filter(Boolean);
+            apiRef.current?.dispatchCommand?.('rowPinning:setTopData', { data: rowData });
+          }
+        }}>
+          Pin Selected Top
         </button>
-        <button onClick={() => apiRef.current?.dispatchCommand?.('rowPinning:pin', { position: 'bottom' })}>
-          Pin Bottom
+        <button onClick={() => {
+          const state = apiRef.current?.getState?.();
+          const selected = state?.selection?.selectedRowIds;
+          if (selected?.size) {
+            const rowData = Array.from(selected).map(id => state?.rowNodes?.get(id)?.data).filter(Boolean);
+            apiRef.current?.dispatchCommand?.('rowPinning:setBottomData', { data: rowData });
+          }
+        }}>
+          Pin Selected Bottom
         </button>
         <button onClick={() => apiRef.current?.dispatchCommand?.('rowPinning:unpinAll', {})}>
           Unpin All
@@ -1879,9 +1890,9 @@ function AIExample() {
 
   const plugins = useMemo<GridPlugin[]>(() => [
     AIPlugin(),
-    new SortingPlugin(),
-    new FilteringPlugin(),
-    new GroupingPlugin(),
+    SortingPlugin(),
+    FilteringPlugin(),
+    GroupingPlugin(),
   ], []);
 
   return (
@@ -1897,7 +1908,7 @@ function AIExample() {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && query.trim()) {
-              apiRef.current?.dispatchCommand?.('ai:query', { text: query });
+              apiRef.current?.dispatchCommand?.('ai:query', { query });
             }
           }}
           style={{ flex: 1, padding: '6px 10px', border: '1px solid #ccc', borderRadius: 4 }}
@@ -1933,8 +1944,8 @@ function FormulaExample() {
 
   const plugins = useMemo<GridPlugin[]>(() => [
     FormulaPlugin(),
-    new SortingPlugin(),
-    new EditingPlugin(),
+    SortingPlugin(),
+    EditingPlugin(),
   ], []);
 
   return (
@@ -1959,8 +1970,8 @@ function TimeTravelExample() {
 
   const plugins = useMemo<GridPlugin[]>(() => [
     TimeTravelPlugin({ maxSnapshots: 50 }),
-    new SortingPlugin(),
-    new EditingPlugin(),
+    SortingPlugin(),
+    EditingPlugin(),
   ], []);
 
   return (
@@ -2003,7 +2014,7 @@ function CellRangeExample() {
 
   const plugins = useMemo<GridPlugin[]>(() => [
     CellRangePlugin(),
-    new SortingPlugin(),
+    SortingPlugin(),
   ], []);
 
   return (
@@ -2012,10 +2023,10 @@ function CellRangeExample() {
       description="Select a range of cells by clicking and dragging. Use fill handle to extend patterns. Supports multi-range selection with Ctrl."
     >
       <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
-        <button onClick={() => apiRef.current?.dispatchCommand?.('cellRange:selectAll', {})}>
+        <button onClick={() => apiRef.current?.dispatchCommand?.('range:selectAll', {})}>
           Select All
         </button>
-        <button onClick={() => apiRef.current?.dispatchCommand?.('cellRange:clear', {})}>
+        <button onClick={() => apiRef.current?.dispatchCommand?.('range:clear', {})}>
           Clear Selection
         </button>
       </div>
@@ -2047,8 +2058,8 @@ function ValidationExample() {
       ],
       validateOnEdit: true,
     }),
-    new EditingPlugin(),
-    new SortingPlugin(),
+    EditingPlugin(),
+    SortingPlugin(),
   ], []);
 
   return (

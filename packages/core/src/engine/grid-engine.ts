@@ -697,6 +697,11 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
       return pluginManager.getPluginApi(pluginId);
     },
 
+    // Commands
+    dispatchCommand(command: string, payload?: any) {
+      commandBus.dispatch(command, payload ?? {});
+    },
+
     // State
     getState() {
       return store.getState();

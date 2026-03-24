@@ -209,6 +209,11 @@ export function MasterDetailPlugin(options: MasterDetailOptions): GridPlugin {
           if (detailState.expandedMasterIds.has(payload.nodeId)) return;
 
           detailState.expandedMasterIds.add(payload.nodeId);
+
+          // Bump master node version so renderer updates the expand chevron
+          const masterNode = ctx.store.getState().rowNodes.get(payload.nodeId);
+          if (masterNode) masterNode.version = (masterNode.version || 0) + 1;
+
           applyDetailRows(); // Show detail row immediately (may have cached data)
 
           // Fetch data asynchronously, then re-apply to show loaded data
@@ -232,6 +237,10 @@ export function MasterDetailPlugin(options: MasterDetailOptions): GridPlugin {
           if (!detailState.expandedMasterIds.has(payload.nodeId)) return;
 
           detailState.expandedMasterIds.delete(payload.nodeId);
+
+          // Bump master node version so renderer updates the expand chevron
+          const masterNode = ctx.store.getState().rowNodes.get(payload.nodeId);
+          if (masterNode) masterNode.version = (masterNode.version || 0) + 1;
 
           // Remove detail RowNode from map unless keeping detail rows cached
           if (!keepDetailRows) {

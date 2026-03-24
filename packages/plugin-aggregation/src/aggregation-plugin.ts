@@ -80,12 +80,30 @@ export function AggregationPlugin(options: AggregationPluginOptions = {}): GridP
         computeAggregations(ctx, aggFuncRegistry);
       });
 
+      // ── Auto-compute when row:groupOpened fires (expand/collapse) ──
+      const unsubGroupOpened = ctx.eventBus.on('row:groupOpened', () => {
+        computeAggregations(ctx, aggFuncRegistry);
+      });
+
+      // ── Auto-compute on initial grid ready (handles initial grouping) ──
+      const unsubReady = ctx.eventBus.on('grid:ready', () => {
+        computeAggregations(ctx, aggFuncRegistry);
+      });
+
+      // ── Auto-compute when data changes ──
+      const unsubData = ctx.eventBus.on('rowData:changed', () => {
+        computeAggregations(ctx, aggFuncRegistry);
+      });
+
       return () => {
         unsubLicenseWatermark?.();
         unregSet();
         unregRemove();
         unregCompute();
         unsubGrouping();
+        unsubGroupOpened();
+        unsubReady();
+        unsubData();
       };
     },
   };

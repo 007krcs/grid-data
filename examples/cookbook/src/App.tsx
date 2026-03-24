@@ -800,6 +800,8 @@ function ClipboardExample() {
 }
 
 function RowReorderExample() {
+  const apiRef = useRef<GridApi | null>(null);
+
   const columns: ColumnDef<Employee>[] = useMemo(() => [
     { field: 'name', headerName: 'Name', width: 180 },
     { field: 'department', headerName: 'Department', width: 140 },
@@ -814,13 +816,22 @@ function RowReorderExample() {
   return (
     <ExampleWrapper
       title="Row Reorder"
-      description="Drag the row handle on the left side of each row to reorder. Visual indicators show the drop target position."
+      description="Drag the row handle (☰) on the left side of each row to reorder. Or use the buttons to move the first row."
     >
+      <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
+        <button onClick={() => apiRef.current?.dispatchCommand?.('row:move', { rowId: 'row-0', toIndex: 2 })}>
+          Move Row 1 → Position 3
+        </button>
+        <button onClick={() => apiRef.current?.dispatchCommand?.('row:swap', { rowIdA: 'row-0', rowIdB: 'row-1' })}>
+          Swap Row 1 &amp; Row 2
+        </button>
+      </div>
       <GridStorm<Employee>
         columns={columns}
         rowData={EMPLOYEES_20}
         plugins={plugins}
         height={400}
+        onGridReady={(api) => { apiRef.current = api; }}
       />
     </ExampleWrapper>
   );

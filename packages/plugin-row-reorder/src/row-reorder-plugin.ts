@@ -75,6 +75,19 @@ export function RowReorderPlugin(options: RowReorderPluginOptions = {}): GridPlu
             ids.splice(fromIndex, 1);
             ids.splice(toIndex, 0, payload.rowId);
 
+            // Recalculate rowTop positions after reorder
+            let top = 0;
+            const defaultHeight = 40;
+            for (let i = 0; i < ids.length; i++) {
+              const n = state.rowNodes.get(ids[i]!);
+              if (n) {
+                n.displayIndex = i;
+                n.rowTop = top;
+                n.version = (n.version || 0) + 1; // bump version to trigger re-render
+                top += n.rowHeight || defaultHeight;
+              }
+            }
+
             updatingOrder = true;
             ctx.store.setState((prev) => ({ ...prev, displayedRowIds: ids }));
             // Persist custom order
@@ -104,6 +117,19 @@ export function RowReorderPlugin(options: RowReorderPluginOptions = {}): GridPlu
             if (indexA === -1 || indexB === -1) return;
 
             [ids[indexA], ids[indexB]] = [ids[indexB]!, ids[indexA]!];
+
+            // Recalculate rowTop positions after swap
+            let top = 0;
+            const defaultHeight = 40;
+            for (let i = 0; i < ids.length; i++) {
+              const n = state.rowNodes.get(ids[i]!);
+              if (n) {
+                n.displayIndex = i;
+                n.rowTop = top;
+                n.version = (n.version || 0) + 1;
+                top += n.rowHeight || defaultHeight;
+              }
+            }
 
             updatingOrder = true;
             ctx.store.setState((prev) => ({ ...prev, displayedRowIds: ids }));
@@ -326,6 +352,8 @@ export function RowReorderPlugin(options: RowReorderPluginOptions = {}): GridPlu
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
             document.body.style.cursor = '';
+            // Remove ghost BEFORE finding drop target (pointer-events:none should
+            // let events through, but remove just in case)
             ghost?.remove();
             indicator?.remove();
 
@@ -333,23 +361,47 @@ export function RowReorderPlugin(options: RowReorderPluginOptions = {}): GridPlu
 
             ctx.eventBus.emit('row:dragEnded' , { rowId });
 
-            // Find drop target row
-            const target = (e.target as HTMLElement).closest<HTMLElement>('[data-row-id]');
-            if (target) {
+            // Find drop target row — try elementFromPoint first, fall back to e.target
+            const elAtPoint = document.elementFromPoint(e.clientX, e.clientY);
+            const target = elAtPoint?.closest<HTMLElement>('[data-row-id]') ??
+              (e.target as HTMLElement).closest<HTMLElement>('[data-row-id]');
+
+            if (!target) {
+              // Last resort: find the closest row by Y position
+              const allRows = getBodyContainer()?.querySelectorAll<HTMLElement>('[data-row-id]');
+              let closestRow: HTMLElement | null = null;
+              let closestDist = Infinity;
+              allRows?.forEach((row) => {
+                const rect = row.getBoundingClientRect();
+                const dist = Math.abs(e.clientY - (rect.top + rect.height / 2));
+                if (dist < closestDist) {
+                  closestDist = dist;
+                  closestRow = row;
+                }
+              });
+              if (closestRow) {
+                const targetRowId = (closestRow as HTMLElement).getAttribute('data-row-id');
+                if (targetRowId && targetRowId !== rowId) {
+                  const ids = ctx.store.getState().displayedRowIds;
+                  const targetIndex = ids.indexOf(targetRowId);
+                  if (targetIndex !== -1) {
+                    const rect = (closestRow as HTMLElement).getBoundingClientRect();
+                    const midY = rect.top + rect.height / 2;
+                    const insertIndex = e.clientY < midY ? targetIndex : targetIndex + 1;
+                    ctx.commandBus.dispatch('row:move', { rowId, toIndex: insertIndex });
+                  }
+                }
+              }
+            } else {
               const targetRowId = target.getAttribute('data-row-id');
               if (targetRowId && targetRowId !== rowId) {
                 const ids = ctx.store.getState().displayedRowIds;
                 const targetIndex = ids.indexOf(targetRowId);
                 if (targetIndex !== -1) {
-                  // Determine insert above or below based on mouse position
                   const rect = target.getBoundingClientRect();
                   const midY = rect.top + rect.height / 2;
                   const insertIndex = e.clientY < midY ? targetIndex : targetIndex + 1;
-
-                  ctx.commandBus.dispatch('row:move', {
-                    rowId,
-                    toIndex: insertIndex,
-                  });
+                  ctx.commandBus.dispatch('row:move', { rowId, toIndex: insertIndex });
                 }
               }
             }

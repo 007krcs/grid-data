@@ -50,9 +50,60 @@ export function TreeDataPlugin(options: TreeDataPluginOptions = {}): GridPlugin 
       /**
        * Full rebuild: reconstruct the tree structure from row data.
        * Called when data changes (e.g., setRowData).
+       * For nested data mode, first flatten children into RowNodes.
        */
       function fullRebuild(): void {
         const state = ctx.store.getState();
+
+        // For nested data, flatten children into RowNodes if they don't exist yet
+        if (useNested && childrenField) {
+          let nextIndex = state.rowNodes.size;
+          const flattenChildren = (parentData: any, parentId: string) => {
+            const children = parentData?.[childrenField];
+            if (!Array.isArray(children)) return;
+            for (const childData of children) {
+              // Check if this child data already has a RowNode
+              let childHasNode = false;
+              for (const [, node] of state.rowNodes) {
+                if (node.data === childData) { childHasNode = true; break; }
+              }
+              if (!childHasNode) {
+                // Create a RowNode for this child
+                const childId = childData.id != null ? String(childData.id) : `tree-${parentId}-${nextIndex}`;
+                const childNode: RowNode = {
+                  id: childId,
+                  data: childData,
+                  sourceIndex: nextIndex++,
+                  displayIndex: -1,
+                  level: 0,
+                  rowHeight: 40,
+                  rowTop: 0,
+                  parent: state.rowNodes.get(parentId) ?? null,
+                  children: null,
+                  expanded: defaultExpanded,
+                  group: false,
+                  groupField: null,
+                  groupValue: undefined,
+                  leafChildrenCount: 0,
+                  aggData: null,
+                  selected: false,
+                  selectable: true,
+                  detail: false,
+                  rowPinned: null,
+                  version: 1,
+                };
+                state.rowNodes.set(childId, childNode);
+                // Recursively flatten grandchildren
+                flattenChildren(childData, childId);
+              }
+            }
+          };
+          for (const [id, node] of state.rowNodes) {
+            if (node.data?.[childrenField]) {
+              flattenChildren(node.data, id);
+            }
+          }
+        }
 
         treeState = buildTree({
           rowNodes: state.rowNodes,

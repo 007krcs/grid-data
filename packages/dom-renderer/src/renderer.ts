@@ -1254,8 +1254,8 @@ export class DomRenderer {
   ): void {
     rowEl.textContent = '';
 
-    // Group row rendering
-    if (this.enableGrouping && node.group) {
+    // Group row rendering (only for row-grouping groups, not tree data parent nodes)
+    if (this.enableGrouping && node.group && node.groupField) {
       this.renderGroupRowContent(rowEl, node, columns, displayIndex);
       return;
     }

@@ -1546,7 +1546,7 @@ export class DomRenderer {
     }
 
     // Tooltip: set title attribute for cell hover
-    const tooltipField = (col.originalDef as any).tooltipField;
+    const tooltipField = (col.originalDef as any)?.tooltipField;
     const tooltipValue = tooltipField
       ? (node.data as any)?.[tooltipField]
       : (displayValue || (value != null ? String(value) : undefined));

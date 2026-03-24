@@ -71,9 +71,34 @@ export function PivotPlugin(options: PivotPluginOptions = {}): GridPlugin {
           const groupCols = currentState.columns.filter((c: ColumnState) =>
             !ps.pivotColumns.includes(c.colId) && c.aggFunc == null
           );
+          // Convert generated ColumnDefs to proper ColumnState with originalDef
+          const generatedColStates = ps.generatedColumns.map((def: any) => ({
+            colId: def.colId ?? def.field ?? '',
+            field: def.field ?? def.colId ?? '',
+            headerName: def.headerName ?? def.field ?? '',
+            width: def.width ?? 150,
+            minWidth: def.minWidth ?? 50,
+            maxWidth: def.maxWidth ?? 2000,
+            flex: def.flex ?? null,
+            hide: false,
+            pinned: null,
+            sort: null,
+            sortIndex: null,
+            sortable: def.sortable ?? false,
+            filterable: def.filterable ?? false,
+            resizable: true,
+            editable: false,
+            rowGroup: false,
+            rowGroupIndex: null,
+            pivot: false,
+            pivotIndex: null,
+            aggFunc: null,
+            originalDef: def,
+          })) as ColumnState[];
+
           ctx.store.setState((prev) => ({
             ...prev,
-            columns: [...groupCols, ...ps.generatedColumns] as ColumnState[],
+            columns: [...groupCols, ...generatedColStates],
           }));
 
           // Compute pivot values for all group nodes

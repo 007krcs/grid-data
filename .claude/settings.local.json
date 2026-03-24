@@ -155,7 +155,12 @@
       "Bash(pip install:*)",
       "Bash(pandoc \"C:\\\\Users\\\\chand\\\\Downloads\\\\grid_issues_list.docx\" -t plain)",
       "Bash(pnpm --filter @gridstorm/plugin-pagination build)",
-      "Bash(pnpm install:*)"
+      "Bash(pnpm install:*)",
+      "Bash(while read:*)",
+      "Bash(do grep:*)",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Bash(pnpm --filter @gridstorm/plugin-pivoting build)"
     ]
   }
 }

@@ -1053,6 +1053,7 @@ function ThemingExample() {
         </button>
       </div>
       <GridStorm<Employee>
+        key={density}
         columns={columns}
         rowData={EMPLOYEES_50}
         rowHeight={densityHeight}

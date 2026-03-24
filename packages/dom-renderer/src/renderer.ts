@@ -1393,8 +1393,11 @@ export class DomRenderer {
       displayValue = value != null ? String(value) : '';
     }
 
-    // Apply cell renderer
-    const cellRenderer = col.originalDef.cellRenderer;
+    // Apply cell renderer (function or registered name)
+    let cellRenderer = col.originalDef.cellRenderer;
+    if (typeof cellRenderer === 'string') {
+      cellRenderer = this.engine.pluginManager.getCellRenderer(cellRenderer) ?? undefined;
+    }
     if (cellRenderer) {
       try {
         const result = cellRenderer({
@@ -1466,6 +1469,22 @@ export class DomRenderer {
         Object.assign(cell.style, styles);
       } catch (err) {
         console.error(`[GridStorm] cellStyle error for column "${col.colId}":`, err);
+      }
+    }
+
+    // Apply conditional formatting styles from plugin state (if plugin installed)
+    const condFormatState = this.engine.store.getState().pluginState?.['conditionalFormatting'] as any;
+    if (condFormatState?.computedStyles) {
+      const cfKey = `${node.id}:${col.colId}`;
+      const format = condFormatState.computedStyles instanceof Map
+        ? condFormatState.computedStyles.get(cfKey)
+        : condFormatState.computedStyles[cfKey];
+      if (format?.style) {
+        if (format.style.backgroundColor) {
+          cell.style.backgroundColor = format.style.backgroundColor;
+        }
+        if (format.style.color) cell.style.color = format.style.color;
+        if (format.style.fontWeight) cell.style.fontWeight = format.style.fontWeight;
       }
     }
 

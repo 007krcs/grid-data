@@ -976,6 +976,23 @@ export interface GridApi<TData = any> {
    */
   getPluginApi<T>(pluginId: string): T | undefined;
 
+  // ── Commands ──
+
+  /**
+   * Dispatches a command to the grid's command bus.
+   * Used to invoke plugin commands programmatically.
+   *
+   * @param command - The command name (e.g., 'sort:toggle', 'autoSize:all').
+   * @param payload - Optional payload data for the command.
+   *
+   * @example
+   * ```ts
+   * api.dispatchCommand('autoSize:all', {});
+   * api.dispatchCommand('timeTravel:undo', {});
+   * ```
+   */
+  dispatchCommand(command: string, payload?: any): void;
+
   // ── State ──
 
   /**

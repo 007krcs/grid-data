@@ -482,8 +482,8 @@ export class DomRenderer {
       font-size:var(--gs-font-size-header,13px);
     `;
 
-    // Check for custom header renderer
-    const customRenderer = col.originalDef.headerRenderer;
+    // Check for custom header renderer (guard for dynamically generated columns)
+    const customRenderer = col.originalDef?.headerRenderer;
     if (customRenderer) {
       const sortItem = state.sortModel.find((s) => s.colId === col.colId);
       const result = customRenderer({
@@ -494,7 +494,7 @@ export class DomRenderer {
         sortIndex: col.sortIndex,
       });
       if (typeof result === 'string') {
-        if (col.originalDef.dangerouslySetInnerHTML || (result.includes('<') && result.includes('>'))) {
+        if (col.originalDef?.dangerouslySetInnerHTML || (result.includes('<') && result.includes('>'))) {
           cell.innerHTML = result;
         } else {
           cell.textContent = result;
@@ -1414,7 +1414,7 @@ export class DomRenderer {
 
     // Get value
     let value: any;
-    const valueGetter = col.originalDef.valueGetter;
+    const valueGetter = col.originalDef?.valueGetter;
     if (valueGetter) {
       try {
         value = valueGetter({
@@ -1432,7 +1432,7 @@ export class DomRenderer {
     }
 
     // Format value
-    const formatter = col.originalDef.valueFormatter;
+    const formatter = col.originalDef?.valueFormatter;
     let displayValue: string;
     if (formatter) {
       try {
@@ -1451,7 +1451,7 @@ export class DomRenderer {
     }
 
     // Apply cell renderer (function or registered name)
-    let cellRenderer = col.originalDef.cellRenderer;
+    let cellRenderer = col.originalDef?.cellRenderer;
     if (typeof cellRenderer === 'string') {
       cellRenderer = this.engine.pluginManager.getCellRenderer(cellRenderer) ?? undefined;
     }
@@ -1467,7 +1467,7 @@ export class DomRenderer {
         });
         if (typeof result === 'string') {
           // Auto-detect HTML strings (starts with < and ends with >), or honor explicit flag
-          if (col.originalDef.dangerouslySetInnerHTML || (result.includes('<') && result.includes('>'))) {
+          if (col.originalDef?.dangerouslySetInnerHTML || (result.includes('<') && result.includes('>'))) {
             cell.innerHTML = result;
           } else {
             cell.textContent = result;
@@ -1484,7 +1484,7 @@ export class DomRenderer {
     }
 
     // Apply cell classes
-    const cellClass = col.originalDef.cellClass;
+    const cellClass = col.originalDef?.cellClass;
     if (cellClass) {
       try {
         if (typeof cellClass === 'function') {
@@ -1509,7 +1509,7 @@ export class DomRenderer {
     }
 
     // Apply cell styles
-    const cellStyle = col.originalDef.cellStyle;
+    const cellStyle = col.originalDef?.cellStyle;
     if (cellStyle) {
       try {
         const styles =
@@ -1923,8 +1923,8 @@ export class DomRenderer {
     cellEl.style.overflow = 'visible';
 
     // Determine editor type
-    const editorType = col.originalDef.cellEditor ?? 'text';
-    const editorParams = col.originalDef.cellEditorParams as Record<string, any> | undefined;
+    const editorType = col.originalDef?.cellEditor ?? 'text';
+    const editorParams = col.originalDef?.cellEditorParams as Record<string, any> | undefined;
 
     let editorEl: HTMLElement;
 

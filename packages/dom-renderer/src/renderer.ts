@@ -81,6 +81,8 @@ export class DomRenderer {
   // Feature config
   private enableCellEditing: boolean;
   private enableGrouping: boolean;
+  private enableMasterDetail: boolean;
+  private enableTreeData: boolean;
   private groupIndent: number;
   private checkboxSelection: boolean;
   private checkboxColumnWidth: number;
@@ -147,6 +149,8 @@ export class DomRenderer {
     const hasPlugin = (id: string) => !!this.engine.pluginManager.getPlugin(id);
     this.enableCellEditing = config.enableCellEditing ?? hasPlugin('editing');
     this.enableGrouping = config.enableGrouping ?? hasPlugin('grouping');
+    this.enableMasterDetail = hasPlugin('master-detail');
+    this.enableTreeData = hasPlugin('tree-data');
     this.groupIndent = config.groupIndent ?? 24;
     this.checkboxSelection = config.checkboxSelection ?? false;
     this.checkboxColumnWidth = config.checkboxColumnWidth ?? 48;
@@ -1256,6 +1260,59 @@ export class DomRenderer {
       return;
     }
 
+    // Detail row rendering (master-detail plugin)
+    if (this.enableMasterDetail && node.detail) {
+      this.renderDetailRowContent(rowEl, node, columns);
+      return;
+    }
+
+    // Master-detail expand arrow (prepend to first cell)
+    if (this.enableMasterDetail && !node.detail) {
+      const expandCell = document.createElement('div');
+      expandCell.className = `${this.prefix}-cell ${this.prefix}-detail-expand-cell`;
+      expandCell.style.cssText = 'width:32px;min-width:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;';
+      const arrow = document.createElement('span');
+      const nodeId = node.id;
+      // Check if this row is expanded by looking at displayedRowIds
+      const state = this.engine.store.getState();
+      const nodeIndex = state.displayedRowIds.indexOf(nodeId);
+      const nextId = nodeIndex >= 0 ? state.displayedRowIds[nodeIndex + 1] : undefined;
+      const isExpanded = nextId?.startsWith('__detail__');
+      arrow.textContent = isExpanded ? '\u25BC' : '\u25B6';
+      arrow.style.cssText = 'font-size:10px;color:var(--gs-color-muted,#64748b);transition:transform 150ms;';
+      expandCell.appendChild(arrow);
+      expandCell.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const cmd = isExpanded ? 'detail:collapse' : 'detail:expand';
+        this.engine.commandBus.dispatch(cmd, { nodeId });
+      });
+      rowEl.appendChild(expandCell);
+    }
+
+    // Tree data indentation (for tree nodes with children)
+    if (this.enableTreeData && node.level > 0) {
+      rowEl.style.paddingLeft = `${node.level * this.groupIndent}px`;
+    }
+
+    // Tree data chevron for parent nodes
+    if (this.enableTreeData && node.children && node.children.length > 0) {
+      const treeCell = document.createElement('div');
+      treeCell.className = `${this.prefix}-cell ${this.prefix}-tree-chevron-cell`;
+      treeCell.style.cssText = 'width:24px;min-width:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;';
+      const chevron = document.createElement('span');
+      chevron.textContent = node.expanded ? '\u25BC' : '\u25B6';
+      chevron.style.cssText = 'font-size:10px;color:var(--gs-color-muted,#64748b);';
+      treeCell.appendChild(chevron);
+      const treeNodeId = node.id;
+      treeCell.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        this.engine.commandBus.dispatch('tree:toggle', { nodeId: treeNodeId });
+      });
+      rowEl.appendChild(treeCell);
+    }
+
     // Prepend checkbox cell for non-group rows
     if (this.checkboxSelection) {
       rowEl.appendChild(this.createCheckboxCell(node, displayIndex));
@@ -1488,6 +1545,15 @@ export class DomRenderer {
       }
     }
 
+    // Tooltip: set title attribute for cell hover
+    const tooltipField = (col.originalDef as any).tooltipField;
+    const tooltipValue = tooltipField
+      ? (node.data as any)?.[tooltipField]
+      : (displayValue || (value != null ? String(value) : undefined));
+    if (tooltipValue != null) {
+      cell.setAttribute('title', String(tooltipValue));
+    }
+
     // Cell click events — includes custom double-click detection.
     // Native dblclick events are unreliable because SelectionPlugin bumps
     // node.version on click, causing updateRowContent() to destroy/recreate
@@ -1661,6 +1727,74 @@ export class DomRenderer {
     });
 
     rowEl.appendChild(groupCell);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ── Feature 1b: Master-Detail Row Rendering ──
+  // ═══════════════════════════════════════════════════════════
+
+  private renderDetailRowContent(
+    rowEl: HTMLElement,
+    node: RowNode,
+    columns: ColumnState[],
+  ): void {
+    rowEl.textContent = '';
+    rowEl.classList.add(`${this.prefix}-detail-row`);
+    const totalWidth = columns.reduce((sum, c) => sum + c.width, 0);
+    const cbWidth = this.checkboxSelection ? this.checkboxColumnWidth : 0;
+    const expandWidth = 32;
+
+    const detailCell = document.createElement('div');
+    detailCell.setAttribute('role', 'gridcell');
+    detailCell.className = `${this.prefix}-cell ${this.prefix}-detail-cell`;
+    detailCell.style.cssText =
+      `width:${totalWidth + cbWidth + expandWidth}px;padding:12px 16px 12px ${expandWidth + 16}px;` +
+      'background:var(--gs-color-detail-bg,#f8fafc);height:100%;overflow:auto;' +
+      'border-left:3px solid var(--gs-color-primary,#4f46e5);';
+
+    // Get cached detail data from plugin state
+    const masterId = node.id.replace('__detail__', '');
+    const masterNode = this.engine.store.getState().rowNodes.get(masterId);
+    const detailState = this.engine.store.getState().pluginState?.['master-detail'] as any;
+    const detailCache: Map<string, any[]> | undefined = detailState?.detailCache;
+    const detailData = detailCache instanceof Map ? detailCache.get(masterId) : undefined;
+
+    if (detailData && detailData.length > 0) {
+      // Render detail data as a simple table
+      const table = document.createElement('table');
+      table.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px;';
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      const keys = Object.keys(detailData[0]);
+      for (const key of keys) {
+        const th = document.createElement('th');
+        th.textContent = key;
+        th.style.cssText = 'text-align:left;padding:4px 8px;border-bottom:1px solid #e2e8f0;font-weight:600;color:#475569;';
+        headerRow.appendChild(th);
+      }
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+      const tbody = document.createElement('tbody');
+      for (const row of detailData) {
+        const tr = document.createElement('tr');
+        for (const key of keys) {
+          const td = document.createElement('td');
+          td.textContent = row[key] != null ? String(row[key]) : '';
+          td.style.cssText = 'padding:4px 8px;border-bottom:1px solid #f1f5f9;';
+          tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+      }
+      table.appendChild(tbody);
+      detailCell.appendChild(table);
+    } else {
+      const label = document.createElement('div');
+      label.textContent = masterNode ? `Detail for ${masterNode.data?.name ?? masterId}` : 'Loading...';
+      label.style.cssText = 'color:var(--gs-color-muted,#94a3b8);font-style:italic;';
+      detailCell.appendChild(label);
+    }
+
+    rowEl.appendChild(detailCell);
   }
 
   // ═══════════════════════════════════════════════════════════

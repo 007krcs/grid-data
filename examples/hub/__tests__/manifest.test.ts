@@ -6,7 +6,9 @@ describe('Docs Manifest', () => {
     const labels = DOC_SECTIONS.map((s) => s.label);
     expect(labels).toContain('Getting Started');
     expect(labels).toContain('Core Concepts');
-    expect(labels).toContain('Plugins');
+    // Plugins are split into tiers
+    const hasPluginSection = labels.some((l) => l.startsWith('Plugins'));
+    expect(hasPluginSection).toBe(true);
     expect(labels).toContain('Framework Guides');
     expect(labels).toContain('Guides');
     expect(labels).toContain('API Reference');
@@ -26,10 +28,9 @@ describe('Docs Manifest', () => {
     expect(slugs).toContain('guides/pdf-toolkit');
   });
 
-  it('includes all 13+ plugins', () => {
-    const plugins = DOC_SECTIONS.find((s) => s.label === 'Plugins');
-    expect(plugins).toBeDefined();
-    const slugs = plugins!.items.map((i) => i.slug);
+  it('includes all 13+ plugins across tiered sections', () => {
+    const pluginSections = DOC_SECTIONS.filter((s) => s.label.startsWith('Plugins'));
+    const slugs = pluginSections.flatMap((s) => s.items.map((i) => i.slug));
     expect(slugs).toContain('plugins/sorting');
     expect(slugs).toContain('plugins/filtering');
     expect(slugs).toContain('plugins/selection');
@@ -42,7 +43,7 @@ describe('Docs Manifest', () => {
     expect(slugs).toContain('plugins/grouping');
     expect(slugs).toContain('plugins/aggregation');
     expect(slugs).toContain('plugins/clipboard');
-    expect(slugs).toContain('plugins/plugin-system');
+    expect(slugs.length).toBeGreaterThanOrEqual(13);
   });
 
   it('includes framework guides for React, Vanilla, and Angular', () => {

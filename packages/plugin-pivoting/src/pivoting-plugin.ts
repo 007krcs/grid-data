@@ -101,6 +101,11 @@ export function PivotPlugin(options: PivotPluginOptions = {}): GridPlugin {
             columns: [...groupCols, ...generatedColStates],
           }));
 
+          // Notify renderer that column structure changed (triggers header + row rebuild)
+          ctx.eventBus.emit('columns:changed', {
+            columns: ctx.store.getState().columns,
+          } as any);
+
           // Compute pivot values for all group nodes
           const pivotCols = currentState.columns.filter((c: ColumnState) => ps.pivotColumns.includes(c.colId));
           const valueCols = currentState.columns.filter((c: ColumnState) => c.aggFunc != null);
@@ -131,6 +136,10 @@ export function PivotPlugin(options: PivotPluginOptions = {}): GridPlugin {
             ...prev,
             columns: originalColumns,
           }));
+          // Notify renderer that column structure changed
+          ctx.eventBus.emit('columns:changed', {
+            columns: originalColumns,
+          } as any);
         }
         emitPivotChanged(ctx);
       });

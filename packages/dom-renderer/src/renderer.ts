@@ -279,6 +279,10 @@ export class DomRenderer {
     this.root.setAttribute('aria-label', this.engine.api.getGridOption('ariaLabel') ?? 'Data Grid');
     this.root.setAttribute('aria-multiselectable', 'true');
     this.root.style.cssText = 'position:relative;overflow:hidden;width:100%;height:100%;';
+    // Expose root element on the engine and api so plugins (context menu, row reorder, etc.)
+    // can find the correct root even when multiple grids exist on the page.
+    (this.engine as any).__gsRootEl = this.root;
+    (this.engine.api as any).__gsRootEl = this.root;
 
     // Live region for screen reader announcements
     this.liveRegion = this.el('div', `${p}-live-region`);
@@ -1951,7 +1955,7 @@ export class DomRenderer {
       select.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
         else if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: true }); }
-        else if (e.key === 'Tab') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
+        else if (e.key === 'Tab') { e.stopPropagation(); e.preventDefault(); this.tabToNextEditableCell(e.shiftKey); }
       });
 
       editorEl = select;
@@ -1974,7 +1978,7 @@ export class DomRenderer {
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
         else if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: true }); }
-        else if (e.key === 'Tab') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
+        else if (e.key === 'Tab') { e.stopPropagation(); e.preventDefault(); this.tabToNextEditableCell(e.shiftKey); }
       });
 
       editorEl = input;
@@ -1997,7 +2001,7 @@ export class DomRenderer {
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
         else if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: true }); }
-        else if (e.key === 'Tab') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
+        else if (e.key === 'Tab') { e.stopPropagation(); e.preventDefault(); this.tabToNextEditableCell(e.shiftKey); }
       });
 
       editorEl = input;
@@ -2021,6 +2025,54 @@ export class DomRenderer {
       } else if (editorEl instanceof HTMLSelectElement) {
         editorEl.focus();
       }
+    });
+  }
+
+  /** Stop current editing and move to the next/previous editable cell (Tab navigation). */
+  private tabToNextEditableCell(reverse = false): void {
+    const state = this.engine.store.getState();
+    if (!state.editing) {
+      this.engine.commandBus.dispatch('editing:stop', { cancel: false });
+      return;
+    }
+
+    const { rowId, colId } = state.editing;
+    // Build a flat list of all [rowId, colId] pairs for editable cells
+    const editablePairs: Array<{ rowId: string; colId: string }> = [];
+    for (const id of state.displayedRowIds) {
+      const node = state.rowNodes.get(id);
+      if (!node || node.group || node.detail) continue;
+      for (const col of state.columns) {
+        if (col.hide) continue;
+        if (col.originalDef?.editable) {
+          editablePairs.push({ rowId: id, colId: col.colId });
+        }
+      }
+    }
+
+    // Find current position
+    const currentIndex = editablePairs.findIndex(
+      (p) => p.rowId === rowId && p.colId === colId,
+    );
+
+    // Stop editing first
+    this.engine.commandBus.dispatch('editing:stop', { cancel: false });
+
+    if (currentIndex === -1 || editablePairs.length < 2) return;
+
+    const nextIndex = reverse
+      ? (currentIndex - 1 + editablePairs.length) % editablePairs.length
+      : (currentIndex + 1) % editablePairs.length;
+
+    const next = editablePairs[nextIndex];
+    if (!next) return;
+
+    // Start editing the next cell after a microtask (allows stop to complete)
+    queueMicrotask(() => {
+      this.engine.commandBus.dispatch('editing:start', {
+        rowId: next.rowId,
+        colId: next.colId,
+      });
     });
   }
 

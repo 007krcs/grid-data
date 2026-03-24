@@ -29,14 +29,24 @@ export function PaginationPlugin(options: PaginationPluginOptions = {}): GridPlu
     version: '0.1.0',
 
     install(ctx: PluginContext) {
-      // Set initial page size from options
-      ctx.store.setState((prev) => ({
-        ...prev,
-        pagination: {
-          ...prev.pagination,
-          pageSize,
-        },
-      }));
+      // Set initial page size from options, but only if the engine hasn't already
+      // configured a page size from the `paginationPageSize` grid option. The engine
+      // initialises pagination.pageSize from config.paginationPageSize (defaulting to
+      // 100), so only override when the plugin was explicitly given a pageSize option
+      // that differs from the default of 100.
+      const currentPageSize = ctx.store.getState().pagination.pageSize;
+      const pluginHasExplicitPageSize = options.pageSize != null;
+      const effectivePageSize = pluginHasExplicitPageSize ? pageSize : currentPageSize;
+
+      if (effectivePageSize !== currentPageSize) {
+        ctx.store.setState((prev) => ({
+          ...prev,
+          pagination: {
+            ...prev.pagination,
+            pageSize: effectivePageSize,
+          },
+        }));
+      }
 
       // ── Register pagination:goToPage command ──
       const unregisterGoTo = ctx.commandBus.registerHandler(

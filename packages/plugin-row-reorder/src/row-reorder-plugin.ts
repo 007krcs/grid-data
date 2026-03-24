@@ -35,10 +35,17 @@ export function RowReorderPlugin(options: RowReorderPluginOptions = {}): GridPlu
       const customOrder = new Map<string, number>();
       let updatingOrder = false;
 
-      // Cached root element for scoped DOM queries
+      // Cached root element for scoped DOM queries.
+      // Prefer the root element stored by the DOM renderer on the api (supports multiple grids).
       let cachedRoot: HTMLElement | null = null;
       const getRoot = (): HTMLElement | null => {
         if (cachedRoot && cachedRoot.isConnected) return cachedRoot;
+        // Use the root element stored by the DOM renderer when available
+        const apiRootEl = (ctx.api as any).__gsRootEl as HTMLElement | undefined;
+        if (apiRootEl?.isConnected) {
+          cachedRoot = apiRootEl;
+          return cachedRoot;
+        }
         cachedRoot = document.querySelector<HTMLElement>('.gs-root');
         return cachedRoot;
       };

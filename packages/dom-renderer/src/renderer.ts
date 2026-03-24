@@ -1611,6 +1611,25 @@ export class DomRenderer {
     groupCell.appendChild(chevron);
     groupCell.appendChild(label);
 
+    // Show aggregation values inline if available
+    if (node.aggData && Object.keys(node.aggData).length > 0) {
+      const aggSpan = document.createElement('span');
+      aggSpan.className = `${this.prefix}-group-agg`;
+      aggSpan.style.cssText =
+        'margin-left:auto;display:flex;gap:12px;font-weight:400;font-size:var(--gs-font-size-small,12px);color:var(--gs-color-muted,#64748b);';
+      for (const col of columns) {
+        const val = node.aggData[col.colId];
+        if (val != null) {
+          const aggLabel = document.createElement('span');
+          const aggFuncName = col.aggFunc ? String(col.aggFunc) : '';
+          const displayVal = typeof val === 'number' ? val.toLocaleString(undefined, { maximumFractionDigits: 1 }) : String(val);
+          aggLabel.textContent = `${col.headerName ?? col.field ?? col.colId}: ${displayVal}${aggFuncName ? ` (${aggFuncName})` : ''}`;
+          aggSpan.appendChild(aggLabel);
+        }
+      }
+      groupCell.appendChild(aggSpan);
+    }
+
     // Click to expand/collapse via pointer events (touch + mouse)
     // Read current expanded state from the store at click time to avoid stale closures.
     const nodeId = node.id;

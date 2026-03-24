@@ -187,7 +187,7 @@ export function RowReorderPlugin(options: RowReorderPluginOptions = {}): GridPlu
                 align-items: center;
                 justify-content: center;
                 cursor: grab;
-                opacity: 0;
+                opacity: 0.4;
                 transition: opacity 0.15s;
                 font-size: 12px;
                 color: var(--gs-color-muted, #94a3b8);
@@ -195,7 +195,7 @@ export function RowReorderPlugin(options: RowReorderPluginOptions = {}): GridPlu
                 background: var(--gs-color-background, #fff);
               }
               [data-gs-row-reorder] .gs-row:hover::before {
-                opacity: 0.7;
+                opacity: 0.8;
               }
               [data-gs-row-reorder] .gs-group-row::before {
                 display: none;

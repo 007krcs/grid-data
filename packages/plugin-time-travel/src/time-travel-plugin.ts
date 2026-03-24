@@ -515,6 +515,21 @@ export function TimeTravelPlugin(options: TimeTravelPluginOptions = {}): GridPlu
           },
         );
         disposers.push(unsubRows);
+
+        // Watch cell edits — editing plugin mutates data in-place
+        // so the rowNodes reference doesn't change
+        const unsubCellEdit = ctx.eventBus.on('cell:valueChanged' as any, () => {
+          scheduleCaptureIfNeeded();
+        });
+        disposers.push(unsubCellEdit);
+
+        // Also watch rowData:changed for setRowData calls
+        const unsubRowData = ctx.eventBus.on('rowData:changed', (_payload: any) => {
+          // Don't capture our own restore events
+          if (_payload?.type?.startsWith?.('timeTravel:')) return;
+          scheduleCaptureIfNeeded();
+        });
+        disposers.push(unsubRowData);
       }
 
       // ── Disposer ──

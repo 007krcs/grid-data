@@ -294,7 +294,7 @@ export class DomRenderer {
 
     // Body viewport (scrollable)
     this.bodyViewport = this.el('div', `${p}-body-viewport`);
-    this.bodyViewport.style.cssText = 'overflow:auto;position:relative;flex:1;contain:strict;';
+    this.bodyViewport.style.cssText = 'overflow:auto;position:relative;flex:1;contain:layout style;';
 
     // Height spacer (sets total scrollable height)
     this.heightSpacer = this.el('div', `${p}-height-spacer`);

@@ -1930,18 +1930,23 @@ function AIExample() {
 
 function FormulaExample() {
   const data = useMemo(() => [
-    { id: 1, a: 10, b: 20, c: 0 },
-    { id: 2, a: 30, b: 40, c: 0 },
-    { id: 3, a: 50, b: 60, c: 0 },
-    { id: 4, a: 70, b: 80, c: 0 },
-    { id: 5, a: 15, b: 25, c: 0 },
+    { id: '1', a: 10, b: 20, c: 0 },
+    { id: '2', a: 30, b: 40, c: 0 },
+    { id: '3', a: 50, b: 60, c: 0 },
+    { id: '4', a: 70, b: 80, c: 0 },
+    { id: '5', a: 15, b: 25, c: 0 },
   ], []);
 
   const columns = useMemo(() => [
     { field: 'id' as const, headerName: 'ID', width: 70 },
     { field: 'a' as const, headerName: 'A', width: 100, editable: true },
     { field: 'b' as const, headerName: 'B', width: 100, editable: true },
-    { field: 'c' as const, headerName: 'C (Result)', width: 140 },
+    {
+      field: 'c' as const,
+      headerName: 'C (=A+B)',
+      width: 140,
+      valueGetter: ({ data: d }: { data: any }) => d ? (Number(d.a) || 0) + (Number(d.b) || 0) : 0,
+    },
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
@@ -1953,9 +1958,16 @@ function FormulaExample() {
   return (
     <ExampleWrapper
       title="Formula Engine"
-      description="Spreadsheet-style formula support. Column C can use formulas like =A1+B1. Edit columns A and B to see results update."
+      description="Spreadsheet-style formula support. Column C computes A+B automatically. Edit columns A and B to see results update."
     >
-      <GridStorm columns={columns} rowData={data} plugins={plugins} enableCellEditing height={300} />
+      <GridStorm
+        columns={columns}
+        rowData={data}
+        plugins={plugins}
+        enableCellEditing
+        getRowId={(row: any) => String(row.id)}
+        height={300}
+      />
     </ExampleWrapper>
   );
 }

@@ -1752,12 +1752,10 @@ export class DomRenderer {
       'background:var(--gs-color-detail-bg,#f8fafc);height:100%;overflow:auto;' +
       'border-left:3px solid var(--gs-color-primary,#4f46e5);';
 
-    // Get cached detail data from plugin state
+    // Get detail data from the detail node's data (set by MasterDetailPlugin)
     const masterId = node.id.replace('__detail__', '');
     const masterNode = this.engine.store.getState().rowNodes.get(masterId);
-    const detailState = this.engine.store.getState().pluginState?.['master-detail'] as any;
-    const detailCache: Map<string, any[]> | undefined = detailState?.detailCache;
-    const detailData = detailCache instanceof Map ? detailCache.get(masterId) : undefined;
+    const detailData: any[] | undefined = (node.data as any)?.__detailRows;
 
     if (detailData && detailData.length > 0) {
       // Render detail data as a simple table

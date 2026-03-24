@@ -5,7 +5,7 @@
 import type { GridPlugin, PluginContext, ColumnState } from '@gridstorm/core';
 import { validateLicense, createWatermark } from '@gridstorm/license';
 import type { PivotPluginOptions, PivotState } from './types';
-import { generatePivotColumns } from './pivot-columns';
+import { generatePivotColumns, computePivotValues } from './pivot-columns';
 
 export function PivotPlugin(options: PivotPluginOptions = {}): GridPlugin {
   const {
@@ -75,6 +75,18 @@ export function PivotPlugin(options: PivotPluginOptions = {}): GridPlugin {
             ...prev,
             columns: [...groupCols, ...ps.generatedColumns] as ColumnState[],
           }));
+
+          // Compute pivot values for all group nodes
+          const pivotCols = currentState.columns.filter((c: ColumnState) => ps.pivotColumns.includes(c.colId));
+          const valueCols = currentState.columns.filter((c: ColumnState) => c.aggFunc != null);
+          const state = ctx.store.getState();
+          for (const [, node] of state.rowNodes) {
+            if (node.group && node.children) {
+              const pivotData = computePivotValues(node, pivotCols, valueCols);
+              node.aggData = { ...(node.aggData ?? {}), ...pivotData };
+              node.version = (node.version || 0) + 1;
+            }
+          }
         }
         emitPivotChanged(ctx);
       });
@@ -147,9 +159,27 @@ export function PivotPlugin(options: PivotPluginOptions = {}): GridPlugin {
         });
       }
 
+      // Re-compute pivot values after group expand/collapse (reprocessWithGroups recreates group nodes)
+      const unsubGroupOpened = ctx.eventBus.on('row:groupOpened', () => {
+        const ps = ctx.getState<PivotState>('pivoting');
+        if (!ps.pivotMode || ps.pivotColumns.length === 0) return;
+        const state = ctx.store.getState();
+        const pivotCols = ((ps as any).originalColumns || state.columns)
+          .filter((c: ColumnState) => ps.pivotColumns.includes(c.colId));
+        const valueCols = ((ps as any).originalColumns || state.columns)
+          .filter((c: ColumnState) => c.aggFunc != null);
+        for (const [, node] of state.rowNodes) {
+          if (node.group && node.children) {
+            const pivotData = computePivotValues(node, pivotCols, valueCols);
+            node.aggData = { ...(node.aggData ?? {}), ...pivotData };
+          }
+        }
+      });
+
       return () => {
         unsubLicenseWatermark?.();
         unsubGridReady?.();
+        unsubGroupOpened();
         unregEnable();
         unregDisable();
         unregAdd();

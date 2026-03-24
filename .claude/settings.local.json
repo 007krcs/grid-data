@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm --filter @gridstorm/plugin-tree-data build)",
+      "Bash(pnpm --filter @gridstorm/dom-renderer build)",
+      "Bash(npx vite:*)",
+      "Bash(pnpm --filter @gridstorm/plugin-row-reorder build)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(pnpm --filter @gridstorm/plugin-aggregation build)",
+      "Bash(pnpm --filter @gridstorm/plugin-pivoting build)"
+    ]
+  }
+}

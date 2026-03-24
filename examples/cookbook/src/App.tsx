@@ -627,7 +627,7 @@ function PivotingExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    GroupingPlugin(),
+    GroupingPlugin({ defaultExpanded: true }),
     AggregationPlugin(),
     PivotPlugin(),
   ], []);
@@ -635,7 +635,7 @@ function PivotingExample() {
   return (
     <ExampleWrapper
       title="Pivoting"
-      description="Pivot transforms rows into columns. Status values become column headers, with Revenue and Quantity aggregated within each cell."
+      description="Pivot transforms rows into columns. Status values become column headers, with Revenue and Quantity aggregated within each cell. Each row shows its value under the matching status column."
     >
       <GridStorm<Order>
         columns={columns}

@@ -33,13 +33,25 @@ export function generatePivotColumns<TData = any>(
 
         const colId = `pivot_${pivotCol.colId}_${String(pivotValue)}_${valueCol.colId}`;
 
+        const pivotField = pivotCol.field;
+        const valueField = valueCol.field;
+        const pv = pivotValue;
+
         generated.push({
           colId,
           headerName: `${String(pivotValue)} — ${valueCol.headerName}`,
           field: colId,
-          valueGetter: ({ node }) => {
+          valueGetter: ({ node, data }) => {
+            // Group nodes: use pre-computed pivot aggData
             if (node?.aggData && colId in node.aggData) {
               return node.aggData[colId];
+            }
+            // Leaf rows: show value only if this row's pivot field matches
+            if (data && pivotField && valueField) {
+              const rowPivotValue = (data as any)[pivotField];
+              if (rowPivotValue === pv) {
+                return (data as any)[valueField];
+              }
             }
             return null;
           },

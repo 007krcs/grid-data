@@ -11,8 +11,9 @@ const SCRIPT_DIR = __dirname;
 const ROOT_DIR = path.dirname(SCRIPT_DIR);
 
 // Use Vercel Build Output API: .vercel/output/static/
-// This bypasses outputDirectory resolution entirely
-const VERCEL_OUTPUT = path.join(ROOT_DIR, '.vercel', 'output');
+// Vercel resolves .vercel/output relative to Root Directory (examples/analytics-explorer)
+const VERCEL_ROOT_DIR = path.join(SCRIPT_DIR, 'analytics-explorer');
+const VERCEL_OUTPUT = path.join(VERCEL_ROOT_DIR, '.vercel', 'output');
 const OUT_DIR = path.join(VERCEL_OUTPUT, 'static');
 
 console.log('Building GridStorm demos...');

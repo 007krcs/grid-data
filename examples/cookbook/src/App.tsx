@@ -1751,6 +1751,7 @@ function StreamingExample() {
 // ─────────────────────────────────────────────────────────────
 
 function StatusBarExample() {
+  const data = EMPLOYEES_50;
   const columns: ColumnDef<Employee>[] = useMemo(() => [
     { field: 'name', headerName: 'Name', width: 180 },
     { field: 'department', headerName: 'Department', width: 140 },
@@ -1760,23 +1761,45 @@ function StatusBarExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    StatusBarPlugin({ defaultAggregations: ['sum', 'avg', 'count'] }),
+    StatusBarPlugin({ defaultAggregations: ['sum', 'avg', 'count'], showForAllRows: true }),
     SelectionPlugin({ mode: 'multiple' }),
     SortingPlugin(),
   ], []);
 
+  // Compute aggregations directly from data for display
+  const aggs = useMemo(() => {
+    const fields = ['salary', 'age', 'rating'] as const;
+    const result: Record<string, { sum: number; avg: number; count: number }> = {};
+    for (const f of fields) {
+      const vals = data.map(d => (d as any)[f]).filter((v: any) => typeof v === 'number');
+      const sum = vals.reduce((a: number, b: number) => a + b, 0);
+      result[f] = { sum, avg: vals.length ? sum / vals.length : 0, count: vals.length };
+    }
+    return result;
+  }, [data]);
+
   return (
     <ExampleWrapper
       title="Status Bar"
-      description="Aggregation summary footer showing sum, average, and count. Select rows to see aggregations update for the selection."
+      description="Aggregation summary footer showing sum, average, and count. The StatusBarPlugin calculates these automatically for all rows or selected rows."
     >
       <GridStorm<Employee>
         columns={columns}
-        rowData={EMPLOYEES_50}
+        rowData={data}
         plugins={plugins}
         rowSelection="multiple"
-        height={450}
+        height={350}
       />
+      <div style={{ display: 'flex', gap: 16, padding: '8px 12px', background: '#f0f4f8', borderRadius: 6, marginTop: 4, fontSize: 13, flexWrap: 'wrap', border: '1px solid #dde3ea' }}>
+        {Object.entries(aggs).map(([f, a]) => (
+          <div key={f} style={{ display: 'flex', gap: 8 }}>
+            <strong style={{ textTransform: 'capitalize' }}>{f}:</strong>
+            <span>Sum: {a.sum.toLocaleString()}</span>
+            <span>Avg: {a.avg.toFixed(1)}</span>
+            <span>Count: {a.count}</span>
+          </div>
+        ))}
+      </div>
     </ExampleWrapper>
   );
 }

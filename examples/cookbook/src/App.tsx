@@ -370,7 +370,7 @@ function SelectionExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    SelectionPlugin({ mode: 'multi' }),
+    SelectionPlugin({ mode: 'multiple' }),
   ], []);
 
   return (
@@ -387,7 +387,7 @@ function SelectionExample() {
         checkboxSelection
         height={400}
         onSelectionChanged={(e) => {
-          const count = e.selectedRowIds.size;
+          const count = e.selectedNodes?.length ?? 0;
           setSelectedInfo(count > 0 ? `${count} row(s) selected` : 'No rows selected');
         }}
       />
@@ -1312,7 +1312,7 @@ function HookUseGridSelectionExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    SelectionPlugin({ mode: 'multi' }),
+    SelectionPlugin({ mode: 'multiple' }),
   ], []);
 
   return (

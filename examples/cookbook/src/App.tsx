@@ -1751,6 +1751,7 @@ function StreamingExample() {
 // ─────────────────────────────────────────────────────────────
 
 function StatusBarExample() {
+  const data = EMPLOYEES_50;
   const columns: ColumnDef<Employee>[] = useMemo(() => [
     { field: 'name', headerName: 'Name', width: 180 },
     { field: 'department', headerName: 'Department', width: 140 },
@@ -1760,23 +1761,45 @@ function StatusBarExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    StatusBarPlugin({ defaultAggregations: ['sum', 'avg', 'count'] }),
+    StatusBarPlugin({ defaultAggregations: ['sum', 'avg', 'count'], showForAllRows: true }),
     SelectionPlugin({ mode: 'multiple' }),
     SortingPlugin(),
   ], []);
 
+  // Compute aggregations directly from data for display
+  const aggs = useMemo(() => {
+    const fields = ['salary', 'age', 'rating'] as const;
+    const result: Record<string, { sum: number; avg: number; count: number }> = {};
+    for (const f of fields) {
+      const vals = data.map(d => (d as any)[f]).filter((v: any) => typeof v === 'number');
+      const sum = vals.reduce((a: number, b: number) => a + b, 0);
+      result[f] = { sum, avg: vals.length ? sum / vals.length : 0, count: vals.length };
+    }
+    return result;
+  }, [data]);
+
   return (
     <ExampleWrapper
       title="Status Bar"
-      description="Aggregation summary footer showing sum, average, and count. Select rows to see aggregations update for the selection."
+      description="Aggregation summary footer showing sum, average, and count. The StatusBarPlugin calculates these automatically for all rows or selected rows."
     >
       <GridStorm<Employee>
         columns={columns}
-        rowData={EMPLOYEES_50}
+        rowData={data}
         plugins={plugins}
         rowSelection="multiple"
-        height={450}
+        height={350}
       />
+      <div style={{ display: 'flex', gap: 16, padding: '8px 12px', background: '#f0f4f8', borderRadius: 6, marginTop: 4, fontSize: 13, flexWrap: 'wrap', border: '1px solid #dde3ea' }}>
+        {Object.entries(aggs).map(([f, a]) => (
+          <div key={f} style={{ display: 'flex', gap: 8 }}>
+            <strong style={{ textTransform: 'capitalize' }}>{f}:</strong>
+            <span>Sum: {a.sum.toLocaleString()}</span>
+            <span>Avg: {a.avg.toFixed(1)}</span>
+            <span>Count: {a.count}</span>
+          </div>
+        ))}
+      </div>
     </ExampleWrapper>
   );
 }
@@ -1785,27 +1808,42 @@ function StatePersistenceExample() {
   const columns: ColumnDef<Employee>[] = useMemo(() => [
     { field: 'name', headerName: 'Name', width: 180, sortable: true },
     { field: 'department', headerName: 'Department', width: 140, filterable: true },
-    { field: 'role', headerName: 'Role', width: 160 },
+    { field: 'role', headerName: 'Role', width: 160, sortable: true },
     { field: 'salary', headerName: 'Salary', width: 130, sortable: true },
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    StatePersistencePlugin({ storageKey: 'cookbook-state', autoSave: true }),
+    StatePersistencePlugin({ storageKey: 'cookbook-state', autoSave: true, debounceMs: 300 }),
     SortingPlugin(),
     FilteringPlugin(),
   ], []);
 
+  const [status, setStatus] = useState(() => {
+    const saved = localStorage.getItem('cookbook-state');
+    return saved ? 'Restored from localStorage' : 'No saved state';
+  });
+
+  const handleClear = useCallback(() => {
+    localStorage.removeItem('cookbook-state');
+    setStatus('Cleared! Sort or filter, then reload.');
+  }, []);
+
   return (
     <ExampleWrapper
       title="State Persistence"
-      description="Grid state (sort, filter, column order) is automatically saved to localStorage. Reload the page to see state restored."
+      description="Sort or filter the grid, then reload the page — your state is automatically restored from localStorage."
     >
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+        <button onClick={() => window.location.reload()}>Reload Page</button>
+        <button onClick={handleClear}>Clear Saved State</button>
+        <span style={{ fontSize: 13, color: '#666' }}>{status}</span>
+      </div>
       <GridStorm<Employee>
         columns={columns}
         rowData={EMPLOYEES_50}
         plugins={plugins}
         floatingFilter
-        height={400}
+        height={380}
       />
     </ExampleWrapper>
   );
@@ -1863,46 +1901,76 @@ function RowPinningExample() {
   ], []);
 
   const apiRef = useRef<GridApi | null>(null);
+  const [pinnedTop, setPinnedTop] = useState<any[]>([]);
+  const [pinnedBottom, setPinnedBottom] = useState<any[]>([]);
+
+  const refreshPinned = useCallback(() => {
+    const state = apiRef.current?.getState?.();
+    const rp = (state?.pluginState as any)?.rowPinning;
+    setPinnedTop(rp?.pinnedTopRows?.map((n: any) => n.data) || []);
+    setPinnedBottom(rp?.pinnedBottomRows?.map((n: any) => n.data) || []);
+  }, []);
+
+  const pinnedRowStyle = { display: 'flex', padding: '6px 0', borderBottom: '1px solid #e2e8f0', fontSize: 14 };
+  const pinnedCellStyle = { flex: 1, padding: '2px 8px' };
+
+  const renderPinnedRows = (rows: any[], label: string, bg: string) => {
+    if (!rows.length) return null;
+    return (
+      <div style={{ background: bg, borderRadius: 4, padding: '4px 8px', marginBottom: label === 'Top' ? 4 : 0, marginTop: label === 'Bottom' ? 4 : 0 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: '#4a5568', marginBottom: 2 }}>📌 Pinned {label} ({rows.length})</div>
+        {rows.map((row, i) => (
+          <div key={i} style={pinnedRowStyle}>
+            <span style={pinnedCellStyle}>{row?.name}</span>
+            <span style={pinnedCellStyle}>{row?.department}</span>
+            <span style={pinnedCellStyle}>{row?.role}</span>
+            <span style={pinnedCellStyle}>{row?.salary?.toLocaleString()}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <ExampleWrapper
       title="Row Pinning"
-      description="Pin rows to the top or bottom of the grid so they stay visible while scrolling. Select rows then click Pin/Unpin."
+      description="Select rows with checkboxes, then click Pin Top/Bottom. Pinned rows appear above or below the grid."
     >
-      <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
+      <div style={{ marginBottom: 8, display: 'flex', gap: 8 }}>
         <button onClick={() => {
           const state = apiRef.current?.getState?.();
           const selected = state?.selection?.selectedRowIds;
           if (selected?.size) {
             const rowData = Array.from(selected).map(id => state?.rowNodes?.get(id)?.data).filter(Boolean);
             apiRef.current?.dispatchCommand?.('rowPinning:setTopData', { data: rowData });
+            refreshPinned();
           }
-        }}>
-          Pin Selected Top
-        </button>
+        }}>Pin Selected Top</button>
         <button onClick={() => {
           const state = apiRef.current?.getState?.();
           const selected = state?.selection?.selectedRowIds;
           if (selected?.size) {
             const rowData = Array.from(selected).map(id => state?.rowNodes?.get(id)?.data).filter(Boolean);
             apiRef.current?.dispatchCommand?.('rowPinning:setBottomData', { data: rowData });
+            refreshPinned();
           }
-        }}>
-          Pin Selected Bottom
-        </button>
-        <button onClick={() => apiRef.current?.dispatchCommand?.('rowPinning:unpinAll', {})}>
-          Unpin All
-        </button>
+        }}>Pin Selected Bottom</button>
+        <button onClick={() => {
+          apiRef.current?.dispatchCommand?.('rowPinning:unpinAll', {});
+          refreshPinned();
+        }}>Unpin All</button>
       </div>
+      {renderPinnedRows(pinnedTop, 'Top', '#ebf8ff')}
       <GridStorm<Employee>
         columns={columns}
         rowData={EMPLOYEES_50}
         plugins={plugins}
         rowSelection="multiple"
         checkboxSelection
-        height={400}
+        height={320}
         onGridReady={(api) => { apiRef.current = api; }}
       />
+      {renderPinnedRows(pinnedBottom, 'Bottom', '#fefcbf')}
     </ExampleWrapper>
   );
 }

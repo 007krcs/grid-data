@@ -1901,46 +1901,76 @@ function RowPinningExample() {
   ], []);
 
   const apiRef = useRef<GridApi | null>(null);
+  const [pinnedTop, setPinnedTop] = useState<any[]>([]);
+  const [pinnedBottom, setPinnedBottom] = useState<any[]>([]);
+
+  const refreshPinned = useCallback(() => {
+    const state = apiRef.current?.getState?.();
+    const rp = (state?.pluginState as any)?.rowPinning;
+    setPinnedTop(rp?.pinnedTopRows?.map((n: any) => n.data) || []);
+    setPinnedBottom(rp?.pinnedBottomRows?.map((n: any) => n.data) || []);
+  }, []);
+
+  const pinnedRowStyle = { display: 'flex', padding: '6px 0', borderBottom: '1px solid #e2e8f0', fontSize: 14 };
+  const pinnedCellStyle = { flex: 1, padding: '2px 8px' };
+
+  const renderPinnedRows = (rows: any[], label: string, bg: string) => {
+    if (!rows.length) return null;
+    return (
+      <div style={{ background: bg, borderRadius: 4, padding: '4px 8px', marginBottom: label === 'Top' ? 4 : 0, marginTop: label === 'Bottom' ? 4 : 0 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: '#4a5568', marginBottom: 2 }}>📌 Pinned {label} ({rows.length})</div>
+        {rows.map((row, i) => (
+          <div key={i} style={pinnedRowStyle}>
+            <span style={pinnedCellStyle}>{row?.name}</span>
+            <span style={pinnedCellStyle}>{row?.department}</span>
+            <span style={pinnedCellStyle}>{row?.role}</span>
+            <span style={pinnedCellStyle}>{row?.salary?.toLocaleString()}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <ExampleWrapper
       title="Row Pinning"
-      description="Pin rows to the top or bottom of the grid so they stay visible while scrolling. Select rows then click Pin/Unpin."
+      description="Select rows with checkboxes, then click Pin Top/Bottom. Pinned rows appear above or below the grid."
     >
-      <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
+      <div style={{ marginBottom: 8, display: 'flex', gap: 8 }}>
         <button onClick={() => {
           const state = apiRef.current?.getState?.();
           const selected = state?.selection?.selectedRowIds;
           if (selected?.size) {
             const rowData = Array.from(selected).map(id => state?.rowNodes?.get(id)?.data).filter(Boolean);
             apiRef.current?.dispatchCommand?.('rowPinning:setTopData', { data: rowData });
+            refreshPinned();
           }
-        }}>
-          Pin Selected Top
-        </button>
+        }}>Pin Selected Top</button>
         <button onClick={() => {
           const state = apiRef.current?.getState?.();
           const selected = state?.selection?.selectedRowIds;
           if (selected?.size) {
             const rowData = Array.from(selected).map(id => state?.rowNodes?.get(id)?.data).filter(Boolean);
             apiRef.current?.dispatchCommand?.('rowPinning:setBottomData', { data: rowData });
+            refreshPinned();
           }
-        }}>
-          Pin Selected Bottom
-        </button>
-        <button onClick={() => apiRef.current?.dispatchCommand?.('rowPinning:unpinAll', {})}>
-          Unpin All
-        </button>
+        }}>Pin Selected Bottom</button>
+        <button onClick={() => {
+          apiRef.current?.dispatchCommand?.('rowPinning:unpinAll', {});
+          refreshPinned();
+        }}>Unpin All</button>
       </div>
+      {renderPinnedRows(pinnedTop, 'Top', '#ebf8ff')}
       <GridStorm<Employee>
         columns={columns}
         rowData={EMPLOYEES_50}
         plugins={plugins}
         rowSelection="multiple"
         checkboxSelection
-        height={400}
+        height={320}
         onGridReady={(api) => { apiRef.current = api; }}
       />
+      {renderPinnedRows(pinnedBottom, 'Bottom', '#fefcbf')}
     </ExampleWrapper>
   );
 }

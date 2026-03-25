@@ -1808,27 +1808,42 @@ function StatePersistenceExample() {
   const columns: ColumnDef<Employee>[] = useMemo(() => [
     { field: 'name', headerName: 'Name', width: 180, sortable: true },
     { field: 'department', headerName: 'Department', width: 140, filterable: true },
-    { field: 'role', headerName: 'Role', width: 160 },
+    { field: 'role', headerName: 'Role', width: 160, sortable: true },
     { field: 'salary', headerName: 'Salary', width: 130, sortable: true },
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    StatePersistencePlugin({ storageKey: 'cookbook-state', autoSave: true }),
+    StatePersistencePlugin({ storageKey: 'cookbook-state', autoSave: true, debounceMs: 300 }),
     SortingPlugin(),
     FilteringPlugin(),
   ], []);
 
+  const [status, setStatus] = useState(() => {
+    const saved = localStorage.getItem('cookbook-state');
+    return saved ? 'Restored from localStorage' : 'No saved state';
+  });
+
+  const handleClear = useCallback(() => {
+    localStorage.removeItem('cookbook-state');
+    setStatus('Cleared! Sort or filter, then reload.');
+  }, []);
+
   return (
     <ExampleWrapper
       title="State Persistence"
-      description="Grid state (sort, filter, column order) is automatically saved to localStorage. Reload the page to see state restored."
+      description="Sort or filter the grid, then reload the page — your state is automatically restored from localStorage."
     >
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+        <button onClick={() => window.location.reload()}>Reload Page</button>
+        <button onClick={handleClear}>Clear Saved State</button>
+        <span style={{ fontSize: 13, color: '#666' }}>{status}</span>
+      </div>
       <GridStorm<Employee>
         columns={columns}
         rowData={EMPLOYEES_50}
         plugins={plugins}
         floatingFilter
-        height={400}
+        height={380}
       />
     </ExampleWrapper>
   );

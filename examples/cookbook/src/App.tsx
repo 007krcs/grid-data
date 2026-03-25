@@ -2134,6 +2134,7 @@ function TimeTravelExample() {
 
 function CellRangeExample() {
   const apiRef = useRef<GridApi | null>(null);
+  const [rangeInfo, setRangeInfo] = useState('No range selected');
 
   const columns: ColumnDef<Employee>[] = useMemo(() => [
     { field: 'name', headerName: 'Name', width: 180 },
@@ -2147,24 +2148,50 @@ function CellRangeExample() {
     SortingPlugin(),
   ], []);
 
+  const refreshRange = useCallback(() => {
+    const state = apiRef.current?.getState?.();
+    const cr = (state?.pluginState as any)?.cellRange;
+    const ranges = cr?.ranges;
+    if (ranges && ranges.length > 0) {
+      const total = ranges.reduce((sum: number, r: any) => {
+        const rows = Math.abs(r.bounds.endRow - r.bounds.startRow) + 1;
+        const cols = Math.abs(r.bounds.endCol - r.bounds.startCol) + 1;
+        return sum + rows * cols;
+      }, 0);
+      setRangeInfo(`${ranges.length} range(s) | ${total} cells selected`);
+    } else {
+      setRangeInfo('No range selected');
+    }
+  }, []);
+
   return (
     <ExampleWrapper
       title="Cell Range"
-      description="Select a range of cells by clicking and dragging. Use fill handle to extend patterns. Supports multi-range selection with Ctrl."
+      description="Use the buttons to select ranges programmatically. Select All selects every cell, Clear removes the selection."
     >
-      <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
-        <button onClick={() => apiRef.current?.dispatchCommand?.('range:selectAll', {})}>
-          Select All
-        </button>
-        <button onClick={() => apiRef.current?.dispatchCommand?.('range:clear', {})}>
-          Clear Selection
-        </button>
+      <div style={{ marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <button onClick={() => {
+          apiRef.current?.dispatchCommand?.('range:selectAll', {});
+          setTimeout(refreshRange, 50);
+        }}>Select All</button>
+        <button onClick={() => {
+          apiRef.current?.dispatchCommand?.('range:select', {
+            start: { rowIndex: 0, colIndex: 0 },
+            end: { rowIndex: 4, colIndex: 2 },
+          });
+          setTimeout(refreshRange, 50);
+        }}>Select Top 5×3</button>
+        <button onClick={() => {
+          apiRef.current?.dispatchCommand?.('range:clear', {});
+          setTimeout(refreshRange, 50);
+        }}>Clear Selection</button>
+        <span style={{ fontSize: 13, color: '#555', marginLeft: 8 }}>{rangeInfo}</span>
       </div>
       <GridStorm<Employee>
         columns={columns}
         rowData={EMPLOYEES_20}
         plugins={plugins}
-        height={400}
+        height={380}
         onGridReady={(api) => { apiRef.current = api; }}
       />
     </ExampleWrapper>

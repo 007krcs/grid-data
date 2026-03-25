@@ -437,11 +437,17 @@ export function ContextMenuPlugin(options: ContextMenuPluginOptions = {}): GridP
       let rootEl: HTMLElement | null = null;
       const unsubReady = ctx.eventBus.on('grid:ready', () => {
         requestAnimationFrame(() => {
-          // Scope to the grid's own root element via the renderer's container
-          const containers = document.querySelectorAll<HTMLElement>('.gs-root');
-          rootEl = containers.length === 1
-            ? containers[0]!
-            : (ctx as any).rootElement ?? containers[0] ?? null;
+          // Prefer the root element stored by the DOM renderer on the engine.
+          // Falls back to scanning `.gs-root` elements (for single-grid pages).
+          const engineRootEl = (ctx.api as any).__gsRootEl ?? (ctx as any).__gsRootEl;
+          if (engineRootEl) {
+            rootEl = engineRootEl;
+          } else {
+            const containers = document.querySelectorAll<HTMLElement>('.gs-root');
+            rootEl = containers.length === 1
+              ? containers[0]!
+              : (ctx as any).rootElement ?? containers[0] ?? null;
+          }
           rootEl?.addEventListener('contextmenu', onContextMenu);
         });
       });

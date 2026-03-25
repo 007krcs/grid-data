@@ -439,7 +439,7 @@ function PaginationExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    PaginationPlugin(),
+    PaginationPlugin({ pageSize: 25, pageSizeOptions: [10, 25, 50, 100] }),
   ], []);
 
   return (
@@ -627,7 +627,7 @@ function PivotingExample() {
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    GroupingPlugin(),
+    GroupingPlugin({ defaultExpanded: true }),
     AggregationPlugin(),
     PivotPlugin(),
   ], []);
@@ -635,7 +635,7 @@ function PivotingExample() {
   return (
     <ExampleWrapper
       title="Pivoting"
-      description="Pivot transforms rows into columns. Status values become column headers, with Revenue and Quantity aggregated within each cell."
+      description="Pivot transforms rows into columns. Status values become column headers, with Revenue and Quantity aggregated within each cell. Each row shows its value under the matching status column."
     >
       <GridStorm<Order>
         columns={columns}
@@ -800,6 +800,8 @@ function ClipboardExample() {
 }
 
 function RowReorderExample() {
+  const apiRef = useRef<GridApi | null>(null);
+
   const columns: ColumnDef<Employee>[] = useMemo(() => [
     { field: 'name', headerName: 'Name', width: 180 },
     { field: 'department', headerName: 'Department', width: 140 },
@@ -814,13 +816,22 @@ function RowReorderExample() {
   return (
     <ExampleWrapper
       title="Row Reorder"
-      description="Drag the row handle on the left side of each row to reorder. Visual indicators show the drop target position."
+      description="Drag the row handle (☰) on the left side of each row to reorder. Or use the buttons to move the first row."
     >
+      <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
+        <button onClick={() => apiRef.current?.dispatchCommand?.('row:move', { rowId: 'row-0', toIndex: 2 })}>
+          Move Row 1 → Position 3
+        </button>
+        <button onClick={() => apiRef.current?.dispatchCommand?.('row:swap', { rowIdA: 'row-0', rowIdB: 'row-1' })}>
+          Swap Row 1 &amp; Row 2
+        </button>
+      </div>
       <GridStorm<Employee>
         columns={columns}
         rowData={EMPLOYEES_20}
         plugins={plugins}
         height={400}
+        onGridReady={(api) => { apiRef.current = api; }}
       />
     </ExampleWrapper>
   );
@@ -1530,7 +1541,7 @@ interface TreeEmployee {
 
 function TreeDataExample() {
   const columns: ColumnDef<TreeEmployee>[] = useMemo(() => [
-    { field: 'name', headerName: 'Name', width: 220 },
+    { field: 'name', headerName: 'Name', width: 260 },
     { field: 'role', headerName: 'Role', width: 180 },
     { field: 'salary', headerName: 'Salary', width: 130 },
   ], []);
@@ -1538,19 +1549,33 @@ function TreeDataExample() {
   const treeData: TreeEmployee[] = useMemo(() => [
     { name: 'CEO Jane', role: 'CEO', salary: 250000, children: [
       { name: 'VP Engineering', role: 'VP', salary: 180000, children: [
-        { name: 'Alice', role: 'Senior Dev', salary: 120000 },
-        { name: 'Bob', role: 'Senior Dev', salary: 115000 },
-        { name: 'Charlie', role: 'Dev', salary: 95000 },
+        { name: 'Engineering Manager', role: 'Manager', salary: 145000, children: [
+          { name: 'Alice', role: 'Senior Dev', salary: 120000, children: [
+            { name: 'Dev Intern A', role: 'Intern', salary: 45000, children: [
+              { name: 'Trainee X', role: 'Trainee', salary: 35000, children: [
+                { name: 'Shadow Y', role: 'Shadow', salary: 30000 },
+              ]},
+            ]},
+          ]},
+          { name: 'Bob', role: 'Senior Dev', salary: 115000 },
+          { name: 'Charlie', role: 'Dev', salary: 95000 },
+        ]},
       ]},
       { name: 'VP Sales', role: 'VP', salary: 170000, children: [
-        { name: 'Diana', role: 'Account Exec', salary: 95000 },
-        { name: 'Eve', role: 'Account Exec', salary: 92000 },
+        { name: 'Sales Manager', role: 'Manager', salary: 135000, children: [
+          { name: 'Diana', role: 'Account Exec', salary: 95000 },
+          { name: 'Eve', role: 'Account Exec', salary: 92000 },
+        ]},
+      ]},
+      { name: 'VP Marketing', role: 'VP', salary: 160000, children: [
+        { name: 'Frank', role: 'Marketing Lead', salary: 110000 },
+        { name: 'Grace', role: 'Designer', salary: 100000 },
       ]},
     ]},
   ], []);
 
   const plugins = useMemo<GridPlugin[]>(() => [
-    TreeDataPlugin({ childrenField: 'children' }),
+    TreeDataPlugin({ childrenField: 'children', defaultExpanded: true }),
     SortingPlugin(),
   ], []);
 
@@ -1639,10 +1664,13 @@ function ChartsExample() {
 }
 
 function ConditionalFormattingExample() {
+  // Use 'condFormat' cell renderer on the columns that have formatting rules.
+  // The ConditionalFormattingPlugin registers a 'condFormat' renderer that reads
+  // computed styles from the plugin state and applies them as inline styles.
   const columns: ColumnDef<Employee>[] = useMemo(() => [
     { field: 'name', headerName: 'Name', width: 180 },
     { field: 'department', headerName: 'Department', width: 140 },
-    { field: 'salary', headerName: 'Salary', width: 140 },
+    { field: 'salary', headerName: 'Salary', width: 140, cellRenderer: 'condFormat' as any },
     { field: 'rating', headerName: 'Rating', width: 120 },
   ], []);
 

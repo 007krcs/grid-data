@@ -279,6 +279,10 @@ export class DomRenderer {
     this.root.setAttribute('aria-label', this.engine.api.getGridOption('ariaLabel') ?? 'Data Grid');
     this.root.setAttribute('aria-multiselectable', 'true');
     this.root.style.cssText = 'position:relative;overflow:hidden;width:100%;height:100%;';
+    // Expose root element on the engine and api so plugins (context menu, row reorder, etc.)
+    // can find the correct root even when multiple grids exist on the page.
+    (this.engine as any).__gsRootEl = this.root;
+    (this.engine.api as any).__gsRootEl = this.root;
 
     // Live region for screen reader announcements
     this.liveRegion = this.el('div', `${p}-live-region`);
@@ -482,8 +486,8 @@ export class DomRenderer {
       font-size:var(--gs-font-size-header,13px);
     `;
 
-    // Check for custom header renderer
-    const customRenderer = col.originalDef.headerRenderer;
+    // Check for custom header renderer (guard for dynamically generated columns)
+    const customRenderer = col.originalDef?.headerRenderer;
     if (customRenderer) {
       const sortItem = state.sortModel.find((s) => s.colId === col.colId);
       const result = customRenderer({
@@ -494,7 +498,7 @@ export class DomRenderer {
         sortIndex: col.sortIndex,
       });
       if (typeof result === 'string') {
-        if (col.originalDef.dangerouslySetInnerHTML || (result.includes('<') && result.includes('>'))) {
+        if (col.originalDef?.dangerouslySetInnerHTML || (result.includes('<') && result.includes('>'))) {
           cell.innerHTML = result;
         } else {
           cell.textContent = result;
@@ -1414,7 +1418,7 @@ export class DomRenderer {
 
     // Get value
     let value: any;
-    const valueGetter = col.originalDef.valueGetter;
+    const valueGetter = col.originalDef?.valueGetter;
     if (valueGetter) {
       try {
         value = valueGetter({
@@ -1432,7 +1436,7 @@ export class DomRenderer {
     }
 
     // Format value
-    const formatter = col.originalDef.valueFormatter;
+    const formatter = col.originalDef?.valueFormatter;
     let displayValue: string;
     if (formatter) {
       try {
@@ -1451,7 +1455,7 @@ export class DomRenderer {
     }
 
     // Apply cell renderer (function or registered name)
-    let cellRenderer = col.originalDef.cellRenderer;
+    let cellRenderer = col.originalDef?.cellRenderer;
     if (typeof cellRenderer === 'string') {
       cellRenderer = this.engine.pluginManager.getCellRenderer(cellRenderer) ?? undefined;
     }
@@ -1467,7 +1471,7 @@ export class DomRenderer {
         });
         if (typeof result === 'string') {
           // Auto-detect HTML strings (starts with < and ends with >), or honor explicit flag
-          if (col.originalDef.dangerouslySetInnerHTML || (result.includes('<') && result.includes('>'))) {
+          if (col.originalDef?.dangerouslySetInnerHTML || (result.includes('<') && result.includes('>'))) {
             cell.innerHTML = result;
           } else {
             cell.textContent = result;
@@ -1484,7 +1488,7 @@ export class DomRenderer {
     }
 
     // Apply cell classes
-    const cellClass = col.originalDef.cellClass;
+    const cellClass = col.originalDef?.cellClass;
     if (cellClass) {
       try {
         if (typeof cellClass === 'function') {
@@ -1509,7 +1513,7 @@ export class DomRenderer {
     }
 
     // Apply cell styles
-    const cellStyle = col.originalDef.cellStyle;
+    const cellStyle = col.originalDef?.cellStyle;
     if (cellStyle) {
       try {
         const styles =
@@ -1546,7 +1550,7 @@ export class DomRenderer {
     }
 
     // Tooltip: set title attribute for cell hover
-    const tooltipField = (col.originalDef as any).tooltipField;
+    const tooltipField = col.originalDef ? (col.originalDef as any).tooltipField : undefined;
     const tooltipValue = tooltipField
       ? (node.data as any)?.[tooltipField]
       : (displayValue || (value != null ? String(value) : undefined));
@@ -1752,12 +1756,10 @@ export class DomRenderer {
       'background:var(--gs-color-detail-bg,#f8fafc);height:100%;overflow:auto;' +
       'border-left:3px solid var(--gs-color-primary,#4f46e5);';
 
-    // Get cached detail data from plugin state
+    // Get detail data from the detail node's data (set by MasterDetailPlugin)
     const masterId = node.id.replace('__detail__', '');
     const masterNode = this.engine.store.getState().rowNodes.get(masterId);
-    const detailState = this.engine.store.getState().pluginState?.['master-detail'] as any;
-    const detailCache: Map<string, any[]> | undefined = detailState?.detailCache;
-    const detailData = detailCache instanceof Map ? detailCache.get(masterId) : undefined;
+    const detailData: any[] | undefined = (node.data as any)?.__detailRows;
 
     if (detailData && detailData.length > 0) {
       // Render detail data as a simple table
@@ -1923,8 +1925,8 @@ export class DomRenderer {
     cellEl.style.overflow = 'visible';
 
     // Determine editor type
-    const editorType = col.originalDef.cellEditor ?? 'text';
-    const editorParams = col.originalDef.cellEditorParams as Record<string, any> | undefined;
+    const editorType = col.originalDef?.cellEditor ?? 'text';
+    const editorParams = col.originalDef?.cellEditorParams as Record<string, any> | undefined;
 
     let editorEl: HTMLElement;
 
@@ -1953,7 +1955,7 @@ export class DomRenderer {
       select.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
         else if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: true }); }
-        else if (e.key === 'Tab') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
+        else if (e.key === 'Tab') { e.stopPropagation(); e.preventDefault(); this.tabToNextEditableCell(e.shiftKey); }
       });
 
       editorEl = select;
@@ -1976,7 +1978,7 @@ export class DomRenderer {
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
         else if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: true }); }
-        else if (e.key === 'Tab') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
+        else if (e.key === 'Tab') { e.stopPropagation(); e.preventDefault(); this.tabToNextEditableCell(e.shiftKey); }
       });
 
       editorEl = input;
@@ -1999,7 +2001,7 @@ export class DomRenderer {
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
         else if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: true }); }
-        else if (e.key === 'Tab') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
+        else if (e.key === 'Tab') { e.stopPropagation(); e.preventDefault(); this.tabToNextEditableCell(e.shiftKey); }
       });
 
       editorEl = input;
@@ -2023,6 +2025,54 @@ export class DomRenderer {
       } else if (editorEl instanceof HTMLSelectElement) {
         editorEl.focus();
       }
+    });
+  }
+
+  /** Stop current editing and move to the next/previous editable cell (Tab navigation). */
+  private tabToNextEditableCell(reverse = false): void {
+    const state = this.engine.store.getState();
+    if (!state.editing) {
+      this.engine.commandBus.dispatch('editing:stop', { cancel: false });
+      return;
+    }
+
+    const { rowId, colId } = state.editing;
+    // Build a flat list of all [rowId, colId] pairs for editable cells
+    const editablePairs: Array<{ rowId: string; colId: string }> = [];
+    for (const id of state.displayedRowIds) {
+      const node = state.rowNodes.get(id);
+      if (!node || node.group || node.detail) continue;
+      for (const col of state.columns) {
+        if (col.hide) continue;
+        if (col.originalDef?.editable) {
+          editablePairs.push({ rowId: id, colId: col.colId });
+        }
+      }
+    }
+
+    // Find current position
+    const currentIndex = editablePairs.findIndex(
+      (p) => p.rowId === rowId && p.colId === colId,
+    );
+
+    // Stop editing first
+    this.engine.commandBus.dispatch('editing:stop', { cancel: false });
+
+    if (currentIndex === -1 || editablePairs.length < 2) return;
+
+    const nextIndex = reverse
+      ? (currentIndex - 1 + editablePairs.length) % editablePairs.length
+      : (currentIndex + 1) % editablePairs.length;
+
+    const next = editablePairs[nextIndex];
+    if (!next) return;
+
+    // Start editing the next cell after a microtask (allows stop to complete)
+    queueMicrotask(() => {
+      this.engine.commandBus.dispatch('editing:start', {
+        rowId: next.rowId,
+        colId: next.colId,
+      });
     });
   }
 

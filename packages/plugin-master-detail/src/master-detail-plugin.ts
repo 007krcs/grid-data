@@ -156,24 +156,40 @@ export function MasterDetailPlugin(options: MasterDetailOptions): GridPlugin {
 
         // Check cache first
         if (detailState.detailCache.has(masterRowId)) {
+          // Update detail node's data from cache
+          const detailId = detailIdFor(masterRowId);
+          const detailNode = ctx.store.getState().rowNodes.get(detailId);
+          if (detailNode) {
+            detailNode.data = { __detailRows: detailState.detailCache.get(masterRowId) };
+            detailNode.version = (detailNode.version || 0) + 1;
+          }
           return;
         }
 
         // Fetch data
+        const storeDetailData = (rowData: any[]) => {
+          detailState.detailCache.set(masterRowId, rowData);
+          // Also store on the detail RowNode for renderer access
+          const detailId = detailIdFor(masterRowId);
+          const detailNode = ctx.store.getState().rowNodes.get(detailId);
+          if (detailNode) {
+            detailNode.data = { __detailRows: rowData };
+            detailNode.version = (detailNode.version || 0) + 1;
+          }
+        };
+
         const result = getDetailRowData({
           node: masterNode,
           data: masterNode.data,
-          successCallback: (rowData: any[]) => {
-            detailState.detailCache.set(masterRowId, rowData);
-          },
+          successCallback: storeDetailData,
         });
 
         // Handle both sync return and Promise
         if (result && typeof (result as Promise<any[]>).then === 'function') {
           const data = await (result as Promise<any[]>);
-          detailState.detailCache.set(masterRowId, data);
+          storeDetailData(data);
         } else if (Array.isArray(result)) {
-          detailState.detailCache.set(masterRowId, result);
+          storeDetailData(result);
         }
       }
 
@@ -193,6 +209,11 @@ export function MasterDetailPlugin(options: MasterDetailOptions): GridPlugin {
           if (detailState.expandedMasterIds.has(payload.nodeId)) return;
 
           detailState.expandedMasterIds.add(payload.nodeId);
+
+          // Bump master node version so renderer updates the expand chevron
+          const masterNode = ctx.store.getState().rowNodes.get(payload.nodeId);
+          if (masterNode) masterNode.version = (masterNode.version || 0) + 1;
+
           applyDetailRows(); // Show detail row immediately (may have cached data)
 
           // Fetch data asynchronously, then re-apply to show loaded data
@@ -216,6 +237,10 @@ export function MasterDetailPlugin(options: MasterDetailOptions): GridPlugin {
           if (!detailState.expandedMasterIds.has(payload.nodeId)) return;
 
           detailState.expandedMasterIds.delete(payload.nodeId);
+
+          // Bump master node version so renderer updates the expand chevron
+          const masterNode = ctx.store.getState().rowNodes.get(payload.nodeId);
+          if (masterNode) masterNode.version = (masterNode.version || 0) + 1;
 
           // Remove detail RowNode from map unless keeping detail rows cached
           if (!keepDetailRows) {

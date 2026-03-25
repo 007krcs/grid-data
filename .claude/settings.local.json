@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm --filter @gridstorm/plugin-tree-data build)",
+      "Bash(pnpm --filter @gridstorm/dom-renderer build)",
+      "Bash(npx vite:*)",
+      "Bash(pnpm --filter @gridstorm/plugin-row-reorder build)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(pnpm --filter @gridstorm/plugin-aggregation build)",
+      "Bash(pnpm --filter @gridstorm/plugin-pivoting build)",
+      "Bash(pnpm --filter @gridstorm/plugin-master-detail build)",
+      "Bash(node -e \":*)",
+      "Bash(pnpm -r --filter='./packages/*' run build)",
+      "Bash(pnpm --filter @gridstorm/plugin-pagination run build)",
+      "Bash(pnpm --filter @gridstorm/dom-renderer run build)",
+      "Bash(pnpm --filter @gridstorm/plugin-pivoting run build)",
+      "Bash(pnpm --filter @gridstorm/plugin-context-menu run build)",
+      "Bash(pnpm --filter @gridstorm/plugin-row-reorder run build)",
+      "Bash(pnpm --filter @gridstorm/plugin-tree-data run build)",
+      "Bash(pnpm --filter @gridstorm/react run build)",
+      "Bash(pnpm run:*)",
+      "Bash(pnpm test:run)",
+      "Bash(pnpm --filter @gridstorm/plugin-pagination --filter @gridstorm/dom-renderer --filter @gridstorm/plugin-pivoting --filter @gridstorm/plugin-context-menu --filter @gridstorm/plugin-row-reorder run build)",
+      "Bash(pnpm --filter @gridstorm/plugin-pagination build)",
+      "Bash(pnpm --filter @gridstorm/plugin-context-menu build)",
+      "Bash(npx vitest:*)"
+    ]
+  }
+}

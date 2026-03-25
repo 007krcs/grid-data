@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-aggregation",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "GridStorm aggregation plugin — aggregate values for grouped rows",
   "type": "module",
   "main": "./dist/index.cjs",

@@ -1,6 +1,6 @@
 {
   "name": "gridstorm",
-  "version": "0.2.0",
+  "version": "0.1.2",
   "description": "GridStorm — The complete enterprise data grid. One package, everything included: core engine, 32 plugins (incl. Formula Engine, Time Travel, Cell Range, Validation), DOM renderer, theming, i18n, and PDF toolkit.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -101,7 +101,11 @@
     "react-dom": ">=18.0.0"
   },
   "peerDependenciesMeta": {
-    "react": { "optional": true },
-    "react-dom": { "optional": true }
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
   }
 }

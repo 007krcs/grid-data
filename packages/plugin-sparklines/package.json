@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-sparklines",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "GridStorm sparklines plugin — inline SVG sparkline cell renderers (line, bar, area, win-loss)",
   "type": "module",
   "main": "./dist/index.cjs",

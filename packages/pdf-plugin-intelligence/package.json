@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/pdf-plugin-intelligence",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "GridStorm PDF document intelligence plugin — classify, extract, and summarize documents",
   "type": "module",
   "main": "./dist/index.cjs",

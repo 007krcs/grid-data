@@ -181,9 +181,9 @@ export function RowPinningPlugin(options: RowPinningPluginOptions = {}): GridPlu
         (payload: { rowIds: string[] }) => {
           const idsToUnpin = new Set(payload.rowIds);
 
-          ctx.setState<RowPinningState>(STATE_KEY, (prev) => ({
-            pinnedTopRows: prev.pinnedTopRows.filter((r) => !idsToUnpin.has(r.id)),
-            pinnedBottomRows: prev.pinnedBottomRows.filter((r) => !idsToUnpin.has(r.id)),
+          ctx.setState<RowPinningState>(STATE_KEY, (prev: RowPinningState) => ({
+            pinnedTopRows: prev.pinnedTopRows.filter((r: PinnedRowNode) => !idsToUnpin.has(r.id)),
+            pinnedBottomRows: prev.pinnedBottomRows.filter((r: PinnedRowNode) => !idsToUnpin.has(r.id)),
           }));
           emitChanged();
         },
@@ -193,7 +193,7 @@ export function RowPinningPlugin(options: RowPinningPluginOptions = {}): GridPlu
       const unregUnpinAll = ctx.commandBus.registerHandler(
         'rowPinning:unpinAll',
         (_payload: unknown) => {
-          ctx.setState<RowPinningState>(STATE_KEY, (_prev) => ({
+          ctx.setState<RowPinningState>(STATE_KEY, (_prev: RowPinningState) => ({
             pinnedTopRows: [],
             pinnedBottomRows: [],
           }));
@@ -213,7 +213,7 @@ export function RowPinningPlugin(options: RowPinningPluginOptions = {}): GridPlu
           const currentState = ctx.getState<RowPinningState>(STATE_KEY);
           if (newTopRows.length + currentState.pinnedBottomRows.length > maxPinnedRows) return;
 
-          ctx.setState<RowPinningState>(STATE_KEY, (prev) => ({
+          ctx.setState<RowPinningState>(STATE_KEY, (prev: RowPinningState) => ({
             ...prev,
             pinnedTopRows: newTopRows,
           }));
@@ -233,7 +233,7 @@ export function RowPinningPlugin(options: RowPinningPluginOptions = {}): GridPlu
           const currentState = ctx.getState<RowPinningState>(STATE_KEY);
           if (currentState.pinnedTopRows.length + newBottomRows.length > maxPinnedRows) return;
 
-          ctx.setState<RowPinningState>(STATE_KEY, (prev) => ({
+          ctx.setState<RowPinningState>(STATE_KEY, (prev: RowPinningState) => ({
             ...prev,
             pinnedBottomRows: newBottomRows,
           }));

@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/svelte",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "GridStorm Svelte 5 adapter — reactive data grid component for Svelte",
   "type": "module",
   "main": "./dist/index.cjs",

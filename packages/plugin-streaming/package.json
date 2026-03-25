@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-streaming",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "GridStorm streaming plugin — real-time live data updates with change highlighting",
   "type": "module",
   "main": "./dist/index.cjs",

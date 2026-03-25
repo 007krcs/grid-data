@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "GridStorm core engine — framework-agnostic data grid state management",
   "type": "module",
   "main": "./dist/index.cjs",

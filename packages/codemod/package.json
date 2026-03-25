@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/codemod",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Codemod CLI to migrate from AG Grid to GridStorm",
   "type": "module",
   "bin": {

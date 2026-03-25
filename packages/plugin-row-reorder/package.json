@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-row-reorder",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "GridStorm row reorder plugin — drag and drop row reordering",
   "type": "module",
   "main": "./dist/index.cjs",

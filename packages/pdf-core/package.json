@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/pdf-core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Headless PDF document engine with command bus, undo/redo, and plugin system",
   "license": "MIT",
   "type": "module",

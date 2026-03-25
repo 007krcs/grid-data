@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-column-resize",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "GridStorm column resize plugin — drag-to-resize with visual indicators",
   "type": "module",
   "main": "./dist/index.cjs",

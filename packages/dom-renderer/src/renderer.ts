@@ -1859,16 +1859,22 @@ export class DomRenderer {
       'accent-color:var(--gs-color-accent,#3b82f6);';
 
     // Stop propagation to prevent row click selection conflict
+    // Store last click event for modifier keys
+    let lastCheckboxClickEvent: MouseEvent | null = null;
     checkbox.addEventListener('click', (e) => {
       e.stopPropagation();
+      lastCheckboxClickEvent = e;
     });
 
     checkbox.addEventListener('change', () => {
+      const e = lastCheckboxClickEvent;
       this.engine.commandBus.dispatch('selection:select', {
         rowId: node.id,
         multiSelect: true,
+        rangeSelect: e?.shiftKey ?? false,
         source: 'checkbox',
       });
+      lastCheckboxClickEvent = null;
     });
 
     cell.appendChild(checkbox);

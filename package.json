@@ -31,7 +31,9 @@
     "version": "changeset version",
     "publish": "pnpm -r --filter='./packages/*' run build && changeset publish",
     "publish:alpha": "pnpm -r --filter='./packages/*' run build && changeset publish --tag alpha",
-    "build:examples": "node examples/build-all.cjs"
+    "build:examples": "node examples/build-all.cjs",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",

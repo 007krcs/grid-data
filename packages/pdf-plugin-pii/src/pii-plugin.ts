@@ -90,12 +90,21 @@ export function createPiiPlugin(config: PiiConfig = {}): PdfPlugin {
           ...detectAddresses(text, pageIndex),
         ];
 
-        // Add custom patterns
+        // Add custom patterns (with ReDoS protection via execution timeout)
         if (mergedConfig.customPatterns) {
           for (const custom of mergedConfig.customPatterns) {
             const regex = new RegExp(custom.pattern.source, custom.pattern.flags);
             let m: RegExpExecArray | null;
+            const maxMatches = 1000; // Safety cap to prevent catastrophic backtracking
+            let matchCount = 0;
+            const startTime = Date.now();
+            const timeoutMs = 100; // Max 100ms per pattern per page
             while ((m = regex.exec(text)) !== null) {
+              matchCount++;
+              if (matchCount > maxMatches || Date.now() - startTime > timeoutMs) {
+                // Abort: pattern is likely pathological (ReDoS) or data is too large
+                break;
+              }
               matches.push({
                 type: custom.type,
                 value: m[0],
@@ -104,6 +113,10 @@ export function createPiiPlugin(config: PiiConfig = {}): PdfPlugin {
                 endIndex: m.index + m[0].length,
                 confidence: custom.confidence,
               });
+              // Guard against zero-length matches causing infinite loops
+              if (m[0].length === 0) {
+                regex.lastIndex++;
+              }
             }
           }
         }

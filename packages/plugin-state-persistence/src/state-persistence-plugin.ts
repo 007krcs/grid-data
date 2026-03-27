@@ -32,6 +32,8 @@ export interface ColumnStateEntry {
  * Complete serializable snapshot of grid state for persistence.
  */
 export interface GridStateSnapshot {
+  /** Schema version for migration support. Automatically set on save. */
+  schemaVersion?: number;
   columnState: ColumnStateEntry[];
   sortModel: SortModelItem[];
   filterModel: Record<string, FilterModel>;
@@ -39,6 +41,15 @@ export interface GridStateSnapshot {
   columnOrder?: string[];
   scrollPosition?: { top: number; left: number };
 }
+
+/**
+ * Migration function that transforms a snapshot from one version to the next.
+ * Return the transformed snapshot for the target version.
+ */
+export type StateMigration = (snapshot: Partial<GridStateSnapshot>) => Partial<GridStateSnapshot>;
+
+/** Current schema version for persisted state. */
+const CURRENT_SCHEMA_VERSION = 1;
 
 /**
  * Configuration options for the StatePersistencePlugin.
@@ -56,6 +67,23 @@ export interface StatePersistenceOptions {
   include?: (keyof GridStateSnapshot)[];
   /** Blacklist of state keys to exclude from persistence. */
   exclude?: (keyof GridStateSnapshot)[];
+  /**
+   * Migration functions keyed by the version they migrate FROM.
+   * Each function transforms a snapshot from version N to version N+1.
+   *
+   * @example
+   * ```ts
+   * migrations: {
+   *   0: (snapshot) => ({ ...snapshot, columnOrder: [] }), // v0 -> v1
+   * }
+   * ```
+   */
+  migrations?: Record<number, StateMigration>;
+  /**
+   * Called when stored state cannot be parsed or migrated.
+   * Useful for logging or analytics. By default, corrupt state is silently skipped.
+   */
+  onRestoreError?: (error: Error, rawData: string) => void;
 }
 
 // ─── Default localStorage adapter ───
@@ -163,6 +191,8 @@ export function StatePersistencePlugin(options: StatePersistenceOptions = {}): G
     debounceMs = 500,
     include,
     exclude,
+    migrations,
+    onRestoreError,
   } = options;
 
   const storage: StorageAdapter = customStorage ?? createLocalStorageAdapter();
@@ -190,6 +220,7 @@ export function StatePersistencePlugin(options: StatePersistenceOptions = {}): G
         const columnOrder = state.columns.map((col) => col.colId);
 
         const snapshot: GridStateSnapshot = {
+          schemaVersion: CURRENT_SCHEMA_VERSION,
           columnState,
           sortModel: state.sortModel,
           filterModel: state.filterModel,
@@ -228,8 +259,32 @@ export function StatePersistencePlugin(options: StatePersistenceOptions = {}): G
         let snapshot: Partial<GridStateSnapshot>;
         try {
           snapshot = JSON.parse(raw) as Partial<GridStateSnapshot>;
-        } catch {
-          return; // Corrupt data — skip silently
+        } catch (err) {
+          const error = err instanceof Error ? err : new Error(String(err));
+          if (onRestoreError) {
+            onRestoreError(error, raw);
+          }
+          return;
+        }
+
+        // Apply migrations if the stored version is older than current
+        const storedVersion = snapshot.schemaVersion ?? 0;
+        if (storedVersion < CURRENT_SCHEMA_VERSION && migrations) {
+          try {
+            for (let v = storedVersion; v < CURRENT_SCHEMA_VERSION; v++) {
+              const migrate = migrations[v];
+              if (migrate) {
+                snapshot = migrate(snapshot);
+              }
+            }
+            snapshot.schemaVersion = CURRENT_SCHEMA_VERSION;
+          } catch (err) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            if (onRestoreError) {
+              onRestoreError(error, raw);
+            }
+            return;
+          }
         }
 
         applySnapshot(snapshot);

@@ -9,6 +9,7 @@ import {
   shallowRef,
   onMounted,
   onBeforeUnmount,
+  onErrorCaptured,
   watch,
   provide,
   h,
@@ -185,9 +186,24 @@ export const GridStorm = defineComponent({
       gridContext.value = null;
     }
 
+    // ── Error Boundary ──
+    const error = ref<Error | null>(null);
+
+    onErrorCaptured((err: Error) => {
+      error.value = err;
+      console.error('[GridStorm Vue] Error captured:', err);
+      // Return false to stop the error from propagating further
+      return false;
+    });
+
     // ── Lifecycle ──
     onMounted(() => {
-      initGrid();
+      try {
+        initGrid();
+      } catch (err) {
+        error.value = err instanceof Error ? err : new Error(String(err));
+        console.error('[GridStorm Vue] Initialization error:', err);
+      }
     });
 
     onBeforeUnmount(() => {

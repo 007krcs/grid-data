@@ -1284,6 +1284,9 @@ export class DomRenderer {
       const isExpanded = nextId?.startsWith('__detail__');
       arrow.textContent = isExpanded ? '\u25BC' : '\u25B6';
       arrow.style.cssText = 'font-size:10px;color:var(--gs-color-muted,#64748b);transition:transform 150ms;';
+      arrow.setAttribute('role', 'button');
+      arrow.setAttribute('aria-expanded', String(!!isExpanded));
+      arrow.setAttribute('aria-label', isExpanded ? 'Collapse detail' : 'Expand detail');
       expandCell.appendChild(arrow);
       expandCell.addEventListener('pointerdown', (e) => {
         e.stopPropagation();
@@ -1307,6 +1310,9 @@ export class DomRenderer {
       const chevron = document.createElement('span');
       chevron.textContent = node.expanded ? '\u25BC' : '\u25B6';
       chevron.style.cssText = 'font-size:10px;color:var(--gs-color-muted,#64748b);';
+      chevron.setAttribute('role', 'button');
+      chevron.setAttribute('aria-expanded', String(!!node.expanded));
+      chevron.setAttribute('aria-label', node.expanded ? 'Collapse node' : 'Expand node');
       treeCell.appendChild(chevron);
       const treeNodeId = node.id;
       treeCell.addEventListener('pointerdown', (e) => {
@@ -1401,6 +1407,7 @@ export class DomRenderer {
     const cell = document.createElement('div');
     cell.setAttribute('role', 'gridcell');
     cell.setAttribute('aria-colindex', String(colIndex + 1));
+    cell.setAttribute('aria-readonly', String(col.originalDef?.editable !== true));
     cell.setAttribute('data-col-id', col.colId);
     cell.id = `gs-cell-${node.id}-${col.colId}`;
     cell.className = `${this.prefix}-cell`;
@@ -1631,15 +1638,18 @@ export class DomRenderer {
   }
 
   private recycleRow(el: HTMLElement): void {
-    el.textContent = '';
-    el.className = '';
-    el.removeAttribute('style');
-    el.removeAttribute('data-row-id');
-    el.removeAttribute('aria-rowindex');
-    el.removeAttribute('aria-selected');
+    // Clone-replace to detach all event listeners from the element and its children.
+    // This prevents memory leaks from stale closures when rows are pooled and reused.
+    const clean = el.cloneNode(false) as HTMLElement;
+    clean.textContent = '';
+    clean.className = '';
+    clean.removeAttribute('style');
+    clean.removeAttribute('data-row-id');
+    clean.removeAttribute('aria-rowindex');
+    clean.removeAttribute('aria-selected');
     // Cap the pool to prevent unbounded memory growth
     if (this.rowPool.length < 100) {
-      this.rowPool.push(el);
+      this.rowPool.push(clean);
     }
   }
 

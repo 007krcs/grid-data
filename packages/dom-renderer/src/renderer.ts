@@ -498,7 +498,7 @@ export class DomRenderer {
         sortIndex: col.sortIndex,
       });
       if (typeof result === 'string') {
-        if (col.originalDef?.dangerouslySetInnerHTML || (result.includes('<') && result.includes('>'))) {
+        if (col.originalDef?.dangerouslySetInnerHTML === true) {
           cell.innerHTML = result;
         } else {
           cell.textContent = result;
@@ -1471,7 +1471,7 @@ export class DomRenderer {
         });
         if (typeof result === 'string') {
           // Auto-detect HTML strings (starts with < and ends with >), or honor explicit flag
-          if (col.originalDef?.dangerouslySetInnerHTML || (result.includes('<') && result.includes('>'))) {
+          if (col.originalDef?.dangerouslySetInnerHTML === true) {
             cell.innerHTML = result;
           } else {
             cell.textContent = result;

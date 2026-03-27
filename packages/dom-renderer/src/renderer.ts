@@ -237,6 +237,68 @@ export class DomRenderer {
     }
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // ── Runtime Theme API ──
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * Switch the grid theme at runtime without re-creating the grid.
+   * Accepts 'light', 'dark', 'high-contrast', or any custom theme name.
+   */
+  setTheme(theme: string): void {
+    if (!this.root) return;
+    this.root.setAttribute('data-theme', theme);
+    this.container?.setAttribute('data-theme', theme);
+  }
+
+  /** Get the currently active theme name, or null if no theme is set. */
+  getTheme(): string | null {
+    return this.root?.getAttribute('data-theme') ?? null;
+  }
+
+  /**
+   * Switch the density mode at runtime.
+   * Accepts 'compact', 'comfortable', or 'spacious'.
+   */
+  setDensity(density: string): void {
+    if (!this.root) return;
+    this.root.setAttribute('data-density', density);
+    this.container?.setAttribute('data-density', density);
+  }
+
+  /** Get the currently active density mode, or null if none is set. */
+  getDensity(): string | null {
+    return this.root?.getAttribute('data-density') ?? null;
+  }
+
+  /**
+   * Enable automatic dark/light theme based on the user's OS preference.
+   * Uses `prefers-color-scheme` media query. Returns an unsubscribe function.
+   *
+   * @param lightTheme - Theme name for light mode. Default: 'light'.
+   * @param darkTheme - Theme name for dark mode. Default: 'dark'.
+   */
+  autoDetectTheme(lightTheme = 'light', darkTheme = 'dark'): () => void {
+    if (typeof window === 'undefined' || !window.matchMedia) {
+      return () => {};
+    }
+
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+      this.setTheme(e.matches ? darkTheme : lightTheme);
+    };
+
+    // Apply immediately
+    handler(mql);
+
+    // Listen for changes
+    mql.addEventListener('change', handler as EventListener);
+
+    return () => {
+      mql.removeEventListener('change', handler as EventListener);
+    };
+  }
+
   /** Unmount and clean up all DOM and subscriptions. Safe to call on the server. */
   destroy(): void {
     for (const unsub of this.unsubscribers) unsub();

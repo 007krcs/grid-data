@@ -101,6 +101,53 @@ jobs:
             fi
           done
 
+  bundle-size:
+    name: Bundle Size Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Measure bundle sizes
+        run: |
+          echo "## Bundle Size Report (PR)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Raw | Gzipped |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-----|---------|" >> $GITHUB_STEP_SUMMARY
+          for pkg in packages/*/dist; do
+            if [ -d "$pkg" ] && ls "$pkg"/*.js 1>/dev/null 2>&1; then
+              name=$(basename $(dirname $pkg))
+              raw=$(wc -c < "$pkg"/index.js 2>/dev/null || echo "0")
+              gz=$(gzip -c "$pkg"/index.js 2>/dev/null | wc -c || echo "0")
+              raw_kb=$(echo "scale=1; $raw/1024" | bc 2>/dev/null || echo "?")
+              gz_kb=$(echo "scale=1; $gz/1024" | bc 2>/dev/null || echo "?")
+              echo "| $name | ${raw_kb}KB | ${gz_kb}KB |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+      - name: Check core bundle size limit
+        run: |
+          CORE_SIZE=$(wc -c < packages/core/dist/index.js 2>/dev/null || echo "0")
+          MAX_SIZE=51200  # 50KB limit
+          if [ "$CORE_SIZE" -gt "$MAX_SIZE" ]; then
+            echo "::error::Core bundle size (${CORE_SIZE} bytes) exceeds limit (${MAX_SIZE} bytes)"
+            exit 1
+          fi
+          echo "Core bundle size: ${CORE_SIZE} bytes (limit: ${MAX_SIZE} bytes)"
+
   benchmark:
     name: Benchmarks
     runs-on: ubuntu-latest

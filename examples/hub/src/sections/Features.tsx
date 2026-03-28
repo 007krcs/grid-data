@@ -18,61 +18,50 @@ const features: Feature[] = [
   },
   {
     icon: 'puzzle',
-    title: 'Plugin Architecture',
-    description: '19+ composable plugins. Use only what you need.',
+    title: '35 Composable Plugins',
+    description: 'Five tiers from Core to Enterprise Differentiators. Use only what you need.',
     docsSlug: 'plugins/plugin-system',
     demoLink: null,
   },
   {
+    icon: 'shield',
+    title: 'WCAG 2.1 AA Accessibility',
+    description: 'Full keyboard nav, ARIA roles, live regions, skip-nav, high-contrast. Legal procurement gate — free.',
+    docsSlug: 'plugins/a11y',
+    demoLink: '/feature-showcase/',
+  },
+  {
+    icon: 'calculator',
+    title: 'Excel Formula Engine',
+    description: '42 Excel-compatible functions: SUMIF, VLOOKUP, XLOOKUP, IFS, named ranges, array formulas.',
+    docsSlug: 'plugins/formula-engine',
+    demoLink: '/feature-showcase/',
+  },
+  {
+    icon: 'clipboard',
+    title: 'Excel Copy/Paste',
+    description: 'Range-aware copy, type coercion, paste validation, formula-aware paste, undo integration.',
+    docsSlug: 'plugins/clipboard-pro',
+    demoLink: '/feature-showcase/',
+  },
+  {
     icon: 'palette',
     title: 'CSS Theming',
-    description:
-      'Light, dark, high-contrast. Runtime-switchable via CSS variables.',
+    description: 'Light, dark, high-contrast. Runtime-switchable via CSS variables.',
     docsSlug: 'core-concepts/theming',
     demoLink: '/feature-showcase/',
   },
   {
     icon: 'code',
     title: 'TypeScript Native',
-    description: 'Built in TypeScript with strict mode. Full type inference.',
+    description: 'Built in TypeScript with strict mode. Full type inference throughout.',
     docsSlug: 'getting-started/introduction',
-    demoLink: null,
-  },
-  {
-    icon: 'file-pdf',
-    title: 'WASM PDF Renderer',
-    description:
-      'Rust-compiled parser with GPU-accelerated canvas rendering.',
-    docsSlug: null,
-    demoLink: '/pdf-viewer/',
-  },
-  {
-    icon: 'settings',
-    title: 'Worker Pool',
-    description: 'Parallel page rendering across Web Worker threads.',
-    docsSlug: null,
-    demoLink: null,
-  },
-  {
-    icon: 'lock',
-    title: 'Encryption',
-    description: 'AES-256 encryption/decryption. Password-protected PDFs.',
-    docsSlug: null,
-    demoLink: null,
-  },
-  {
-    icon: 'save',
-    title: 'Incremental Save',
-    description:
-      'Append-only saves. No full re-serialization of the document.',
-    docsSlug: null,
     demoLink: null,
   },
   {
     icon: 'search',
     title: 'Sort & Filter',
-    description:
-      'Multi-column sort, quick filter, per-column floating filters.',
+    description: 'Multi-column sort, quick filter, per-column floating filters.',
     docsSlug: 'plugins/sorting',
     demoLink: '/feature-showcase/',
   },
@@ -85,27 +74,39 @@ const features: Feature[] = [
   },
   {
     icon: 'bar-chart',
-    title: 'Row Grouping',
-    description:
-      'Multi-level grouping with expand/collapse and aggregation.',
+    title: 'Row Grouping & Pivoting',
+    description: 'Multi-level grouping, aggregation, pivoting, master-detail, tree data.',
     docsSlug: 'plugins/grouping',
     demoLink: '/feature-showcase/',
   },
   {
-    icon: 'move',
-    title: 'Drag & Drop',
-    description: 'Reorder columns and rows with visual drag indicators.',
-    docsSlug: 'plugins/column-reorder',
+    icon: 'clock',
+    title: 'Time Travel (Undo/Redo)',
+    description: 'Snapshot-based undo/redo. Branching history. Integrates with paste and editing.',
+    docsSlug: 'plugins/time-travel',
     demoLink: '/feature-showcase/',
+  },
+  {
+    icon: 'file-pdf',
+    title: 'WASM PDF Toolkit',
+    description: 'Rust-powered renderer, 13 annotation types, digital signatures, AES-256 encryption.',
+    docsSlug: 'guides/pdf-toolkit',
+    demoLink: '/pdf-viewer/',
   },
 ];
 
 export function Features() {
   return (
     <div className="features-section">
-      <div className="section-header" style={{ marginBottom: 16 }}>
-        <h2>Core Capabilities</h2>
-      </div>
+      <div className="section-label">Capabilities</div>
+      <h2 className="section-title">
+        Everything AG Grid Enterprise charges{' '}
+        <span className="section-accent">$999/dev/yr for</span>
+      </h2>
+      <p className="section-sub">
+        35 composable plugins covering virtual scroll, WCAG 2.1 AA, Excel formulas,
+        Excel copy/paste, row grouping, time travel, and more — all open-source.
+      </p>
       <div className="features-grid">
         {features.map((feat) => (
           <div key={feat.title} className="feature-cell">

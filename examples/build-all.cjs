@@ -1,20 +1,27 @@
 /**
  * Build all GridStorm example apps into a combined output folder.
  * Cross-platform Node.js replacement for build-all.sh.
- * Used by Vercel deployment — outputs to dist/ directory.
+ * Used by Vercel deployment.
+ *
+ * Vercel project Root Directory is set to "examples/analytics-explorer".
+ * Vercel resolves outputDirectory ("dist") relative to that Root Directory,
+ * so we output to examples/analytics-explorer/dist/.
  */
 const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-const SCRIPT_DIR = __dirname;
-const ROOT_DIR = path.dirname(SCRIPT_DIR);
+const SCRIPT_DIR = __dirname; // examples/
+const ROOT_DIR = path.dirname(SCRIPT_DIR); // repo root
 
-// Output to dist/ at the project root (standard Vercel output directory)
-const OUT_DIR = path.join(ROOT_DIR, 'dist');
+// Vercel Root Directory = examples/analytics-explorer
+// outputDirectory = "dist" resolves to examples/analytics-explorer/dist
+const VERCEL_ROOT = path.join(SCRIPT_DIR, 'analytics-explorer');
+const OUT_DIR = path.join(VERCEL_ROOT, 'dist');
 
 console.log('Building GridStorm demos...');
-console.log('Root:', ROOT_DIR);
+console.log('Repo root:', ROOT_DIR);
+console.log('Vercel root dir:', VERCEL_ROOT);
 console.log('Output:', OUT_DIR);
 console.log('CWD:', process.cwd());
 

@@ -257,12 +257,18 @@ importers:
       '@gridstorm/dom-renderer':
         specifier: workspace:*
         version: link:../../packages/dom-renderer
+      '@gridstorm/plugin-a11y':
+        specifier: workspace:*
+        version: link:../../packages/plugin-a11y
       '@gridstorm/plugin-aggregation':
         specifier: workspace:*
         version: link:../../packages/plugin-aggregation
       '@gridstorm/plugin-clipboard':
         specifier: workspace:*
         version: link:../../packages/plugin-clipboard
+      '@gridstorm/plugin-clipboard-pro':
+        specifier: workspace:*
+        version: link:../../packages/plugin-clipboard-pro
       '@gridstorm/plugin-column-pinning':
         specifier: workspace:*
         version: link:../../packages/plugin-column-pinning
@@ -281,6 +287,12 @@ importers:
       '@gridstorm/plugin-filtering':
         specifier: workspace:*
         version: link:../../packages/plugin-filtering
+      '@gridstorm/plugin-formula':
+        specifier: workspace:*
+        version: link:../../packages/plugin-formula
+      '@gridstorm/plugin-formula-engine':
+        specifier: workspace:*
+        version: link:../../packages/plugin-formula-engine
       '@gridstorm/plugin-grouping':
         specifier: workspace:*
         version: link:../../packages/plugin-grouping

@@ -144,13 +144,17 @@ describe('ErrorHandler', () => {
   it('should clear all handlers on clear()', () => {
     const handler = new ErrorHandler();
     const spy = vi.fn();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     handler.onError(spy);
     handler.setSuppressConsole(true);
     handler.clear();
 
+    // clear() resets suppressConsole to false, so console.error would fire — mock it
     handler.report(new Error('test'), { source: 'command', severity: 'error' });
     expect(spy).not.toHaveBeenCalled();
+
+    consoleSpy.mockRestore();
   });
 
   it('should return a singleton via getGlobalErrorHandler()', () => {

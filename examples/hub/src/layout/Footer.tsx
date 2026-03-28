@@ -1,39 +1,118 @@
 import { Icon } from '../icons/Icon';
 
+const FOOTER_COLS = [
+  {
+    heading: 'Product',
+    links: [
+      { label: 'Data Grid',       href: '#/docs/core-concepts/architecture' },
+      { label: 'PDF Toolkit',     href: '#/docs/guides/pdf-toolkit' },
+      { label: 'AI & MCP',        href: '#/docs/core-concepts/architecture' },
+      { label: 'Plugin System',   href: '#/docs/plugins/plugin-system' },
+      { label: 'Changelog',       href: '#/docs/getting-started/introduction' },
+    ],
+  },
+  {
+    heading: 'Documentation',
+    links: [
+      { label: 'Quick Start',     href: '#/docs/getting-started/quick-start' },
+      { label: 'API Reference',   href: '#/docs/api/grid-api' },
+      { label: 'Column Defs',     href: '#/docs/api/column-definitions' },
+      { label: 'Migration Guide', href: '#/docs/guides/migration-ag-grid' },
+      { label: 'Contributing',    href: 'https://github.com/007krcs/grid-data/blob/main/CONTRIBUTING.md' },
+    ],
+  },
+  {
+    heading: 'Frameworks',
+    links: [
+      { label: 'React',   href: '#/docs/framework-guides/react' },
+      { label: 'Vue',     href: '#/docs/framework-guides/vue' },
+      { label: 'Angular', href: '#/docs/framework-guides/angular' },
+      { label: 'Svelte',  href: '#/docs/framework-guides/svelte' },
+      { label: 'Vanilla', href: '#/docs/framework-guides/vanilla' },
+    ],
+  },
+  {
+    heading: 'Demos',
+    links: [
+      { label: 'Feature Showcase',   href: '/feature-showcase/' },
+      { label: 'Playground',         href: '/playground/' },
+      { label: 'Financial Trading',  href: '/financial-trading/' },
+      { label: 'Analytics Explorer', href: '/analytics-explorer/' },
+      { label: 'PDF Viewer',         href: '/pdf-viewer/' },
+    ],
+  },
+  {
+    heading: 'Community',
+    links: [
+      { label: 'GitHub',             href: 'https://github.com/007krcs/grid-data' },
+      { label: 'Issues',             href: 'https://github.com/007krcs/grid-data/issues' },
+      { label: 'Discussions',        href: 'https://github.com/007krcs/grid-data/discussions' },
+      { label: 'Security Policy',    href: 'https://github.com/007krcs/grid-data/blob/main/SECURITY.md' },
+      { label: 'Code of Conduct',    href: 'https://github.com/007krcs/grid-data/blob/main/CODE_OF_CONDUCT.md' },
+    ],
+  },
+];
+
 export function Footer() {
+  const isExternal = (href: string) => href.startsWith('http') || href.startsWith('/');
+
   return (
-    <footer className="hub-footer">
-      <div className="hub-footer-links">
-        <a
-          href="https://github.com/007krcs/grid-data"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hub-footer-link"
-        >
-          <Icon name="github" size={16} />
-          <span>GitHub</span>
-        </a>
-        <a href="#/docs" className="hub-footer-link">
-          <Icon name="book-open" size={16} />
-          <span>Documentation</span>
-        </a>
-        <a
-          href="/playground/"
-          className="hub-footer-link"
-        >
-          <Icon name="play" size={16} />
-          <span>Playground</span>
-        </a>
-        <a
-          href="/pdf-viewer/"
-          className="hub-footer-link"
-        >
-          <Icon name="file-pdf" size={16} />
-          <span>PDF Viewer</span>
-        </a>
+    <footer className="hub-footer-enterprise">
+      {/* Top: brand + newsletter placeholder */}
+      <div className="hub-footer-top">
+        <div className="hub-footer-brand">
+          <div className="hub-footer-logo">GS</div>
+          <div>
+            <div className="hub-footer-brand-name">GridStorm</div>
+            <div className="hub-footer-brand-tagline">The Enterprise Document Platform</div>
+          </div>
+        </div>
+        <div className="hub-footer-badges">
+          <span className="hub-footer-badge">39 packages</span>
+          <span className="hub-footer-badge">1,619+ tests</span>
+          <span className="hub-footer-badge">TypeScript-native</span>
+          <span className="hub-footer-badge">MIT License</span>
+        </div>
       </div>
-      <div className="hub-footer-copy">
-        &copy; {new Date().getFullYear()} GridStorm. All rights reserved.
+
+      {/* Main link columns */}
+      <div className="hub-footer-cols">
+        {FOOTER_COLS.map((col) => (
+          <div key={col.heading} className="hub-footer-col">
+            <h4 className="hub-footer-col-heading">{col.heading}</h4>
+            <ul className="hub-footer-col-list">
+              {col.links.map((link) => (
+                <li key={link.label}>
+                  <a
+                    href={link.href}
+                    className="hub-footer-col-link"
+                    {...(isExternal(link.href) ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      {/* Bottom bar */}
+      <div className="hub-footer-bottom">
+        <div className="hub-footer-copy">
+          &copy; {new Date().getFullYear()} GridStorm. All rights reserved.
+        </div>
+        <div className="hub-footer-social">
+          <a
+            href="https://github.com/007krcs/grid-data"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hub-footer-social-link"
+            aria-label="GitHub"
+          >
+            <Icon name="github" size={18} />
+          </a>
+        </div>
       </div>
     </footer>
   );

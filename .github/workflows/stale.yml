@@ -1,0 +1,53 @@
+name: Stale Issue & PR Management
+
+on:
+  schedule:
+    - cron: '0 8 * * 1' # Every Monday at 8am UTC
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    name: Mark stale issues and PRs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+          # ── Issues ──
+          stale-issue-message: >
+            This issue has been automatically marked as stale because it has not had
+            any activity for 60 days. It will be closed in 14 days unless activity
+            resumes. If this issue is still relevant, please add a comment or remove
+            the `stale` label.
+          close-issue-message: >
+            This issue was automatically closed due to 14 days of inactivity after
+            being marked stale. Please reopen if this is still relevant.
+          days-before-issue-stale: 60
+          days-before-issue-close: 14
+          stale-issue-label: 'stale'
+          exempt-issue-labels: 'pinned,security,bug,enhancement,help wanted,good first issue'
+
+          # ── Pull Requests ──
+          stale-pr-message: >
+            This pull request has been automatically marked as stale because it has
+            not had any activity for 30 days. It will be closed in 7 days unless
+            activity resumes. If this PR is still being worked on, please add a
+            comment or remove the `stale` label.
+          close-pr-message: >
+            This pull request was automatically closed due to 7 days of inactivity
+            after being marked stale. Please reopen if you want to continue the work.
+          days-before-pr-stale: 30
+          days-before-pr-close: 7
+          stale-pr-label: 'stale'
+          exempt-pr-labels: 'pinned,security,do not merge,work in progress'
+
+          # ── General ──
+          ascending: true
+          operations-per-run: 100
+          remove-stale-when-updated: true
+          delete-branch: false

@@ -1,0 +1,79 @@
+# ─── Auto-labeling configuration ───
+# Maps file path patterns to PR labels.
+
+'pkg: core':
+  - changed-files:
+    - any-glob-to-any-file: 'packages/core/**'
+
+'pkg: react':
+  - changed-files:
+    - any-glob-to-any-file: 'packages/react-adapter/**'
+
+'pkg: angular':
+  - changed-files:
+    - any-glob-to-any-file: 'packages/angular-adapter/**'
+
+'pkg: vue':
+  - changed-files:
+    - any-glob-to-any-file: 'packages/vue-adapter/**'
+
+'pkg: svelte':
+  - changed-files:
+    - any-glob-to-any-file: 'packages/svelte-adapter/**'
+
+'pkg: dom-renderer':
+  - changed-files:
+    - any-glob-to-any-file: 'packages/dom-renderer/**'
+
+'pkg: pdf':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'packages/pdf-core/**'
+      - 'packages/pdf-renderer/**'
+      - 'packages/pdf-theme/**'
+      - 'packages/pdf-plugin-*/**'
+
+'plugin':
+  - changed-files:
+    - any-glob-to-any-file: 'packages/plugin-*/**'
+
+'tests':
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.test.ts'
+      - '**/*.test.tsx'
+      - '**/__tests__/**'
+      - 'e2e/**'
+
+'ci/cd':
+  - changed-files:
+    - any-glob-to-any-file: '.github/**'
+
+'documentation':
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.md'
+      - 'docs/**'
+
+'dependencies':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '**/package.json'
+
+'examples':
+  - changed-files:
+    - any-glob-to-any-file: 'examples/**'
+
+'benchmarks':
+  - changed-files:
+    - any-glob-to-any-file: 'benchmarks/**'
+
+'config':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'vitest.config.ts'
+      - 'tsconfig*.json'
+      - '.prettierrc'
+      - '.eslint*'

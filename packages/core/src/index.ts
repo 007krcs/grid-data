@@ -14,6 +14,9 @@ export type { CommandContext, CommandMiddleware, CommandValidator } from './even
 
 // Error Handling
 export { ErrorHandler, getGlobalErrorHandler } from './errors/error-handler';
+
+// Validation
+export { registerCoreCommandValidators } from './validation/command-validators';
 export type {
   GridError,
   GridErrorContext,

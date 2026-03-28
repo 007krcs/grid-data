@@ -1,0 +1,111 @@
+name: Performance Issue
+description: Report a performance regression or bottleneck in GridStorm
+title: "[Perf]: "
+labels: ["performance", "triage"]
+body:
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      description: Which package exhibits the performance issue?
+      options:
+        - "@gridstorm/core"
+        - "@gridstorm/dom-renderer"
+        - "@gridstorm/react"
+        - "@gridstorm/plugin-sorting"
+        - "@gridstorm/plugin-filtering"
+        - "@gridstorm/plugin-grouping"
+        - "@gridstorm/plugin-aggregation"
+        - "@gridstorm/plugin-pivoting"
+        - "@gridstorm/plugin-ssrm"
+        - "Other / Unknown"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Performance Category
+      description: What kind of performance issue is this?
+      options:
+        - Initial render / time-to-first-row
+        - Scroll performance
+        - Sort / filter speed
+        - Large dataset handling (100k+ rows)
+        - Memory usage / leak
+        - Bundle size
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the performance problem you observed.
+      placeholder: Scrolling with 50,000 rows causes noticeable jank on mid-range hardware...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this performance issue?
+      placeholder: |
+        1. Create a grid with 100,000 rows
+        2. Enable sorting plugin
+        3. Click a column header to sort
+        4. Observe ~2s freeze
+    validations:
+      required: true
+
+  - type: textarea
+    id: measurements
+    attributes:
+      label: Measurements / Profiler Output
+      description: Paste benchmark results, browser profiler screenshots, or timing data here.
+      placeholder: |
+        Chrome Performance panel: scripting 1800ms, rendering 400ms
+        Benchmark result: 2340ms average over 5 runs
+    validations:
+      required: false
+
+  - type: input
+    id: rows
+    attributes:
+      label: Row Count
+      description: Approximately how many rows are in the dataset?
+      placeholder: "50000"
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: GridStorm Version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      multiple: true
+      options:
+        - Chrome
+        - Firefox
+        - Safari
+        - Edge
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context, reproduction links, or environment details.
+    validations:
+      required: false

@@ -706,7 +706,7 @@ export function App() {
           background: '#f9fafb',
           textAlign: 'center',
           borderRight: '1px solid #e5e7eb',
-        },
+        } as Record<string, string>,
       },
       // Product
       {
@@ -827,7 +827,7 @@ export function App() {
           background: '#fefce8',
           fontFamily: "'Consolas', monospace",
           fontWeight: '700',
-        },
+        } as Record<string, string>,
         valueGetter: (params) => {
           if (!params.data) return 0;
           const price = params.data.unitPrice ?? 0;
@@ -923,9 +923,9 @@ export function App() {
           borderLeft: '2px solid #bfdbfe',
           color: '#6b7280',
           fontStyle: 'italic',
-        },
+        } as Record<string, string>,
       },
-    ],
+    ] as ReactColumnDef<SpreadsheetRow>[],
     [],
   );
 

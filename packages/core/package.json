@@ -39,8 +39,8 @@
     "@gridstorm/plugin-selection": "workspace:*",
     "@gridstorm/plugin-sorting": "workspace:*",
     "tsup": "^8.2.0",
-    "typedoc": "^0.27.0",
-    "typedoc-plugin-markdown": "^4.4.0",
+    "typedoc": "^0.28.18",
+    "typedoc-plugin-markdown": "^4.11.0",
     "typescript": "^5.5.0"
   },
   "sideEffects": false,

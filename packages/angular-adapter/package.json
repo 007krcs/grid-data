@@ -35,12 +35,12 @@
     "@gridstorm/dom-renderer": "workspace:*"
   },
   "peerDependencies": {
-    "@angular/core": ">=16.0.0",
-    "@angular/common": ">=16.0.0"
+    "@angular/core": ">=21.2.6",
+    "@angular/common": ">=21.2.6"
   },
   "devDependencies": {
-    "@angular/core": ">=16.0.0",
-    "@angular/common": ">=16.0.0",
+    "@angular/core": ">=21.2.6",
+    "@angular/common": ">=21.2.6",
     "tsup": "^8.2.0",
     "typescript": "^5.5.0"
   },

@@ -11,8 +11,8 @@ const SCRIPT_DIR = __dirname;
 const ROOT_DIR = path.dirname(SCRIPT_DIR);
 
 // Use Vercel Build Output API: .vercel/output/static/
-// Vercel resolves .vercel/output relative to Root Directory (examples/analytics-explorer)
-const VERCEL_ROOT_DIR = path.join(SCRIPT_DIR, 'analytics-explorer');
+// Vercel resolves .vercel/output relative to the monorepo root (Root Directory in project settings)
+const VERCEL_ROOT_DIR = ROOT_DIR;
 const VERCEL_OUTPUT = path.join(VERCEL_ROOT_DIR, '.vercel', 'output');
 const OUT_DIR = path.join(VERCEL_OUTPUT, 'static');
 

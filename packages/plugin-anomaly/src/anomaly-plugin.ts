@@ -39,7 +39,7 @@ function updateStats(stats: ColumnStats, value: number, windowSize: number): voi
   // Recalculate from window for accuracy
   const n = stats.window.length;
   const mean = stats.window.reduce((a, b) => a + b, 0) / n;
-  const variance = stats.window.reduce((s, v) => s + (v - mean) ** 2, 0) / Math.max(n - 1, 1);
+  const variance = stats.window.reduce((s, v) => s + (v - mean) ** 2, 0) / Math.max(n, 1);
 
   stats.count = n;
   stats.mean = mean;
@@ -108,8 +108,9 @@ export function AnomalyPlugin(options: AnomalyPluginOptions = {}): GridPlugin {
           columnStats.set(columnId, stats);
         }
 
-        // Need at least 2 data points to compute meaningful z-score
-        if (stats.count >= 2) {
+        // Need at least minSamples data points to build a stable baseline
+        const minSamples = Math.max(config.minSamples ?? 10, 2);
+        if (stats.count >= minSamples) {
           const zscore = getZScore(stats, value);
           const severity = getSeverity(zscore, config);
 

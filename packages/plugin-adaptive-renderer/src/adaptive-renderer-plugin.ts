@@ -30,14 +30,11 @@ export function detectDevice(breakpoints?: { mobile: number; tablet: number; des
     ? ('ontouchstart' in w || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0))
     : false;
 
-  const prefersReducedMotion =
-    w?.matchMedia('(prefers-reduced-motion: reduce)').matches ?? false;
-  const darkQuery = w?.matchMedia('(prefers-color-scheme: dark)');
-  const prefersColorScheme: 'light' | 'dark' | 'no-preference' = darkQuery?.matches
-    ? 'dark'
-    : 'light';
-  const prefersHighContrast =
-    w?.matchMedia('(forced-colors: active)').matches ?? false;
+  const mm = w != null && typeof w.matchMedia === 'function' ? w.matchMedia.bind(w) : null;
+  const prefersReducedMotion = mm?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  const prefersDark = mm?.('(prefers-color-scheme: dark)').matches ?? false;
+  const prefersColorScheme: 'light' | 'dark' | 'no-preference' = prefersDark ? 'dark' : 'light';
+  const prefersHighContrast = mm?.('(forced-colors: active)').matches ?? false;
 
   // Network info (experimental)
   const nav = w

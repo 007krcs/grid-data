@@ -25,6 +25,10 @@
     "@gridstorm/plugin-aggregation": "workspace:*",
     "@gridstorm/plugin-context-menu": "workspace:*",
     "@gridstorm/plugin-clipboard": "workspace:*",
+    "@gridstorm/plugin-a11y": "workspace:*",
+    "@gridstorm/plugin-formula": "workspace:*",
+    "@gridstorm/plugin-formula-engine": "workspace:*",
+    "@gridstorm/plugin-clipboard-pro": "workspace:*",
     "@gridstorm/theme-default": "workspace:*",
     "react": "^18.3.0",
     "react-dom": "^18.3.0"

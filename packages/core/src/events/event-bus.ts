@@ -1,9 +1,17 @@
 // ─── Typed Event Bus ───
 
+import type { ErrorHandler } from '../errors/error-handler';
+
 export type EventListener<T = any> = (payload: T) => void;
 
 export class EventBus<TEventMap extends Record<string, any>> {
   private listeners = new Map<keyof TEventMap, Set<EventListener>>();
+  private errorHandler: ErrorHandler | null = null;
+
+  /** Attach a structured error handler for listener errors. */
+  setErrorHandler(handler: ErrorHandler): void {
+    this.errorHandler = handler;
+  }
 
   on<K extends keyof TEventMap>(event: K, listener: EventListener<TEventMap[K]>): () => void {
     let set = this.listeners.get(event);
@@ -38,7 +46,15 @@ export class EventBus<TEventMap extends Record<string, any>> {
       try {
         listener(payload);
       } catch (err) {
-        console.error(`[GridStorm] Error in event listener for "${String(event)}":`, err);
+        if (this.errorHandler) {
+          this.errorHandler.report(err, {
+            source: 'event',
+            eventType: String(event),
+            severity: 'error',
+          });
+        } else {
+          console.error(`[GridStorm] Error in event listener for "${String(event)}":`, err);
+        }
       }
     }
   }

@@ -6,7 +6,16 @@
     "composite": false,
     "declaration": true,
     "declarationMap": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "paths": {
+      "@gridstorm/core": ["../core/src/index.ts"],
+      "@gridstorm/dom-renderer": ["../dom-renderer/src/index.ts"],
+      "@gridstorm/license": ["../license/src/index.ts"],
+      "@gridstorm/plugin-ai": ["../plugin-ai/src/index.ts"],
+      "@gridstorm/plugin-column-autosize": ["../plugin-column-autosize/src/index.ts"],
+      "@gridstorm/plugin-state-persistence": ["../plugin-state-persistence/src/index.ts"],
+      "@gridstorm/pdf-core": ["../pdf-core/src/index.ts"]
+    }
   },
   "include": [
     "src",
@@ -50,5 +59,9 @@
     "../pdf-plugin-intelligence/src",
     "../pdf-plugin-pii/src",
     "../pdf-plugin-text/src"
+  ],
+  "exclude": [
+    "../**/src/__tests__",
+    "../**/src/__stories__"
   ]
 }

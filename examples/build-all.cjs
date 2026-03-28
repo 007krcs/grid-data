@@ -1,37 +1,35 @@
 /**
  * Build all GridStorm example apps into a combined output folder.
  * Cross-platform Node.js replacement for build-all.sh.
- * Used by Vercel deployment — uses Build Output API (.vercel/output/static).
+ * Used by Vercel deployment.
+ *
+ * Vercel project Root Directory is set to "examples/analytics-explorer".
+ * Vercel resolves outputDirectory ("dist") relative to that Root Directory,
+ * so we output to examples/analytics-explorer/dist/.
  */
 const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-const SCRIPT_DIR = __dirname;
-const ROOT_DIR = path.dirname(SCRIPT_DIR);
+const SCRIPT_DIR = __dirname; // examples/
+const ROOT_DIR = path.dirname(SCRIPT_DIR); // repo root
 
-// Use Vercel Build Output API: .vercel/output/static/
-// Vercel resolves .vercel/output relative to Root Directory (examples/analytics-explorer)
-const VERCEL_ROOT_DIR = path.join(SCRIPT_DIR, 'analytics-explorer');
-const VERCEL_OUTPUT = path.join(VERCEL_ROOT_DIR, '.vercel', 'output');
-const OUT_DIR = path.join(VERCEL_OUTPUT, 'static');
+// Vercel Root Directory = examples/analytics-explorer
+// outputDirectory = "dist" resolves to examples/analytics-explorer/dist
+const VERCEL_ROOT = path.join(SCRIPT_DIR, 'analytics-explorer');
+const OUT_DIR = path.join(VERCEL_ROOT, 'dist');
 
 console.log('Building GridStorm demos...');
-console.log('Root:', ROOT_DIR);
+console.log('Repo root:', ROOT_DIR);
+console.log('Vercel root dir:', VERCEL_ROOT);
 console.log('Output:', OUT_DIR);
 console.log('CWD:', process.cwd());
 
 // Clean output
-if (fs.existsSync(VERCEL_OUTPUT)) {
-  fs.rmSync(VERCEL_OUTPUT, { recursive: true, force: true });
+if (fs.existsSync(OUT_DIR)) {
+  fs.rmSync(OUT_DIR, { recursive: true, force: true });
 }
 fs.mkdirSync(OUT_DIR, { recursive: true });
-
-// Write Vercel Build Output API config
-fs.writeFileSync(
-  path.join(VERCEL_OUTPUT, 'config.json'),
-  JSON.stringify({ version: 3, routes: [{ handle: 'filesystem' }, { src: '/(.*)', dest: '/index.html' }] }, null, 2)
-);
 
 function run(cmd, cwd) {
   console.log(`\n> ${cmd}`);
@@ -45,12 +43,12 @@ function run(cmd, cwd) {
   }
 }
 
-// Build hub (React SPA) — outputs to static root (index.html + hub-assets/)
+// Build hub (React SPA) — outputs to dist root (index.html + hub-assets/)
 console.log('\n=== Building hub ===');
 run(`npx vite build --outDir "${OUT_DIR}"`, path.join(SCRIPT_DIR, 'hub'));
 console.log('Done: hub');
 
-// Build each example app
+// Build each example app into dist/<app>/
 const APPS = [
   'playground',
   'react-demo',
@@ -78,4 +76,3 @@ console.log('\nAll demos built successfully!');
 console.log('Output directory:', OUT_DIR);
 const entries = fs.readdirSync(OUT_DIR);
 console.log('Output contents:', entries.join(', '));
-console.log('Vercel output config:', path.join(VERCEL_OUTPUT, 'config.json'));

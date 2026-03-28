@@ -4,5 +4,8 @@ contact_links:
     url: https://gridstorm.dev/docs
     about: Check the documentation for guides, API reference, and examples.
   - name: Discussions
-    url: https://github.com/gridstorm/gridstorm/discussions
+    url: https://github.com/007krcs/grid-data/discussions
     about: Ask questions, share ideas, and connect with the community.
+  - name: Security Vulnerability
+    url: https://github.com/007krcs/grid-data/security/advisories/new
+    about: Report a security vulnerability privately via GitHub's security advisory system.

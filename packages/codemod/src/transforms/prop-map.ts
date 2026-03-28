@@ -44,18 +44,20 @@ export const COLUMN_PROP_MAP: Record<string, string> = {
 /**
  * Maps AG Grid CSS theme class names to GridStorm data-theme attribute values.
  */
+// Ordered longest-first to prevent substring false matches
+// (e.g., "ag-theme-alpine-dark" must match before "ag-theme-alpine")
 export const THEME_CLASS_MAP: Record<string, string> = {
-  'ag-theme-alpine': 'light',
-  'ag-theme-alpine-dark': 'dark',
   'ag-theme-alpine-auto-dark': 'dark',
-  'ag-theme-balham': 'light',
-  'ag-theme-balham-dark': 'dark',
+  'ag-theme-alpine-dark': 'dark',
+  'ag-theme-alpine': 'light',
   'ag-theme-balham-auto-dark': 'dark',
-  'ag-theme-material': 'light',
+  'ag-theme-balham-dark': 'dark',
+  'ag-theme-balham': 'light',
   'ag-theme-material-dark': 'dark',
-  'ag-theme-quartz': 'light',
-  'ag-theme-quartz-dark': 'dark',
+  'ag-theme-material': 'light',
   'ag-theme-quartz-auto-dark': 'dark',
+  'ag-theme-quartz-dark': 'dark',
+  'ag-theme-quartz': 'light',
 };
 
 /**

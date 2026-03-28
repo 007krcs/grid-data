@@ -4,11 +4,37 @@
 
 import type { CommandHandler, AsyncCommandHandler } from '../types/plugin';
 import type { CommandMap } from '../types/commands';
+import type { ErrorHandler } from '../errors/error-handler';
+
+export type CommandValidator = (payload: unknown) => string | null;
 
 export class CommandBus {
   private handlers = new Map<string, CommandHandler[]>();
   private asyncHandlers = new Map<string, AsyncCommandHandler[]>();
   private middlewares: CommandMiddleware[] = [];
+  private validators = new Map<string, CommandValidator>();
+  private errorHandler: ErrorHandler | null = null;
+
+  /** Attach a structured error handler for error reporting. */
+  setErrorHandler(handler: ErrorHandler): void {
+    this.errorHandler = handler;
+  }
+
+  /**
+   * Register a payload validator for a command type.
+   * The validator should return null if valid, or an error message string if invalid.
+   */
+  registerValidator<K extends keyof CommandMap>(
+    commandType: K,
+    validator: (payload: CommandMap[K]) => string | null,
+  ): () => void;
+  registerValidator(commandType: string, validator: CommandValidator): () => void;
+  registerValidator(commandType: string, validator: CommandValidator): () => void {
+    this.validators.set(commandType, validator);
+    return () => {
+      this.validators.delete(commandType);
+    };
+  }
 
   /** Register a handler for a command type. Returns an unsubscribe function. */
   registerHandler<K extends keyof CommandMap>(
@@ -68,6 +94,26 @@ export class CommandBus {
   dispatch<K extends keyof CommandMap>(commandType: K, payload: CommandMap[K]): void;
   dispatch(commandType: string, payload: any): void;
   dispatch(commandType: string, payload: any): void {
+    // Validate payload if a validator is registered
+    const validator = this.validators.get(commandType);
+    if (validator) {
+      const validationError = validator(payload);
+      if (validationError) {
+        const err = new Error(`Command validation failed for "${commandType}": ${validationError}`);
+        if (this.errorHandler) {
+          this.errorHandler.report(err, {
+            source: 'validation',
+            commandType,
+            payload,
+            severity: 'error',
+          });
+        } else {
+          console.error(`[GridStorm]`, err.message);
+        }
+        return;
+      }
+    }
+
     // Run through middleware chain
     let cancelled = false;
     const context: CommandContext = {
@@ -96,7 +142,15 @@ export class CommandBus {
       try {
         handler(payload);
       } catch (err) {
-        console.error(`[GridStorm] Error in command handler for "${commandType}":`, err);
+        if (this.errorHandler) {
+          this.errorHandler.report(err, {
+            source: 'command',
+            commandType,
+            severity: 'error',
+          });
+        } else {
+          console.error(`[GridStorm] Error in command handler for "${commandType}":`, err);
+        }
       }
     }
   }
@@ -114,6 +168,26 @@ export class CommandBus {
   ): Promise<void>;
   async dispatchAsync(commandType: string, payload: any): Promise<void>;
   async dispatchAsync(commandType: string, payload: any): Promise<void> {
+    // Validate payload if a validator is registered
+    const validator = this.validators.get(commandType);
+    if (validator) {
+      const validationError = validator(payload);
+      if (validationError) {
+        const err = new Error(`Command validation failed for "${commandType}": ${validationError}`);
+        if (this.errorHandler) {
+          this.errorHandler.report(err, {
+            source: 'validation',
+            commandType,
+            payload,
+            severity: 'error',
+          });
+        } else {
+          console.error(`[GridStorm]`, err.message);
+        }
+        return;
+      }
+    }
+
     // Run through middleware chain (synchronous)
     let cancelled = false;
     const context: CommandContext = {
@@ -136,7 +210,15 @@ export class CommandBus {
         try {
           handler(payload);
         } catch (err) {
-          console.error(`[GridStorm] Error in sync command handler for "${commandType}":`, err);
+          if (this.errorHandler) {
+            this.errorHandler.report(err, {
+              source: 'command',
+              commandType,
+              severity: 'error',
+            });
+          } else {
+            console.error(`[GridStorm] Error in sync command handler for "${commandType}":`, err);
+          }
         }
       }
     }
@@ -148,7 +230,15 @@ export class CommandBus {
         try {
           await handler(payload);
         } catch (err) {
-          console.error(`[GridStorm] Error in async command handler for "${commandType}":`, err);
+          if (this.errorHandler) {
+            this.errorHandler.report(err, {
+              source: 'command',
+              commandType,
+              severity: 'error',
+            });
+          } else {
+            console.error(`[GridStorm] Error in async command handler for "${commandType}":`, err);
+          }
         }
       }
     }
@@ -160,11 +250,12 @@ export class CommandBus {
     this.asyncHandlers.delete(commandType);
   }
 
-  /** Remove all handlers and middlewares. */
+  /** Remove all handlers, middlewares, and validators. */
   clear(): void {
     this.handlers.clear();
     this.asyncHandlers.clear();
     this.middlewares = [];
+    this.validators.clear();
   }
 }
 

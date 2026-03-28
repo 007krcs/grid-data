@@ -2,5 +2,18 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "cd /vercel/path0 && pnpm install",
   "buildCommand": "cd /vercel/path0 && node examples/build-all.cjs",
-  "framework": null
+  "outputDirectory": "dist",
+  "framework": null,
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/analytics-explorer/(.*)", "dest": "/analytics-explorer/index.html" },
+    { "src": "/cookbook/(.*)", "dest": "/cookbook/index.html" },
+    { "src": "/feature-showcase/(.*)", "dest": "/feature-showcase/index.html" },
+    { "src": "/financial-trading/(.*)", "dest": "/financial-trading/index.html" },
+    { "src": "/pdf-viewer/(.*)", "dest": "/pdf-viewer/index.html" },
+    { "src": "/playground/(.*)", "dest": "/playground/index.html" },
+    { "src": "/react-demo/(.*)", "dest": "/react-demo/index.html" },
+    { "src": "/spreadsheet/(.*)", "dest": "/spreadsheet/index.html" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
 }

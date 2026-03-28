@@ -24,23 +24,26 @@
     "dev": "pnpm -r --parallel --filter='./packages/*' run dev",
     "test": "vitest",
     "test:run": "vitest run",
-    "lint": "eslint packages/*/src --ext .ts,.tsx",
+    "lint": "eslint 'packages/*/src/**/*.ts' 'packages/*/src/**/*.tsx'",
     "typecheck": "pnpm -r run typecheck",
     "clean": "pnpm -r run clean && rm -rf node_modules",
     "changeset": "changeset",
     "version": "changeset version",
     "publish": "pnpm -r --filter='./packages/*' run build && changeset publish",
     "publish:alpha": "pnpm -r --filter='./packages/*' run build && changeset publish --tag alpha",
-    "build:examples": "node examples/build-all.cjs"
+    "build:examples": "node examples/build-all.cjs",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
-    "typescript": "^5.5.0",
-    "vitest": "^2.0.0",
-    "eslint": "^9.0.0",
+    "eslint": "^9.39.4",
+    "jsdom": "^25.0.0",
     "prettier": "^3.3.0",
     "tsup": "^8.2.0",
-    "jsdom": "^25.0.0"
+    "typescript": "^5.5.0",
+    "typescript-eslint": "^8.57.2",
+    "vitest": "^2.0.0"
   },
   "engines": {
     "node": ">=18.0.0",

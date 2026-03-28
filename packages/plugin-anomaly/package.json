@@ -1,0 +1,64 @@
+{
+  "name": "@gridstorm/plugin-anomaly",
+  "version": "0.1.0",
+  "description": "GridStorm anomaly detection plugin — rolling statistical baseline with z-score threshold alerts",
+  "private": false,
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "@gridstorm/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@gridstorm/core": "workspace:*",
+    "tsup": "^8.2.0",
+    "typescript": "^5.5.0"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "keywords": [
+    "datagrid",
+    "anomaly",
+    "statistics",
+    "z-score",
+    "plugin",
+    "gridstorm"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/007krcs/grid-data.git",
+    "directory": "packages/plugin-anomaly"
+  },
+  "bugs": {
+    "url": "https://github.com/007krcs/grid-data/issues"
+  },
+  "homepage": "https://grid-data-analytics-explorer.vercel.app/",
+  "author": {
+    "name": "GridStorm",
+    "url": "https://grid-data-analytics-explorer.vercel.app/"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

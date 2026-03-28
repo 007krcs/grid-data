@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-filtering",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "GridStorm filtering plugin — column filters, quick filter, compound conditions",
   "type": "module",
   "main": "./dist/index.cjs",

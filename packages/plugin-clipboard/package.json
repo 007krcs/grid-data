@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-clipboard",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "GridStorm clipboard plugin — copy, cut, paste with keyboard shortcuts",
   "type": "module",
   "main": "./dist/index.cjs",

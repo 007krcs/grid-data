@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-ai",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "GridStorm AI plugin — natural language queries, anomaly detection, smart suggestions",
   "type": "module",
   "main": "./dist/index.cjs",

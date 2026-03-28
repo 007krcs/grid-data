@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-status-bar",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "GridStorm status bar plugin — aggregation summary bar with sum, avg, min, max, count",
   "type": "module",
   "main": "./dist/index.cjs",

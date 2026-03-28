@@ -23,7 +23,13 @@
       "Bash(pnpm --filter @gridstorm/plugin-pagination --filter @gridstorm/dom-renderer --filter @gridstorm/plugin-pivoting --filter @gridstorm/plugin-context-menu --filter @gridstorm/plugin-row-reorder run build)",
       "Bash(pnpm --filter @gridstorm/plugin-pagination build)",
       "Bash(pnpm --filter @gridstorm/plugin-context-menu build)",
-      "Bash(npx vitest:*)"
+      "Bash(npx vitest:*)",
+      "Bash(pnpm --filter @gridstorm/plugin-time-travel build)",
+      "Bash(node scripts/bump-version.cjs 0.1.2)",
+      "Bash(pnpm -r build)",
+      "Bash(pnpm --filter @gridstorm/plugin-row-pinning build)",
+      "Bash(pnpm --filter gridstorm build)",
+      "Bash(node scripts/publish-all.cjs)"
     ]
   }
 }

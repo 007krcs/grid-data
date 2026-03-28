@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-master-detail",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "GridStorm master-detail plugin — expandable detail rows with nested data",
   "type": "module",
   "main": "./dist/index.cjs",

@@ -120,13 +120,20 @@ export function StreamingPlugin(options: StreamingPluginOptions = {}): GridPlugi
           if (paused) return;
           pendingQueue.push(...updates);
           // Cap the pending queue to prevent unbounded growth
-          if (pendingQueue.length > maxBatchSize * 10) {
-            pendingQueue = pendingQueue.slice(-maxBatchSize * 10);
+          const queueLimit = maxBatchSize * 10;
+          if (pendingQueue.length > queueLimit) {
+            const dropped = pendingQueue.length - queueLimit;
+            pendingQueue = pendingQueue.slice(-queueLimit);
+            // Emit backpressure event so adapters/consumers know data was lost
+            ctx.eventBus.emit('streaming:backpressure' as any, {
+              droppedCount: dropped,
+              queueSize: pendingQueue.length,
+              queueLimit,
+            } as any);
           }
         },
         onError(error: Error): void {
-          ctx.eventBus.emit('rowData:changed' as any, {
-            type: 'stream:error',
+          ctx.eventBus.emit('streaming:error' as any, {
             error,
           } as any);
         },
@@ -135,6 +142,9 @@ export function StreamingPlugin(options: StreamingPluginOptions = {}): GridPlugi
             ...prev,
             connected,
           }));
+          ctx.eventBus.emit('streaming:connectionChange' as any, {
+            connected,
+          } as any);
         },
       };
 

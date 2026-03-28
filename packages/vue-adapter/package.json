@@ -37,7 +37,7 @@
     "vue": "^3.3.0"
   },
   "devDependencies": {
-    "vue": "^3.5.0",
+    "vue": "^3.5.31",
     "tsup": "^8.2.0",
     "typescript": "^5.5.0"
   },

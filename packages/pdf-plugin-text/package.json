@@ -43,5 +43,10 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "keywords": [
+    "gridstorm",
+    "data-grid",
+    "pdf text"
+  ]
 }

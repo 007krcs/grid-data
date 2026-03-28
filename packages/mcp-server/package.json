@@ -50,5 +50,10 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "keywords": [
+    "gridstorm",
+    "data-grid",
+    "mcp-server"
+  ]
 }

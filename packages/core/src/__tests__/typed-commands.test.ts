@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CommandBus } from '../events/command-bus';
-import type { CommandMap } from '../types/commands';
 
 describe('Typed Command Map', () => {
   it('should dispatch typed commands to registered handlers', () => {

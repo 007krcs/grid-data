@@ -45,5 +45,10 @@
   },
   "sideEffects": [
     "*.css"
+  ],
+  "keywords": [
+    "gridstorm",
+    "data-grid",
+    "pdf theme"
   ]
 }

@@ -237,6 +237,68 @@ export class DomRenderer {
     }
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // ── Runtime Theme API ──
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * Switch the grid theme at runtime without re-creating the grid.
+   * Accepts 'light', 'dark', 'high-contrast', or any custom theme name.
+   */
+  setTheme(theme: string): void {
+    if (!this.root) return;
+    this.root.setAttribute('data-theme', theme);
+    this.container?.setAttribute('data-theme', theme);
+  }
+
+  /** Get the currently active theme name, or null if no theme is set. */
+  getTheme(): string | null {
+    return this.root?.getAttribute('data-theme') ?? null;
+  }
+
+  /**
+   * Switch the density mode at runtime.
+   * Accepts 'compact', 'comfortable', or 'spacious'.
+   */
+  setDensity(density: string): void {
+    if (!this.root) return;
+    this.root.setAttribute('data-density', density);
+    this.container?.setAttribute('data-density', density);
+  }
+
+  /** Get the currently active density mode, or null if none is set. */
+  getDensity(): string | null {
+    return this.root?.getAttribute('data-density') ?? null;
+  }
+
+  /**
+   * Enable automatic dark/light theme based on the user's OS preference.
+   * Uses `prefers-color-scheme` media query. Returns an unsubscribe function.
+   *
+   * @param lightTheme - Theme name for light mode. Default: 'light'.
+   * @param darkTheme - Theme name for dark mode. Default: 'dark'.
+   */
+  autoDetectTheme(lightTheme = 'light', darkTheme = 'dark'): () => void {
+    if (typeof window === 'undefined' || !window.matchMedia) {
+      return () => {};
+    }
+
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+      this.setTheme(e.matches ? darkTheme : lightTheme);
+    };
+
+    // Apply immediately
+    handler(mql);
+
+    // Listen for changes
+    mql.addEventListener('change', handler as EventListener);
+
+    return () => {
+      mql.removeEventListener('change', handler as EventListener);
+    };
+  }
+
   /** Unmount and clean up all DOM and subscriptions. Safe to call on the server. */
   destroy(): void {
     for (const unsub of this.unsubscribers) unsub();
@@ -498,7 +560,7 @@ export class DomRenderer {
         sortIndex: col.sortIndex,
       });
       if (typeof result === 'string') {
-        if (col.originalDef?.dangerouslySetInnerHTML || (result.includes('<') && result.includes('>'))) {
+        if (col.originalDef?.dangerouslySetInnerHTML === true) {
           cell.innerHTML = result;
         } else {
           cell.textContent = result;
@@ -1284,6 +1346,9 @@ export class DomRenderer {
       const isExpanded = nextId?.startsWith('__detail__');
       arrow.textContent = isExpanded ? '\u25BC' : '\u25B6';
       arrow.style.cssText = 'font-size:10px;color:var(--gs-color-muted,#64748b);transition:transform 150ms;';
+      arrow.setAttribute('role', 'button');
+      arrow.setAttribute('aria-expanded', String(!!isExpanded));
+      arrow.setAttribute('aria-label', isExpanded ? 'Collapse detail' : 'Expand detail');
       expandCell.appendChild(arrow);
       expandCell.addEventListener('pointerdown', (e) => {
         e.stopPropagation();
@@ -1307,6 +1372,9 @@ export class DomRenderer {
       const chevron = document.createElement('span');
       chevron.textContent = node.expanded ? '\u25BC' : '\u25B6';
       chevron.style.cssText = 'font-size:10px;color:var(--gs-color-muted,#64748b);';
+      chevron.setAttribute('role', 'button');
+      chevron.setAttribute('aria-expanded', String(!!node.expanded));
+      chevron.setAttribute('aria-label', node.expanded ? 'Collapse node' : 'Expand node');
       treeCell.appendChild(chevron);
       const treeNodeId = node.id;
       treeCell.addEventListener('pointerdown', (e) => {
@@ -1401,6 +1469,7 @@ export class DomRenderer {
     const cell = document.createElement('div');
     cell.setAttribute('role', 'gridcell');
     cell.setAttribute('aria-colindex', String(colIndex + 1));
+    cell.setAttribute('aria-readonly', String(col.originalDef?.editable !== true));
     cell.setAttribute('data-col-id', col.colId);
     cell.id = `gs-cell-${node.id}-${col.colId}`;
     cell.className = `${this.prefix}-cell`;
@@ -1471,7 +1540,7 @@ export class DomRenderer {
         });
         if (typeof result === 'string') {
           // Auto-detect HTML strings (starts with < and ends with >), or honor explicit flag
-          if (col.originalDef?.dangerouslySetInnerHTML || (result.includes('<') && result.includes('>'))) {
+          if (col.originalDef?.dangerouslySetInnerHTML === true) {
             cell.innerHTML = result;
           } else {
             cell.textContent = result;
@@ -1631,15 +1700,18 @@ export class DomRenderer {
   }
 
   private recycleRow(el: HTMLElement): void {
-    el.textContent = '';
-    el.className = '';
-    el.removeAttribute('style');
-    el.removeAttribute('data-row-id');
-    el.removeAttribute('aria-rowindex');
-    el.removeAttribute('aria-selected');
+    // Clone-replace to detach all event listeners from the element and its children.
+    // This prevents memory leaks from stale closures when rows are pooled and reused.
+    const clean = el.cloneNode(false) as HTMLElement;
+    clean.textContent = '';
+    clean.className = '';
+    clean.removeAttribute('style');
+    clean.removeAttribute('data-row-id');
+    clean.removeAttribute('aria-rowindex');
+    clean.removeAttribute('aria-selected');
     // Cap the pool to prevent unbounded memory growth
     if (this.rowPool.length < 100) {
-      this.rowPool.push(el);
+      this.rowPool.push(clean);
     }
   }
 

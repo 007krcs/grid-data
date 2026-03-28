@@ -151,22 +151,22 @@ function App() {
 ## Architecture
 
 ```
-                          ┌─────────────────────┐
-                          │   Framework Adapters  │
-                          │  React · Vue · Svelte │
-                          └──────────┬────────────┘
+                          ┌──────────────────────┐
+                          │   Framework Adapters │
+                          │  React · Vue · Svelte│
+                          └──────────┬───────────┘
                                      │
                           ┌──────────▼────────────┐
-                          │    DOM Renderer        │
-                          │  Virtual scroll, ARIA  │
+                          │    DOM Renderer       │
+                          │  Virtual scroll, ARIA │
                           └──────────┬────────────┘
                                      │
 ┌────────────────┐       ┌───────────▼────────────┐       ┌────────────────┐
-│   19+ Plugins  │◄──────│    Core Engine          │──────►│  PDF Toolkit   │
-│  Sort, Filter, │       │  Store · EventBus ·     │       │  Core · Render │
-│  Edit, Group,  │       │  CommandBus · Plugins   │       │  Text · Theme  │
+│   19+ Plugins  │◄──────│    Core Engine         │──────►│  PDF Toolkit   │
+│  Sort, Filter, │       │  Store · EventBus ·    │       │  Core · Render │
+│  Edit, Group,  │       │  CommandBus · Plugins  │       │  Text · Theme  │
 │  Pivot, Export │       └────────────────────────┘       │  AI Plugins    │
-└────────────────┘                                         └────────────────┘
+└────────────────┘                                        └────────────────┘
 ```
 
 **Key decisions:**

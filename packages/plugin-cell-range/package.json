@@ -48,5 +48,10 @@
     "auto-fill",
     "plugin",
     "gridstorm"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/007krcs/grid-data.git",
+    "directory": "packages/plugin-cell-range"
+  }
 }

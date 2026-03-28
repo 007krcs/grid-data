@@ -111,6 +111,9 @@ export class GridStormComponent implements OnInit, OnDestroy, OnChanges {
   /** Emitted when a column is resized. */
   @Output() columnResized = new EventEmitter<any>();
 
+  /** Emitted when an error occurs during grid initialization or operation. */
+  @Output() gridError = new EventEmitter<Error>();
+
   // ── Template reference ──
 
   @ViewChild('gridContainer', { static: true })
@@ -125,7 +128,13 @@ export class GridStormComponent implements OnInit, OnDestroy, OnChanges {
   // ── Lifecycle ──
 
   ngOnInit(): void {
-    this.initGrid();
+    try {
+      this.initGrid();
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      console.error('[GridStorm Angular] Initialization error:', error);
+      this.gridError.emit(error);
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {

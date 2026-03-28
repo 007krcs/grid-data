@@ -12,6 +12,7 @@ import { Store } from '../state/store';
 import { EventBus } from '../events/event-bus';
 import { CommandBus } from '../events/command-bus';
 import { PluginManager } from '../plugins/plugin-manager';
+import { registerCoreCommandValidators } from '../validation/command-validators';
 import { resolveColumns, resolveColumnGroups, updateColumn, findColumn } from './column-model';
 import {
   createRowNodes,
@@ -80,6 +81,9 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
   const store = new Store<GridState<TData>>(initialState);
   const eventBus = new EventBus<GridEventMap<TData>>();
   const commandBus = new CommandBus();
+
+  // Register built-in payload validators for core commands
+  const removeValidators = registerCoreCommandValidators(commandBus);
 
   // ── Row processing pipeline ──
   function reprocessRows(): void {
@@ -680,6 +684,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
       eventBus.emit('grid:destroyed', {});
       pluginManager.destroyAll();
       eventBus.removeAllListeners();
+      removeValidators();
       commandBus.clear();
     },
 

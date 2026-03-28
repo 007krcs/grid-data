@@ -28,9 +28,15 @@ const aiCards = [
 export function AiSection() {
   return (
     <div className="ai-section">
-      <div className="section-header" style={{ marginBottom: 16 }}>
-        <h2>AI &amp; Document Intelligence</h2>
-      </div>
+      <div className="section-label">AI-Powered</div>
+      <h2 className="section-title">
+        Document intelligence,{' '}
+        <span className="section-accent">built in</span>
+      </h2>
+      <p className="section-sub">
+        MCP server, PII detection, smart form fill, and entity extraction —
+        all driven by the same plugin architecture as the rest of the platform.
+      </p>
       <div className="ai-grid">
         {aiCards.map((card) => (
           <div key={card.title} className="ai-card">

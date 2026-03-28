@@ -2,7 +2,21 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "../",
+    "paths": {
+      "@gridstorm/dom-renderer": ["../dom-renderer/src/index.ts"],
+      "@gridstorm/core": ["../core/src/index.ts"]
+    }
   },
-  "include": ["src"]
+  "include": [
+    "src",
+    "../dom-renderer/src",
+    "../core/src"
+  ],
+  "exclude": [
+    "src/__tests__",
+    "../dom-renderer/src/__tests__",
+    "../core/src/__tests__",
+    "../core/src/__stories__"
+  ]
 }

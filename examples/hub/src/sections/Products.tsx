@@ -25,10 +25,16 @@ const pdfFeatures = [
 export function Products() {
   return (
     <>
-      <div className="section-header">
-        <h2>Products</h2>
-      </div>
-      <div className="products-grid">
+      <div className="section-label">Products</div>
+      <h2 className="section-title">
+        Everything you need to build{' '}
+        <span className="section-accent">document-driven apps</span>
+      </h2>
+      <p className="section-sub">
+        A unified platform — one license covers both the data grid and the
+        PDF toolkit, with a shared event and plugin architecture.
+      </p>
+      <div className="products-grid" style={{ marginBottom: 64 }}>
         {/* Data Grid */}
         <div className="product-card grid-product">
           <div className="product-label grid-label">
@@ -47,6 +53,14 @@ export function Products() {
                 {feat}
               </div>
             ))}
+          </div>
+          <div className="product-cta">
+            <a href="#/docs/core-concepts/architecture" className="btn-primary product-btn">
+              Grid Docs
+            </a>
+            <a href="/feature-showcase/" className="btn-secondary product-btn">
+              Live Demo
+            </a>
           </div>
         </div>
 
@@ -69,6 +83,14 @@ export function Products() {
                 {feat}
               </div>
             ))}
+          </div>
+          <div className="product-cta">
+            <a href="#/docs/guides/pdf-toolkit" className="btn-primary product-btn product-btn-pdf">
+              PDF Docs
+            </a>
+            <a href="/pdf-viewer/" className="btn-secondary product-btn">
+              Live Demo
+            </a>
           </div>
         </div>
       </div>

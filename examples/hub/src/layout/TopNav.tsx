@@ -8,9 +8,11 @@ interface TopNavProps {
 }
 
 const navLinks = [
-  { path: '/', label: 'Home' },
-  { path: '/docs', label: 'Docs' },
+  { path: '/',      label: 'Home' },
+  { path: '/docs',  label: 'Docs' },
   { path: '/demos', label: 'Demos' },
+  { path: '/docs/blog/architecture-deep-dive', label: 'Blog' },
+  { path: '/docs/getting-started/introduction', label: 'Changelog' },
 ];
 
 function isActive(route: string, path: string): boolean {

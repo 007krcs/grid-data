@@ -191,6 +191,7 @@ export function SemanticPlugin(options: SemanticPluginOptions = {}): GridPlugin 
 
       const bus = ctx.eventBus as unknown as {
         emit: (event: string, payload: unknown) => void;
+        on: (event: string, listener: (p: unknown) => void) => () => void;
       };
 
       let lastAnalysis: SemanticAnalysis | null = null;
@@ -303,7 +304,7 @@ export function SemanticPlugin(options: SemanticPluginOptions = {}): GridPlugin 
 
       // ─── Auto-analyze on data:changed ───
       unsubscribers.push(
-        ctx.eventBus.on('data:changed', () => {
+        bus.on('data:changed', () => {
           if (currentOptions.autoAnalyze) {
             runAnalysis();
           }
@@ -312,7 +313,7 @@ export function SemanticPlugin(options: SemanticPluginOptions = {}): GridPlugin 
 
       // ─── Auto-analyze on grid:ready ───
       unsubscribers.push(
-        ctx.eventBus.on('grid:ready', () => {
+        bus.on('grid:ready', () => {
           if (currentOptions.autoAnalyze) {
             runAnalysis();
           }

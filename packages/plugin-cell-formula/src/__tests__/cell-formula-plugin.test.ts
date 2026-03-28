@@ -337,7 +337,7 @@ describe('CellFormulaPlugin', () => {
     const plugin = CellFormulaPlugin();
     const cleanup = plugin.install(mock.ctx as never);
 
-    cleanup();
+    (cleanup as () => void)();
 
     // After cleanup, dispatching define should not register anything
     const initialHandlerCount = Object.keys(mock.handlers).length;

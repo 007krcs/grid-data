@@ -4,5 +4,9 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "src/__stories__",
+    "src/__tests__/plugin-integration.test.ts"
+  ]
 }

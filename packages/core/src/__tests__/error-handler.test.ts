@@ -15,7 +15,7 @@ describe('ErrorHandler', () => {
     });
 
     expect(spy).toHaveBeenCalledTimes(1);
-    const gridError = spy.mock.calls[0][0];
+    const gridError = spy.mock.calls[0]![0]!;
     expect(gridError.error.message).toBe('test error');
     expect(gridError.context.source).toBe('command');
     expect(gridError.context.commandType).toBe('sort:set');
@@ -88,7 +88,7 @@ describe('ErrorHandler', () => {
     handler.onError(spy);
     handler.report('string error', { source: 'unknown', severity: 'error' });
 
-    const gridError = spy.mock.calls[0][0];
+    const gridError = spy.mock.calls[0]![0]!;
     expect(gridError.error).toBeInstanceOf(Error);
     expect(gridError.error.message).toBe('string error');
   });
@@ -105,7 +105,7 @@ describe('ErrorHandler', () => {
       severity: 'error',
     });
 
-    expect(spy.mock.calls[0][0].context.eventType).toBe('sort:changed');
+    expect(spy.mock.calls[0]![0]!.context.eventType).toBe('sort:changed');
   });
 
   it('should include plugin context for plugin errors', () => {
@@ -120,7 +120,7 @@ describe('ErrorHandler', () => {
       severity: 'error',
     });
 
-    expect(spy.mock.calls[0][0].context.pluginId).toBe('sorting');
+    expect(spy.mock.calls[0]![0]!.context.pluginId).toBe('sorting');
   });
 
   it('should not crash if an error handler itself throws', () => {
@@ -175,7 +175,7 @@ describe('ErrorHandler', () => {
       metadata: { userId: '123', gridId: 'main' },
     });
 
-    expect(spy.mock.calls[0][0].context.metadata).toEqual({
+    expect(spy.mock.calls[0]![0]!.context.metadata).toEqual({
       userId: '123',
       gridId: 'main',
     });

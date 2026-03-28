@@ -14,7 +14,7 @@ function createMockContext() {
         setFilterModel: vi.fn(),
         setQuickFilter: vi.fn(),
         getRowNode: vi.fn(),
-        forEachNode: vi.fn((cb: (node: unknown) => void) => {}),
+        forEachNode: vi.fn((_cb: (node: unknown) => void) => {}),
         getAllColumns: vi.fn().mockReturnValue([]),
         getState: vi.fn().mockReturnValue({ quickFilterText: '', pluginState: {} }),
         getSelectedRows: vi.fn().mockReturnValue([]),

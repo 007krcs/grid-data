@@ -3,21 +3,24 @@
 // enterprise monitoring systems (Sentry, DataDog, custom loggers).
 // Also covers state serialization / snapshot-restore patterns.
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createGrid } from '../engine/grid-engine';
+import type { GridConfig } from '../types/grid';
 import { ErrorHandler } from '../errors/error-handler';
 
 // ── Helpers ──
 
-function createEngine(overrides: Parameters<typeof createGrid>[0] = {}) {
-  return createGrid({
+type EngineData = { id: number; name: string; score: number };
+
+function createEngine(overrides: Omit<Partial<GridConfig<EngineData>>, 'columns' | 'rowData' | 'getRowId'> = {}) {
+  return createGrid<EngineData>({
     columns: [{ field: 'id' }, { field: 'name' }, { field: 'score' }],
     rowData: [
       { id: 1, name: 'Alice', score: 90 },
       { id: 2, name: 'Bob', score: 75 },
       { id: 3, name: 'Charlie', score: 85 },
     ],
-    getRowId: ({ data }) => String(data.id),
+    getRowId: ({ data }) => String((data as EngineData).id),
     ...overrides,
   });
 }
@@ -80,8 +83,8 @@ describe('Telemetry hook integration', () => {
     engine.commandBus.dispatch('sort:set', { sortModel: [{ colId: 'name', sort: 'invalid' as any }] });
 
     expect(capturedErrors.length).toBeGreaterThan(0);
-    expect(capturedErrors[0].tags.command).toBe('sort:set');
-    expect(capturedErrors[0].tags.source).toBe('validation');
+    expect(capturedErrors[0]!.tags.command).toBe('sort:set');
+    expect(capturedErrors[0]!.tags.source).toBe('validation');
 
     engine.destroy();
   });

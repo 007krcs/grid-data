@@ -209,7 +209,7 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
       theme,
     }),
     // Only recreate config on structural changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line -- intentional dependency omission
     [coreColumns, plugins, rowModelType, getRowId],
   );
 
@@ -396,7 +396,7 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
     if (engine) {
       onGridReady?.(engine.api);
     }
-  }, [engine]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [engine]); // eslint-disable-line -- intentional dependency omission
 
   // ── Container style ──
   const style: CSSProperties = {

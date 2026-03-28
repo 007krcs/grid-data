@@ -8,6 +8,7 @@ export interface ColumnAnomalyConfig {
   warningThreshold?: number;  // default 2.5
   criticalThreshold?: number; // default 3.0
   windowSize?: number;        // rolling window size, default 100
+  minSamples?: number;        // min samples before detection starts, default 10
 }
 
 export interface ColumnStats {

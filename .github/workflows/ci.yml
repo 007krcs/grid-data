@@ -177,3 +177,44 @@ jobs:
           name: benchmark-results
           path: benchmarks/results/
           retention-days: 90
+
+  docs:
+    name: API Docs (TypeDoc)
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate API docs for @gridstorm/core
+        run: pnpm --filter @gridstorm/core run docs
+        continue-on-error: true
+
+      - name: Generate API docs for @gridstorm/react
+        run: pnpm --filter @gridstorm/react run docs 2>/dev/null || echo "No docs script for react adapter"
+        continue-on-error: true
+
+      - name: Generate API docs for @gridstorm/angular
+        run: pnpm --filter @gridstorm/angular run docs 2>/dev/null || echo "No docs script for angular adapter"
+        continue-on-error: true
+
+      - name: Upload generated docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-docs
+          path: |
+            packages/core/docs/
+            packages/react-adapter/docs/
+            packages/angular-adapter/docs/
+          retention-days: 30
+          if-no-files-found: ignore

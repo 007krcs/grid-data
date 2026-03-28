@@ -216,4 +216,30 @@ export const iconPaths: Record<string, React.ReactNode> = {
     React.createElement('line', { x1: '18', y1: '6', x2: '6', y2: '18' }),
     React.createElement('line', { x1: '6', y1: '6', x2: '18', y2: '18' })
   ),
+
+  shield: React.createElement(React.Fragment, null,
+    React.createElement('path', { d: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' })
+  ),
+
+  clock: React.createElement(React.Fragment, null,
+    React.createElement('circle', { cx: '12', cy: '12', r: '10' }),
+    React.createElement('polyline', { points: '12 6 12 12 16 14' })
+  ),
+
+  calculator: React.createElement(React.Fragment, null,
+    React.createElement('rect', { x: '4', y: '2', width: '16', height: '20', rx: '2' }),
+    React.createElement('line', { x1: '8', y1: '6', x2: '16', y2: '6' }),
+    React.createElement('line', { x1: '8', y1: '10', x2: '8', y2: '10' }),
+    React.createElement('line', { x1: '12', y1: '10', x2: '12', y2: '10' }),
+    React.createElement('line', { x1: '16', y1: '10', x2: '16', y2: '10' }),
+    React.createElement('line', { x1: '8', y1: '14', x2: '8', y2: '14' }),
+    React.createElement('line', { x1: '12', y1: '14', x2: '12', y2: '14' }),
+    React.createElement('line', { x1: '16', y1: '14', x2: '16', y2: '14' }),
+    React.createElement('line', { x1: '8', y1: '18', x2: '16', y2: '18' })
+  ),
+
+  clipboard: React.createElement(React.Fragment, null,
+    React.createElement('path', { d: 'M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2' }),
+    React.createElement('rect', { x: '8', y: '2', width: '8', height: '4', rx: '1', ry: '1' })
+  ),
 };

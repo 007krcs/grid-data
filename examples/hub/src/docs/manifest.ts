@@ -84,6 +84,14 @@ export const DOC_SECTIONS: DocSection[] = [
     ],
   },
   {
+    label: 'Plugins — Enterprise Tier',
+    items: [
+      { slug: 'plugins/a11y', title: 'Accessibility (WCAG 2.1 AA)' },
+      { slug: 'plugins/formula-engine', title: 'Formula Engine Pro (42 functions)' },
+      { slug: 'plugins/clipboard-pro', title: 'Clipboard Pro (Excel-Compatible)' },
+    ],
+  },
+  {
     label: 'Framework Guides',
     items: [
       { slug: 'frameworks/react', title: 'React' },

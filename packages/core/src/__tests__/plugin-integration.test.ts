@@ -158,7 +158,6 @@ describe('Plugin Integration: Filtering + Pagination', () => {
       model: { filterType: 'text', type: 'equals', filter: 'Engineering' },
     });
 
-    const state = engine.store.getState();
     // Total filtered rows is 4, page size is 3
     expect(engine.api.getDisplayedRowCount()).toBeLessThanOrEqual(4);
 
@@ -376,7 +375,7 @@ describe('Plugin Integration: Error Handling', () => {
     });
 
     expect(errorSpy).toHaveBeenCalled();
-    expect(errorSpy.mock.calls[0][0].context.source).toBe('command');
+    expect(errorSpy.mock.calls[0]![0]!.context.source).toBe('command');
 
     engine.destroy();
   });
@@ -400,7 +399,7 @@ describe('Plugin Integration: Error Handling', () => {
     });
 
     expect(errorSpy).toHaveBeenCalled();
-    expect(errorSpy.mock.calls[0][0].context.source).toBe('event');
+    expect(errorSpy.mock.calls[0]![0]!.context.source).toBe('event');
 
     engine.destroy();
   });

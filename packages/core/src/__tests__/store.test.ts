@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { Store, createSelector } from '../state/store';
+import { Store, createSelector, type Selector } from '../state/store';
 
 describe('Store', () => {
   it('should initialize with the given state', () => {
@@ -113,8 +113,8 @@ describe('Store', () => {
 describe('createSelector', () => {
   it('should compute derived state', () => {
     type State = { items: number[] };
-    const selectItems = (s: State) => s.items;
-    const selectSum = createSelector([selectItems], (items) =>
+    const selectItems: Selector<State, number[]> = (s) => s.items;
+    const selectSum = createSelector<State, [number[]], number>([selectItems], (items) =>
       items.reduce((a, b) => a + b, 0),
     );
 
@@ -123,9 +123,9 @@ describe('createSelector', () => {
 
   it('should memoize results when deps are unchanged', () => {
     type State = { items: number[] };
-    const selectItems = (s: State) => s.items;
+    const selectItems: Selector<State, number[]> = (s) => s.items;
     const combiner = vi.fn((items: number[]) => items.length);
-    const selectCount = createSelector([selectItems], combiner);
+    const selectCount = createSelector<State, [number[]], number>([selectItems], combiner);
 
     const items = [1, 2, 3];
     const state: State = { items };
@@ -138,9 +138,9 @@ describe('createSelector', () => {
 
   it('should recompute when deps change', () => {
     type State = { items: number[] };
-    const selectItems = (s: State) => s.items;
+    const selectItems: Selector<State, number[]> = (s) => s.items;
     const combiner = vi.fn((items: number[]) => items.length);
-    const selectCount = createSelector([selectItems], combiner);
+    const selectCount = createSelector<State, [number[]], number>([selectItems], combiner);
 
     selectCount({ items: [1, 2] });
     selectCount({ items: [1, 2, 3] }); // Different reference

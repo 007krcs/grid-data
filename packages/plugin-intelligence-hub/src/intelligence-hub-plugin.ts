@@ -2,7 +2,7 @@
 // Aggregates behavioral patterns across multiple GridStorm instances.
 // Implements differential privacy via Laplace noise injection.
 
-import type { GridPlugin, PluginContext } from '@gridstorm/core';
+import type { GridPlugin, PluginContext, FilterModel } from '@gridstorm/core';
 import type {
   InsightType,
   BehaviorSample,
@@ -267,7 +267,7 @@ export function IntelligenceHubPlugin(options: IntelligenceHubOptions = {}): Gri
             if (patterns && patterns.length > 0) {
               const topPattern = patterns[0]?.pattern;
               if (topPattern && typeof topPattern === 'object') {
-                ctx.api.setFilterModel(topPattern as Record<string, unknown>);
+                ctx.api.setFilterModel(topPattern as Record<string, FilterModel>);
               }
             }
           }

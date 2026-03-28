@@ -84,9 +84,10 @@ export function AnomalyPlugin(options: AnomalyPluginOptions = {}): GridPlugin {
       // Active anomaly registry keyed by anomaly id
       const activeAnomalies = new Map<string, AnomalyEvent>();
 
-      // Helper to access the event bus emit function
+      // Helper to access the event bus (cast to allow custom event names)
       const bus = ctx.eventBus as unknown as {
         emit: (event: string, payload: unknown) => void;
+        on: (event: string, listener: (p: unknown) => void) => () => void;
       };
 
       // Register initial columns
@@ -218,7 +219,7 @@ export function AnomalyPlugin(options: AnomalyPluginOptions = {}): GridPlugin {
 
       // ─── Listen for rows:updated and data:changed ───
       unsubscribers.push(
-        ctx.eventBus.on('rows:updated', (payload: unknown) => {
+        bus.on('rows:updated', (payload: unknown) => {
           const p = payload as { rows?: Array<{ id: string; data: Record<string, unknown> }> };
           if (!Array.isArray(p?.rows)) return;
           for (const row of p.rows) {
@@ -233,7 +234,7 @@ export function AnomalyPlugin(options: AnomalyPluginOptions = {}): GridPlugin {
       );
 
       unsubscribers.push(
-        ctx.eventBus.on('data:changed', (payload: unknown) => {
+        bus.on('data:changed', (payload: unknown) => {
           const p = payload as { rowId?: string; columnId?: string; value?: unknown };
           if (p?.rowId === undefined || p?.columnId === undefined) return;
           if (typeof p.value !== 'number') return;

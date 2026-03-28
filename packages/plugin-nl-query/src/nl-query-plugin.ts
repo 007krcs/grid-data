@@ -2,7 +2,7 @@
 // Parses natural language queries and translates them into GridStorm
 // filter/sort/group commands using deterministic regex pattern matching.
 
-import type { GridPlugin, PluginContext } from '@gridstorm/core';
+import type { GridPlugin, PluginContext, FilterModel } from '@gridstorm/core';
 import type {
   NlQueryOptions,
   ParsedQuery,
@@ -279,7 +279,7 @@ export function NlQueryPlugin(options: NlQueryOptions = {}): GridPlugin {
             const current = ctx.api.getFilterModel();
             ctx.api.setFilterModel({
               ...current,
-              [op.columnId]: { type: op.operator, filter: op.value },
+              [op.columnId]: { filterType: 'text', type: op.operator, filter: op.value } as FilterModel,
             });
             applied++;
           } else if (op.type === 'quickFilter') {

@@ -51,7 +51,7 @@ describe('Command Validation', () => {
     bus.dispatch('sort:set', { sortModel: [] });
 
     expect(errorSpy).toHaveBeenCalledTimes(1);
-    const gridError = errorSpy.mock.calls[0][0];
+    const gridError = errorSpy.mock.calls[0]![0]!;
     expect(gridError.context.source).toBe('validation');
     expect(gridError.context.commandType).toBe('sort:set');
     expect(gridError.error.message).toContain('always fails');
@@ -123,7 +123,7 @@ describe('Command Validation', () => {
     bus.dispatch('sort:set', { sortModel: [] });
 
     expect(errorSpy).toHaveBeenCalledTimes(1);
-    const gridError = errorSpy.mock.calls[0][0];
+    const gridError = errorSpy.mock.calls[0]![0]!;
     expect(gridError.context.source).toBe('command');
     expect(gridError.context.commandType).toBe('sort:set');
   });

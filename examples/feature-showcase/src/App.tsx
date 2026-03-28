@@ -16,6 +16,17 @@ import { ClipboardPlugin } from '@gridstorm/plugin-clipboard';
 import { RowReorderPlugin } from '@gridstorm/plugin-row-reorder';
 import '@gridstorm/theme-default';
 import { generateEmployees, generateProducts } from './data';
+// Next-gen plugins (Horizons 1-3)
+import { IntentEnginePlugin } from '@gridstorm/plugin-intent-engine';
+import { CellFormulaPlugin } from '@gridstorm/plugin-cell-formula';
+import { TemporalPlugin } from '@gridstorm/plugin-temporal';
+import { NlQueryPlugin } from '@gridstorm/plugin-nl-query';
+import { AnomalyPlugin } from '@gridstorm/plugin-anomaly';
+import { CollabPlugin, createInMemoryTransport } from '@gridstorm/plugin-collab';
+import { SemanticPlugin } from '@gridstorm/plugin-semantic';
+import { PrivacyLensPlugin } from '@gridstorm/plugin-privacy-lens';
+import { AdaptiveRendererPlugin } from '@gridstorm/plugin-adaptive-renderer';
+import { IntelligenceHubPlugin } from '@gridstorm/plugin-intelligence-hub';
 // Types from data generators used by demos
 
 // ── Feature Demos ──
@@ -28,6 +39,17 @@ interface FeatureDemo {
 }
 
 const FEATURES: FeatureDemo[] = [
+  // ── Horizon 1-3 next-gen features ──
+  { id: 'intent-engine', title: 'Intent Engine', description: 'Tracks column interactions and ranks columns by user intent using frequency+recency scoring', category: 'enterprise' },
+  { id: 'cell-formula', title: 'Cell Formulas', description: 'Define computed columns with JavaScript formula functions and automatic dependency tracking', category: 'enterprise' },
+  { id: 'temporal', title: 'Time Travel', description: 'Snapshot grid state (sort, filter, columns) and travel back in time with undo/redo', category: 'enterprise' },
+  { id: 'nl-query', title: 'NL Query', description: 'Type natural language queries like "sort by salary desc" or "filter status equals Active"', category: 'enterprise' },
+  { id: 'anomaly', title: 'Anomaly Detection', description: 'Real-time z-score anomaly detection with watch/warning/critical severity tiers', category: 'enterprise' },
+  { id: 'collab', title: 'Collaboration', description: 'Multi-user presence tracking with cell-level focus indicators and locking', category: 'enterprise' },
+  { id: 'semantic', title: 'Semantic Analysis', description: 'Auto-detects column data types (email, URL, phone, currency) and column relationships', category: 'enterprise' },
+  { id: 'privacy-lens', title: 'Privacy Lens', description: 'PII detection and masking with GDPR data map export and audit log', category: 'enterprise' },
+  { id: 'adaptive-renderer', title: 'Adaptive Renderer', description: 'Device-aware layout recommendations — mobile cards, compact tablet, virtual scroll thresholds', category: 'enterprise' },
+  { id: 'intelligence-hub', title: 'Intelligence Hub', description: 'Cross-grid behavioral aggregation with differential privacy (Laplace noise)', category: 'enterprise' },
   { id: 'sorting', title: 'Sorting', description: 'Single & multi-column sorting with custom sort cycles', category: 'core' },
   { id: 'filtering', title: 'Filtering', description: 'Quick-filter search across all columns', category: 'core' },
   { id: 'selection', title: 'Row Selection', description: 'Click rows to select with multi-select support', category: 'core' },
@@ -768,6 +790,478 @@ function FullFeaturedDemo() {
   );
 }
 
+// ── Horizon 1-3 Demo Components ──
+
+function IntentEngineDemo() {
+  const [log, setLog] = useState<string[]>([]);
+  const apiRef = useRef<GridApi | null>(null);
+  const plugins = useMemo(() => [
+    SortingPlugin({ multiSort: true }),
+    FilteringPlugin(),
+    ColumnResizePlugin(),
+    IntentEnginePlugin({
+      autoTrack: true,
+      maxRecords: 100,
+    }),
+  ], []);
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 70, sortable: true },
+    { field: 'name', headerName: 'Name', width: 180, sortable: true },
+    { field: 'department', headerName: 'Department', width: 140, sortable: true, filterable: true },
+    { field: 'salary', headerName: 'Salary', width: 120, sortable: true,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+    { field: 'city', headerName: 'City', width: 130, sortable: true },
+  ], []);
+  return (
+    <>
+      <p style={hintStyle}>Sort and filter columns. The intent engine tracks your interactions and ranks columns by frequency+recency.</p>
+      <div style={{ marginBottom: 8, display: 'flex', gap: 8 }}>
+        <button style={chipBtn} onClick={() => {
+          apiRef.current?.dispatchCommand?.('intent:record', { columnId: 'salary', action: 'sort' });
+          setLog(l => [...l.slice(-4), 'Recorded: salary sort']);
+        }}>Record Intent</button>
+        <button style={chipBtn} onClick={() => {
+          apiRef.current?.dispatchCommand?.('intent:reset', {});
+          setLog(l => [...l.slice(-4), 'Reset rankings']);
+        }}>Reset</button>
+      </div>
+      {log.length > 0 && <div style={{ fontSize: 11, color: '#666', marginBottom: 6 }}>{log[log.length - 1]}</div>}
+      <GridStorm columns={columns} rowData={EMPLOYEES_200} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+        onGridReady={(api: any) => { apiRef.current = api; }}
+        ariaLabel="Intent Engine Demo" />
+    </>
+  );
+}
+
+function CellFormulaDemo() {
+  const apiRef = useRef<GridApi | null>(null);
+  const [computed, setComputed] = useState<string>('');
+  const plugins = useMemo(() => [
+    SortingPlugin(),
+    ColumnResizePlugin(),
+    CellFormulaPlugin({ onError: 'report' }),
+  ], []);
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 60 },
+    { field: 'name', headerName: 'Product', width: 160 },
+    { field: 'price', headerName: 'Price', width: 110, sortable: true,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+    { field: 'quantity', headerName: 'Qty', width: 80, sortable: true },
+    { field: 'revenue', headerName: 'Revenue (computed)', width: 180, sortable: true,
+      valueFormatter: (p: any) => p.value != null ? `$${Number(p.value).toLocaleString()}` : '—' },
+  ], []);
+  const data = useMemo(() => PRODUCTS_100.map(p => ({ ...p, revenue: null })), []);
+  return (
+    <>
+      <p style={hintStyle}>Click "Define Formula" to compute Revenue = Price × Quantity for each row using the Cell Formula plugin.</p>
+      <div style={{ marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <button style={chipBtn} onClick={() => {
+          apiRef.current?.dispatchCommand?.('formula:define', {
+            columnId: 'revenue',
+            dependencies: ['price', 'quantity'],
+            compute: (row: any) => (row.price ?? 0) * (row.quantity ?? 0),
+          });
+          setComputed('Formula active: revenue = price × quantity');
+        }}>Define Formula</button>
+        <button style={chipBtn} onClick={() => {
+          apiRef.current?.dispatchCommand?.('formula:remove', { columnId: 'revenue' });
+          setComputed('Formula removed');
+        }}>Remove Formula</button>
+        {computed && <span style={{ fontSize: 12, color: '#2563eb' }}>{computed}</span>}
+      </div>
+      <GridStorm columns={columns} rowData={data} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+        onGridReady={(api: any) => { apiRef.current = api; }}
+        ariaLabel="Cell Formula Demo" />
+    </>
+  );
+}
+
+function TemporalDemo() {
+  const apiRef = useRef<GridApi | null>(null);
+  const [snapshots, setSnapshots] = useState<string[]>([]);
+  const plugins = useMemo(() => [
+    SortingPlugin({ multiSort: true }),
+    FilteringPlugin(),
+    ColumnResizePlugin(),
+    TemporalPlugin({ maxSnapshots: 20 }),
+  ], []);
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 70, sortable: true },
+    { field: 'name', headerName: 'Name', width: 180, sortable: true },
+    { field: 'department', headerName: 'Department', width: 140, sortable: true, filterable: true },
+    { field: 'salary', headerName: 'Salary', width: 120, sortable: true,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+    { field: 'status', headerName: 'Status', width: 110, filterable: true },
+  ], []);
+  return (
+    <>
+      <p style={hintStyle}>Sort or filter the grid, then take a snapshot. Use Undo/Redo to travel through grid states.</p>
+      <div style={{ marginBottom: 8, display: 'flex', gap: 8 }}>
+        <button style={chipBtn} onClick={() => {
+          const label = `Snapshot ${snapshots.length + 1}`;
+          apiRef.current?.dispatchCommand?.('temporal:snapshot', { label });
+          setSnapshots(s => [...s, label]);
+        }}>📸 Snapshot</button>
+        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('temporal:undo', {})}>↩ Undo</button>
+        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('temporal:redo', {})}>↪ Redo</button>
+        {snapshots.length > 0 && <span style={{ fontSize: 12, color: '#666' }}>{snapshots.length} snapshot(s)</span>}
+      </div>
+      <GridStorm columns={columns} rowData={EMPLOYEES_200} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+        onGridReady={(api: any) => { apiRef.current = api; }}
+        ariaLabel="Temporal Demo" />
+    </>
+  );
+}
+
+function NlQueryDemo() {
+  const apiRef = useRef<GridApi | null>(null);
+  const [query, setQuery] = useState('');
+  const [result, setResult] = useState('');
+  const plugins = useMemo(() => [
+    SortingPlugin({ multiSort: true }),
+    FilteringPlugin(),
+    ColumnResizePlugin(),
+    NlQueryPlugin({ maxHistory: 20 }),
+  ], []);
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 70 },
+    { field: 'name', headerName: 'Name', width: 180, sortable: true },
+    { field: 'department', headerName: 'Department', width: 140, sortable: true, filterable: true },
+    { field: 'salary', headerName: 'Salary', width: 120, sortable: true,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+    { field: 'status', headerName: 'Status', width: 110, filterable: true },
+    { field: 'city', headerName: 'City', width: 130, sortable: true, filterable: true },
+  ], []);
+  const EXAMPLES = ['sort by salary desc', 'filter status equals Active', 'sort name asc', 'clear filters'];
+  return (
+    <>
+      <p style={hintStyle}>Type a natural language query or click an example. No LLM required — pure regex pattern matching.</p>
+      <div style={{ marginBottom: 8 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+          <input type="text" placeholder='e.g. "sort by salary desc"' value={query}
+            onChange={e => setQuery(e.target.value)}
+            style={{ ...inputStyle, flex: 1 }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                apiRef.current?.dispatchCommand?.('nlquery:execute', { query });
+                setResult(`Executed: "${query}"`);
+              }
+            }} />
+          <button style={chipBtn} onClick={() => {
+            apiRef.current?.dispatchCommand?.('nlquery:execute', { query });
+            setResult(`Executed: "${query}"`);
+          }}>Run</button>
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {EXAMPLES.map(ex => (
+            <button key={ex} style={{ ...chipBtn, fontSize: 11 }} onClick={() => {
+              setQuery(ex);
+              apiRef.current?.dispatchCommand?.('nlquery:execute', { query: ex });
+              setResult(`Executed: "${ex}"`);
+            }}>{ex}</button>
+          ))}
+        </div>
+      </div>
+      {result && <div style={{ fontSize: 11, color: '#2563eb', marginBottom: 6 }}>{result}</div>}
+      <GridStorm columns={columns} rowData={EMPLOYEES_200} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+        onGridReady={(api: any) => { apiRef.current = api; }}
+        ariaLabel="NL Query Demo" />
+    </>
+  );
+}
+
+function AnomalyDemo() {
+  const apiRef = useRef<GridApi | null>(null);
+  const [anomalies, setAnomalies] = useState<string[]>([]);
+  const plugins = useMemo(() => [
+    SortingPlugin(),
+    ColumnResizePlugin(),
+    AnomalyPlugin({
+      columns: [
+        { columnId: 'salary', watchThreshold: 1.5, warningThreshold: 2.0, criticalThreshold: 2.5, windowSize: 50 },
+        { columnId: 'rating', watchThreshold: 1.5, warningThreshold: 2.0, criticalThreshold: 2.5, windowSize: 50 },
+      ],
+      onAnomaly: (ev: any) => setAnomalies(a => [`[${ev.severity.toUpperCase()}] ${ev.columnId}: ${ev.value} (z=${ev.zscore.toFixed(2)})`, ...a.slice(0, 4)]),
+    }),
+  ], []);
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 70, sortable: true },
+    { field: 'name', headerName: 'Name', width: 180 },
+    { field: 'department', headerName: 'Department', width: 140 },
+    { field: 'salary', headerName: 'Salary', width: 120, sortable: true,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+    { field: 'rating', headerName: 'Rating', width: 90, sortable: true },
+  ], []);
+  return (
+    <>
+      <p style={hintStyle}>Feed data points to the anomaly engine. It uses rolling z-score statistics to flag outliers.</p>
+      <div style={{ marginBottom: 8, display: 'flex', gap: 8 }}>
+        <button style={chipBtn} onClick={() => {
+          apiRef.current?.dispatchCommand?.('anomaly:feed', { rowId: 'r1', columnId: 'salary', value: 999999 });
+        }}>Feed Outlier ($999K)</button>
+        <button style={chipBtn} onClick={() => {
+          EMPLOYEES_50.slice(0, 10).forEach((e: any, i: number) =>
+            apiRef.current?.dispatchCommand?.('anomaly:feed', { rowId: `e${i}`, columnId: 'salary', value: e.salary })
+          );
+        }}>Feed Normal Data</button>
+        <button style={{ ...chipBtn, background: '#ef4444', color: '#fff' }} onClick={() => setAnomalies([])}>Clear Log</button>
+      </div>
+      {anomalies.length > 0 && (
+        <div style={{ fontSize: 11, background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 4, padding: '6px 10px', marginBottom: 8 }}>
+          {anomalies.map((a, i) => <div key={i}>{a}</div>)}
+        </div>
+      )}
+      <GridStorm columns={columns} rowData={EMPLOYEES_50} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+        onGridReady={(api: any) => { apiRef.current = api; }}
+        ariaLabel="Anomaly Detection Demo" />
+    </>
+  );
+}
+
+function CollabDemo() {
+  const apiRef = useRef<GridApi | null>(null);
+  const [presence, setPresence] = useState<string[]>([]);
+  const transport = useMemo(() => createInMemoryTransport(), []);
+  const plugins = useMemo(() => [
+    SortingPlugin(),
+    EditingPlugin(),
+    ColumnResizePlugin(),
+    CollabPlugin({
+      transport,
+      lockTimeout: 10000,
+    }),
+  ], [transport]);
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 70 },
+    { field: 'name', headerName: 'Name', width: 180, editable: true, cellEditor: 'text' },
+    { field: 'department', headerName: 'Department', width: 140 },
+    { field: 'salary', headerName: 'Salary', width: 120, editable: true, cellEditor: 'number',
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+  ], []);
+  const USERS = [
+    { id: 'u1', name: 'Alice', color: '#3b82f6' },
+    { id: 'u2', name: 'Bob', color: '#10b981' },
+    { id: 'u3', name: 'Carol', color: '#f59e0b' },
+  ];
+  return (
+    <>
+      <p style={hintStyle}>Simulate multi-user collaboration. Each user can join, focus cells, and acquire edit locks.</p>
+      <div style={{ marginBottom: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {USERS.map(u => (
+          <button key={u.id} style={{ ...chipBtn, borderLeft: `3px solid ${u.color}` }}
+            onClick={() => {
+              apiRef.current?.dispatchCommand?.('collab:join', { id: u.id, name: u.name, color: u.color, joinedAt: Date.now() });
+              setPresence(p => [...p.filter(x => !x.startsWith(u.name)), `${u.name} joined`]);
+            }}>
+            {u.name} Join
+          </button>
+        ))}
+        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('collab:get-presence', {})}>Get Presence</button>
+      </div>
+      {presence.length > 0 && (
+        <div style={{ fontSize: 11, color: '#666', marginBottom: 6 }}>
+          {presence.map((p, i) => <span key={i} style={{ marginRight: 10 }}>● {p}</span>)}
+        </div>
+      )}
+      <GridStorm columns={columns} rowData={EMPLOYEES_50} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT} enableCellEditing
+        onGridReady={(api: any) => { apiRef.current = api; }}
+        ariaLabel="Collaboration Demo" />
+    </>
+  );
+}
+
+function SemanticDemo() {
+  const apiRef = useRef<GridApi | null>(null);
+  const [analysis, setAnalysis] = useState<Record<string, string>>({});
+  const plugins = useMemo(() => [
+    SortingPlugin(),
+    ColumnResizePlugin(),
+    SemanticPlugin({ autoAnalyze: true, sampleSize: 100 }),
+  ], []);
+  const semanticData = useMemo(() => EMPLOYEES_50.map((e: any) => ({
+    ...e,
+    email: `${e.name.toLowerCase().replace(' ', '.')}@company.com`,
+    phone: `+1-${String(Math.floor(Math.random() * 900) + 100)}-${String(Math.floor(Math.random() * 900) + 100)}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+    ip: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+  })), []);
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'name', headerName: 'Name', width: 160 },
+    { field: 'email', headerName: 'Email', width: 220 },
+    { field: 'phone', headerName: 'Phone', width: 160 },
+    { field: 'ip', headerName: 'IP Address', width: 140 },
+    { field: 'salary', headerName: 'Salary', width: 110,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+  ], []);
+  return (
+    <>
+      <p style={hintStyle}>Click Analyze to let the Semantic plugin detect column data types from value patterns.</p>
+      <div style={{ marginBottom: 8, display: 'flex', gap: 8 }}>
+        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('semantic:analyze', {})}>🔍 Analyze Columns</button>
+        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('semantic:get-analysis', {})}>Get Analysis</button>
+      </div>
+      {Object.keys(analysis).length > 0 && (
+        <div style={{ fontSize: 11, marginBottom: 6, display: 'flex', gap: 12 }}>
+          {Object.entries(analysis).map(([col, type]) => (
+            <span key={col}><strong>{col}</strong>: <code>{type}</code></span>
+          ))}
+        </div>
+      )}
+      <GridStorm columns={columns} rowData={semanticData} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+        onGridReady={(api: any) => { apiRef.current = api; }}
+        ariaLabel="Semantic Analysis Demo" />
+    </>
+  );
+}
+
+function PrivacyLensDemo() {
+  const apiRef = useRef<GridApi | null>(null);
+  const [log, setLog] = useState<string[]>([]);
+  const piiData = useMemo(() => EMPLOYEES_50.map((e: any) => ({
+    id: e.id,
+    name: e.name,
+    email: `${e.name.toLowerCase().replace(' ', '.')}@company.com`,
+    ssn: `${String(Math.floor(Math.random() * 900) + 100)}-${String(Math.floor(Math.random() * 90) + 10)}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+    salary: e.salary,
+    department: e.department,
+  })), []);
+  const plugins = useMemo(() => [
+    SortingPlugin(),
+    ColumnResizePlugin(),
+    PrivacyLensPlugin({
+      autoDetect: false,
+      defaultRevealPolicy: 'on-click',
+      onReveal: (entry: any) => setLog(l => [`Revealed: ${entry.columnId}/${entry.rowId}`, ...l.slice(0, 3)]),
+    }),
+  ], []);
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 60 },
+    { field: 'name', headerName: 'Name', width: 160 },
+    { field: 'email', headerName: 'Email', width: 220 },
+    { field: 'ssn', headerName: 'SSN', width: 140 },
+    { field: 'salary', headerName: 'Salary', width: 110,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+    { field: 'department', headerName: 'Department', width: 140 },
+  ], []);
+  return (
+    <>
+      <p style={hintStyle}>Configure PII masking for sensitive columns. Export a GDPR data map of all detected PII.</p>
+      <div style={{ marginBottom: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('privacy:scan-column', { columnId: 'email' })}>Scan Email</button>
+        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('privacy:scan-column', { columnId: 'ssn' })}>Scan SSN</button>
+        <button style={{ ...chipBtn, background: '#ef4444', color: '#fff' }} onClick={() => apiRef.current?.dispatchCommand?.('privacy:mask', { columnId: 'ssn' })}>Mask SSN</button>
+        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('privacy:unmask', { columnId: 'ssn' })}>Unmask SSN</button>
+        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('privacy:export-map', {})}>Export Data Map</button>
+      </div>
+      {log.length > 0 && <div style={{ fontSize: 11, color: '#666', marginBottom: 6 }}>{log[0]}</div>}
+      <GridStorm columns={columns} rowData={piiData} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+        onGridReady={(api: any) => { apiRef.current = api; }}
+        ariaLabel="Privacy Lens Demo" />
+    </>
+  );
+}
+
+function AdaptiveRendererDemo() {
+  const apiRef = useRef<GridApi | null>(null);
+  const [rec, setRec] = useState<string>('');
+  const plugins = useMemo(() => [
+    SortingPlugin(),
+    ColumnResizePlugin(),
+    AdaptiveRendererPlugin({
+      autoApply: false,
+      onRecommendation: (r: any) => setRec(`Mode: ${r.mode} | Row height: ${r.rowHeight}px | Pagination: ${r.showPagination} | Reason: ${r.reason}`),
+    }),
+  ], []);
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 70, sortable: true },
+    { field: 'name', headerName: 'Name', width: 180 },
+    { field: 'department', headerName: 'Department', width: 140 },
+    { field: 'salary', headerName: 'Salary', width: 120,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+    { field: 'city', headerName: 'City', width: 130 },
+  ], []);
+  return (
+    <>
+      <p style={hintStyle}>The Adaptive Renderer detects your device profile and recommends optimal grid layout settings.</p>
+      <div style={{ marginBottom: 8, display: 'flex', gap: 8 }}>
+        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('adaptive:recalculate', {})}>📱 Detect Device</button>
+        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('adaptive:get-device-profile', {})}>Get Profile</button>
+      </div>
+      {rec && <div style={{ fontSize: 11, color: '#2563eb', background: '#eff6ff', borderRadius: 4, padding: '6px 10px', marginBottom: 8 }}>{rec}</div>}
+      <GridStorm columns={columns} rowData={EMPLOYEES_200} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+        onGridReady={(api: any) => { apiRef.current = api; }}
+        ariaLabel="Adaptive Renderer Demo" />
+    </>
+  );
+}
+
+function IntelligenceHubDemo() {
+  const apiRef1 = useRef<GridApi | null>(null);
+  const apiRef2 = useRef<GridApi | null>(null);
+  const [insights, setInsights] = useState<string[]>([]);
+  const plugins1 = useMemo(() => [
+    SortingPlugin(),
+    FilteringPlugin(),
+    ColumnResizePlugin(),
+    IntelligenceHubPlugin({ gridId: 'grid-A', shareSortPatterns: true, shareFilterPatterns: true }),
+  ], []);
+  const plugins2 = useMemo(() => [
+    SortingPlugin(),
+    FilteringPlugin(),
+    ColumnResizePlugin(),
+    IntelligenceHubPlugin({ gridId: 'grid-B', shareSortPatterns: true, shareFilterPatterns: true }),
+  ], []);
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 70, sortable: true },
+    { field: 'name', headerName: 'Name', width: 160, sortable: true },
+    { field: 'department', headerName: 'Dept', width: 120, sortable: true, filterable: true },
+    { field: 'salary', headerName: 'Salary', width: 100, sortable: true,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+  ], []);
+  return (
+    <>
+      <p style={hintStyle}>Two grid instances share behavioral patterns via the Intelligence Hub. Connect both and sort/filter to generate shared insights.</p>
+      <div style={{ marginBottom: 8, display: 'flex', gap: 8 }}>
+        <button style={chipBtn} onClick={() => {
+          apiRef1.current?.dispatchCommand?.('hub:connect', {});
+          apiRef2.current?.dispatchCommand?.('hub:connect', {});
+          setInsights(i => ['Both grids connected to hub', ...i]);
+        }}>Connect Both</button>
+        <button style={chipBtn} onClick={() => {
+          apiRef1.current?.dispatchCommand?.('hub:get-insights', {});
+          setInsights(i => ['Requested insights from hub...', ...i.slice(0, 3)]);
+        }}>Get Insights</button>
+        <button style={chipBtn} onClick={() => apiRef1.current?.dispatchCommand?.('hub:reset', {})}>Reset Hub</button>
+      </div>
+      {insights.length > 0 && <div style={{ fontSize: 11, color: '#666', marginBottom: 6 }}>{insights[0]}</div>}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#2563eb' }}>Grid A</div>
+          <GridStorm columns={columns} rowData={EMPLOYEES_50} plugins={plugins1}
+            rowHeight={36} headerHeight={40} height={240}
+            onGridReady={(api: any) => { apiRef1.current = api; }}
+            ariaLabel="Hub Grid A" />
+        </div>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#10b981' }}>Grid B</div>
+          <GridStorm columns={columns} rowData={EMPLOYEES_50.slice(0, 25)} plugins={plugins2}
+            rowHeight={36} headerHeight={40} height={240}
+            onGridReady={(api: any) => { apiRef2.current = api; }}
+            ariaLabel="Hub Grid B" />
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ── Demo Renderer Map ──
 
 const DEMO_MAP: Record<string, () => JSX.Element> = {
@@ -791,6 +1285,17 @@ const DEMO_MAP: Record<string, () => JSX.Element> = {
   'infinite-scroll': InfiniteScrollDemo,
   'status-badges': StatusBadgesDemo,
   'full-featured': FullFeaturedDemo,
+  // Horizon 1-3 next-gen demos
+  'intent-engine': IntentEngineDemo,
+  'cell-formula': CellFormulaDemo,
+  'temporal': TemporalDemo,
+  'nl-query': NlQueryDemo,
+  'anomaly': AnomalyDemo,
+  'collab': CollabDemo,
+  'semantic': SemanticDemo,
+  'privacy-lens': PrivacyLensDemo,
+  'adaptive-renderer': AdaptiveRendererDemo,
+  'intelligence-hub': IntelligenceHubDemo,
 };
 
 const CATEGORIES: Record<string, string> = {

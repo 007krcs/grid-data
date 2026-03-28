@@ -1,5 +1,5 @@
 /**
- * GridStorm Plugins — All 32 plugins in one import
+ * GridStorm Plugins — All 35 plugins in one import
  *
  * ```ts
  * import { SortingPlugin, FilteringPlugin, AIPlugin } from 'gridstorm/plugins';
@@ -47,3 +47,8 @@ export { FormulaPlugin } from '../../plugin-formula/src/index';
 export { TimeTravelPlugin } from '../../plugin-time-travel/src/index';
 export { CellRangePlugin } from '../../plugin-cell-range/src/index';
 export { ValidationPlugin } from '../../plugin-validation/src/index';
+
+// ─── Tier 5: Enterprise Differentiators ────────────────────
+export { A11yPlugin } from '../../plugin-a11y/src/index';
+export { FormulaEnginePlugin } from '../../plugin-formula-engine/src/index';
+export { ClipboardProPlugin } from '../../plugin-clipboard-pro/src/index';

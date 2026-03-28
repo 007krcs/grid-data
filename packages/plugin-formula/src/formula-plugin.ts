@@ -445,6 +445,15 @@ export function FormulaPlugin(options?: FormulaPluginOptions): GridPlugin {
         },
       );
 
+      const unregisterRegFunctions = ctx.commandBus.registerHandler(
+        'formula:registerFunctions',
+        (payload: { functions: Array<{ name: string; minArgs: number; maxArgs: number; evaluate: (args: unknown[]) => unknown }> }) => {
+          for (const fn of payload.functions) {
+            functionRegistry.set(fn.name.toUpperCase(), fn);
+          }
+        },
+      );
+
       const unregisterGetErrors = ctx.commandBus.registerHandler(
         'formula:getErrors',
         (_payload: Record<string, never>) => {
@@ -481,6 +490,7 @@ export function FormulaPlugin(options?: FormulaPluginOptions): GridPlugin {
         unregisterEvaluate();
         unregisterEvaluateAll();
         unregisterBulkSet();
+        unregisterRegFunctions();
         unregisterGetErrors();
         unsubValueChanged();
         graph.clear();

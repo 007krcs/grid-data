@@ -50,6 +50,9 @@ const PUBLISH_ORDER = [
   'plugin-conditional-formatting',
   'plugin-streaming',
   'plugin-ai',
+  'plugin-a11y',
+  'plugin-formula-engine',
+  'plugin-clipboard-pro',
 
   // Layer 2: PDF subsystem
   'pdf-core',

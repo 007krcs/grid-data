@@ -29,6 +29,7 @@ const FOOTER_COLS = [
       { label: 'API Reference',     href: '#/docs/api/grid-api' },
       { label: 'Column Defs',       href: '#/docs/api/column-definitions' },
       { label: 'Accessibility',     href: '#/docs/plugins/a11y' },
+      { label: 'Migration Guide',   href: '#/docs/guides/migration-from-ag-grid' },
       { label: 'Contributing',      href: 'https://github.com/007krcs/grid-data/blob/main/CONTRIBUTING.md' },
     ],
   },

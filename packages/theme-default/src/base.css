@@ -122,7 +122,8 @@
   color: var(--gs-color-row-fg);
 }
 
-.gs-cell:focus {
+.gs-cell:focus,
+.gs-cell.gs-cell-focused {
   outline: none;
   box-shadow: var(--gs-shadow-focus-ring);
   z-index: 1;

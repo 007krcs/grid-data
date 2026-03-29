@@ -30,4 +30,6 @@ export interface IntentEngineOptions {
   autoTrack?: boolean;
   /** When true, reorder columns immediately whenever ranking changes. Default: false */
   autoApplyRanking?: boolean;
+  /** Called whenever the ranking is recalculated — use for UI visualisation. */
+  onRankingUpdated?: (ranking: ColumnScore[]) => void;
 }

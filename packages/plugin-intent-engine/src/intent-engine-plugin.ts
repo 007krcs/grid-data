@@ -64,6 +64,7 @@ export function IntentEnginePlugin(options: IntentEngineOptions = {}): GridPlugi
     halfLifeMs = DEFAULT_HALF_LIFE_MS,
     autoTrack = true,
     autoApplyRanking = false,
+    onRankingUpdated,
   } = options;
 
   return {
@@ -92,6 +93,9 @@ export function IntentEnginePlugin(options: IntentEngineOptions = {}): GridPlugi
 
         const state = ctx.getState<IntentState>(PLUGIN_STATE_KEY);
         ctx.eventBus.emit('intent:ranking-updated' as never, { ranking: state.ranking } as never);
+
+        // Fire callback for UI visualisation (avoids internal API access from demos)
+        onRankingUpdated?.(state.ranking);
 
         if (autoApplyRanking) {
           applyRanking(ctx);
@@ -144,13 +148,14 @@ export function IntentEnginePlugin(options: IntentEngineOptions = {}): GridPlugi
             ranking: [],
             lastApplied: null,
           }));
+          onRankingUpdated?.([]);
         }),
       );
 
       if (autoTrack) {
-        // Listen to sort:changed — track sorted columns
+        // Listen to column:sort:changed (correct event name — NOT 'sort:changed')
         unsubscribers.push(
-          ctx.eventBus.on('sort:changed' as never, (payload: unknown) => {
+          ctx.eventBus.on('column:sort:changed' as never, (payload: unknown) => {
             const ev = payload as { sortModel?: Array<{ colId: string }> };
             for (const item of ev.sortModel ?? []) {
               track(item.colId, 'sort');
@@ -168,15 +173,25 @@ export function IntentEnginePlugin(options: IntentEngineOptions = {}): GridPlugi
           }),
         );
 
-        // Listen to column:visibility-changed — detect hide/show
+        // Listen to column:visible — detect hide/show (correct event name)
         unsubscribers.push(
-          ctx.eventBus.on('column:visibility-changed' as never, (payload: unknown) => {
-            const ev = payload as { columnId: string; visible: boolean };
-            track(ev.columnId, ev.visible ? 'show' : 'hide');
+          ctx.eventBus.on('column:visible' as never, (payload: unknown) => {
+            const ev = payload as { column: { colId: string }; visible: boolean };
+            const colId = ev.column?.colId;
+            if (colId) track(colId, ev.visible ? 'show' : 'hide');
           }),
         );
 
-        // Listen to quickFilter:changed — track as quickFilter action
+        // Listen to column:moved — track reorder interactions
+        unsubscribers.push(
+          ctx.eventBus.on('column:moved' as never, (payload: unknown) => {
+            const ev = payload as { column: { colId: string } };
+            const colId = ev.column?.colId;
+            if (colId) track(colId, 'reorder');
+          }),
+        );
+
+        // Listen to quickFilter:changed
         unsubscribers.push(
           ctx.eventBus.on('quickFilter:changed' as never, () => {
             track('__quickFilter__', 'quickFilter');

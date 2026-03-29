@@ -1222,9 +1222,16 @@ function FullFeaturedDemo() {
 
 // ── Horizon 1-3 Demo Components ──
 
+const COL_LABELS: Record<string, string> = {
+  id: 'ID', name: 'Name', department: 'Department', salary: 'Salary', city: 'City',
+};
+const RANK_COLORS = ['#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626'];
+
 function IntentEngineDemo() {
-  const [log, setLog] = useState<string[]>([]);
+  const [ranking, setRanking] = useState<Array<{ columnId: string; score: number; frequency: number; recency: number }>>([]);
+  const [lastAction, setLastAction] = useState<string>('');
   const apiRef = useRef<GridApi | null>(null);
+
   const plugins = useMemo(() => [
     SortingPlugin({ multiSort: true }),
     FilteringPlugin(),
@@ -1232,34 +1239,89 @@ function IntentEngineDemo() {
     IntentEnginePlugin({
       autoTrack: true,
       maxRecords: 100,
+      onRankingUpdated: (r) => setRanking(r.map(c => ({ columnId: c.columnId, score: c.score, frequency: c.frequency, recency: c.recency }))),
     }),
   ], []);
+
   const columns: ColumnDef[] = useMemo(() => [
     { field: 'id', headerName: 'ID', width: 70, sortable: true },
-    { field: 'name', headerName: 'Name', width: 180, sortable: true },
+    { field: 'name', headerName: 'Name', width: 180, sortable: true, filterable: true },
     { field: 'department', headerName: 'Department', width: 140, sortable: true, filterable: true },
     { field: 'salary', headerName: 'Salary', width: 120, sortable: true,
       valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
-    { field: 'city', headerName: 'City', width: 130, sortable: true },
+    { field: 'city', headerName: 'City', width: 130, sortable: true, filterable: true },
   ], []);
+
+  const maxScore = ranking[0]?.score ?? 1;
+
   return (
     <>
-      <p style={hintStyle}>Sort and filter columns. The intent engine tracks your interactions and ranks columns by frequency+recency.</p>
-      <div style={{ marginBottom: 8, display: 'flex', gap: 8 }}>
-        <button style={chipBtn} onClick={() => {
-          apiRef.current?.dispatchCommand?.('intent:record', { columnId: 'salary', action: 'sort' });
-          setLog(l => [...l.slice(-4), 'Recorded: salary sort']);
-        }}>Record Intent</button>
-        <button style={chipBtn} onClick={() => {
-          apiRef.current?.dispatchCommand?.('intent:reset', {});
-          setLog(l => [...l.slice(-4), 'Reset rankings']);
-        }}>Reset</button>
+      <p style={hintStyle}>
+        Sort or filter any column — the intent engine tracks interactions and ranks columns by
+        <strong> frequency × recency</strong> scoring. Rankings update live below.
+      </p>
+
+      {/* Controls */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <button style={{ ...chipBtn, background: '#2563eb', color: '#fff' }} onClick={() => {
+          apiRef.current?.dispatchCommand?.('intent:record' as any, { columnId: 'salary', action: 'sort' });
+          setLastAction('📌 Manually recorded: Salary → sort');
+        }}>📌 Record Salary Sort</button>
+        <button style={{ ...chipBtn, background: '#7c3aed', color: '#fff' }} onClick={() => {
+          apiRef.current?.dispatchCommand?.('intent:record' as any, { columnId: 'department', action: 'filter' });
+          setLastAction('📌 Manually recorded: Department → filter');
+        }}>📌 Record Dept Filter</button>
+        <button style={{ ...chipBtn, background: '#374151', color: '#fff' }} onClick={() => {
+          apiRef.current?.dispatchCommand?.('intent:reset' as any, {});
+          setLastAction('🔄 Rankings reset');
+        }}>🔄 Reset</button>
+        {lastAction && <span style={{ fontSize: 11, color: '#6b7280' }}>{lastAction}</span>}
       </div>
-      {log.length > 0 && <div style={{ fontSize: 11, color: '#666', marginBottom: 6 }}>{log[log.length - 1]}</div>}
-      <GridStorm columns={columns} rowData={EMPLOYEES_200} plugins={plugins}
-        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+
+      {/* Live ranking panel */}
+      <div style={{ marginBottom: 10, padding: '10px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#64748b', marginBottom: 8 }}>
+          ⚡ Live Column Intent Rankings
+        </div>
+        {ranking.length === 0 ? (
+          <div style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>
+            Sort or filter a column to start tracking — rankings will appear here in real time.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {ranking.filter(r => !r.columnId.startsWith('__')).map((col, i) => (
+              <div key={col.columnId} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 18, height: 18, borderRadius: 4, background: RANK_COLORS[i] ?? '#94a3b8', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {i + 1}
+                </span>
+                <span style={{ width: 90, fontSize: 12, fontWeight: 600, color: '#1e293b' }}>
+                  {COL_LABELS[col.columnId] ?? col.columnId}
+                </span>
+                <div style={{ flex: 1, background: '#e2e8f0', borderRadius: 3, height: 8, overflow: 'hidden' }}>
+                  <div style={{ width: `${Math.round((col.score / maxScore) * 100)}%`, background: RANK_COLORS[i] ?? '#94a3b8', height: '100%', borderRadius: 3, transition: 'width 0.4s ease' }} />
+                </div>
+                <span style={{ width: 38, fontSize: 11, color: '#64748b', textAlign: 'right' }}>
+                  {col.score.toFixed(2)}
+                </span>
+                <span style={{ width: 52, fontSize: 10, color: '#94a3b8', textAlign: 'right' }}>
+                  f:{col.frequency}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <GridStorm
+        columns={columns}
+        rowData={EMPLOYEES_200}
+        plugins={plugins}
+        rowHeight={40}
+        headerHeight={44}
+        height={GRID_HEIGHT - 130}
         onGridReady={(api: any) => { apiRef.current = api; }}
-        ariaLabel="Intent Engine Demo" />
+        ariaLabel="Intent Engine Demo"
+      />
     </>
   );
 }

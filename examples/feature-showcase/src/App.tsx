@@ -1372,12 +1372,16 @@ function CellFormulaDemo() {
 
 function TemporalDemo() {
   const apiRef = useRef<GridApi | null>(null);
-  const [snapshots, setSnapshots] = useState<string[]>([]);
+  const [snapshotCount, setSnapshotCount] = useState(0);
+  const [undoCount, setUndoCount] = useState(0);
+  const [redoCount, setRedoCount] = useState(0);
+  const [lastAction, setLastAction] = useState<string>('');
+
   const plugins = useMemo(() => [
     SortingPlugin({ multiSort: true }),
     FilteringPlugin(),
     ColumnResizePlugin(),
-    TemporalPlugin({ maxSnapshots: 20 }),
+    TemporalPlugin({ maxHistory: 20 }),
   ], []);
   const columns: ColumnDef[] = useMemo(() => [
     { field: 'id', headerName: 'ID', width: 70, sortable: true },
@@ -1387,18 +1391,43 @@ function TemporalDemo() {
       valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
     { field: 'status', headerName: 'Status', width: 110, filterable: true },
   ], []);
+
+  function syncPluginState() {
+    const api = apiRef.current as any;
+    if (!api) return;
+    const state = api.getPluginState?.('temporal');
+    if (!state) return;
+    setUndoCount(state.undoStack?.length ?? 0);
+    setRedoCount(state.redoStack?.length ?? 0);
+    setSnapshotCount(state.snapshots?.length ?? 0);
+  }
+
   return (
     <>
       <p style={hintStyle}>Sort or filter the grid, then take a snapshot. Use Undo/Redo to travel through grid states.</p>
-      <div style={{ marginBottom: 8, display: 'flex', gap: 8 }}>
+      <div style={{ marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <button style={chipBtn} onClick={() => {
-          const label = `Snapshot ${snapshots.length + 1}`;
+          const label = `Snapshot ${snapshotCount + 1}`;
           apiRef.current?.dispatchCommand?.('temporal:snapshot', { label });
-          setSnapshots(s => [...s, label]);
+          setLastAction(`Saved "${label}"`);
+          syncPluginState();
         }}>📸 Snapshot</button>
-        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('temporal:undo', {})}>↩ Undo</button>
-        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('temporal:redo', {})}>↪ Redo</button>
-        {snapshots.length > 0 && <span style={{ fontSize: 12, color: '#666' }}>{snapshots.length} snapshot(s)</span>}
+        <button style={chipBtn} onClick={() => {
+          apiRef.current?.dispatchCommand?.('temporal:undo', {});
+          setLastAction('↩ Undone');
+          syncPluginState();
+        }}>↩ Undo</button>
+        <button style={chipBtn} onClick={() => {
+          apiRef.current?.dispatchCommand?.('temporal:redo', {});
+          setLastAction('↪ Redone');
+          syncPluginState();
+        }}>↪ Redo</button>
+        <span style={{ fontSize: 12, color: '#555', display: 'flex', gap: 12 }}>
+          <span>📦 {snapshotCount} snapshots</span>
+          <span style={{ color: undoCount > 0 ? '#2563eb' : '#aaa' }}>↩ {undoCount} undo</span>
+          <span style={{ color: redoCount > 0 ? '#7c3aed' : '#aaa' }}>↪ {redoCount} redo</span>
+        </span>
+        {lastAction && <span style={{ fontSize: 12, color: '#059669', fontWeight: 600 }}>{lastAction}</span>}
       </div>
       <GridStorm columns={columns} rowData={EMPLOYEES_200} plugins={plugins}
         rowHeight={40} headerHeight={44} height={GRID_HEIGHT}

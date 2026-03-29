@@ -42,6 +42,9 @@ export function CellFormulaPlugin(options: CellFormulaOptions = {}): GridPlugin 
         computedValues: new Map(),
       } as FormulaState);
 
+      // Guard against re-entrant recompute triggered by our own rowNodes touch
+      let isRecomputing = false;
+
       function getRows(): Array<{ id: string; data: unknown }> {
         const nodes: Array<{ id: string; data: unknown }> = [];
         ctx.api.forEachNode?.((node: { id: string; data: unknown }) => nodes.push(node));
@@ -49,33 +52,56 @@ export function CellFormulaPlugin(options: CellFormulaOptions = {}): GridPlugin 
       }
 
       function recompute(columnId?: string) {
-        ctx.setState(PLUGIN_STATE_KEY, (prev: unknown) => {
-          const state = prev as FormulaState;
-          const newComputedValues = new Map(state.computedValues);
-          const allErrors: FormulaError[] = [];
-          const rows = getRows();
+        if (isRecomputing) return;
+        isRecomputing = true;
 
-          const defsToCompute = columnId
-            ? ([state.definitions.get(columnId)].filter(Boolean) as FormulaDefinition[])
-            : ([...state.definitions.values()] as FormulaDefinition[]);
+        try {
+          ctx.setState(PLUGIN_STATE_KEY, (prev: unknown) => {
+            const state = prev as FormulaState;
+            const newComputedValues = new Map(state.computedValues);
+            const allErrors: FormulaError[] = [];
+            const rows = getRows();
 
-          for (const def of defsToCompute) {
-            const { values, errors } = computeForColumn(def, rows, errorMode);
-            newComputedValues.set(def.columnId, values);
-            allErrors.push(...errors);
-            if (errors.length > 0 && errorMode === 'report') {
-              ctx.eventBus.emit('formula:error' as never, { errors } as never);
+            const defsToCompute = columnId
+              ? ([state.definitions.get(columnId)].filter(Boolean) as FormulaDefinition[])
+              : ([...state.definitions.values()] as FormulaDefinition[]);
+
+            for (const def of defsToCompute) {
+              const { values, errors } = computeForColumn(def, rows, errorMode);
+              newComputedValues.set(def.columnId, values);
+              allErrors.push(...errors);
+              if (errors.length > 0 && errorMode === 'report') {
+                ctx.eventBus.emit('formula:error' as never, { errors } as never);
+              }
             }
+
+            return { ...state, computedValues: newComputedValues, errors: allErrors };
+          });
+
+          // Write computed values back into row node data so the renderer displays them
+          const state = ctx.getState(PLUGIN_STATE_KEY) as FormulaState;
+          let anyUpdated = false;
+          ctx.api.forEachNode?.((node: { id: string; data: Record<string, unknown> }) => {
+            for (const [colId, valueMap] of state.computedValues) {
+              if (valueMap.has(node.id)) {
+                node.data[colId] = valueMap.get(node.id);
+                anyUpdated = true;
+              }
+            }
+          });
+
+          // Touch rowNodes reference so the DOM renderer re-renders all cells
+          if (anyUpdated) {
+            ctx.store.setState((prev) => ({ ...prev, rowNodes: new Map(prev.rowNodes) }));
           }
 
-          return { ...state, computedValues: newComputedValues, errors: allErrors };
-        });
-
-        const state = ctx.getState(PLUGIN_STATE_KEY) as FormulaState;
-        ctx.eventBus.emit('formula:computed' as never, {
-          columnId,
-          computedValues: state.computedValues,
-        } as never);
+          ctx.eventBus.emit('formula:computed' as never, {
+            columnId,
+            computedValues: state.computedValues,
+          } as never);
+        } finally {
+          isRecomputing = false;
+        }
       }
 
       const unregisterDefine = ctx.commandBus.registerHandler(
@@ -115,8 +141,11 @@ export function CellFormulaPlugin(options: CellFormulaOptions = {}): GridPlugin 
         },
       );
 
-      // Recompute when rows change
-      const unsubRows = ctx.eventBus.on('rows:updated' as never, () => recompute());
+      // Recompute when rows change — isRecomputing guard prevents infinite loop
+      // when recompute() itself touches rowNodes to trigger re-render
+      const unsubRows = ctx.eventBus.on('rows:updated' as never, () => {
+        if (!isRecomputing) recompute();
+      });
 
       return () => {
         unregisterDefine();

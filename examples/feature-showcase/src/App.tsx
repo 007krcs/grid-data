@@ -468,16 +468,26 @@ function A11yDemo() {
       highContrast: true,
       politeness: 'polite',
       formatAnnouncement: (_type: any, ctx: any) => {
+        // ctx.columnName (not columnId), ctx.count (not selectedCount),
+        // ctx.active + ctx.columnName (not visibleCount)
         const msg = ctx.type === 'sort-changed'
-          ? `Sorted by ${ctx.columnId ?? 'column'}`
+          ? `Sorted by ${ctx.columnName ?? 'column'} — ${ctx.direction ?? ''}`
           : ctx.type === 'filter-changed'
-          ? `Filter applied — ${ctx.visibleCount ?? '?'} rows visible`
+          ? ctx.active
+            ? `Filter applied${ctx.columnName ? ` on ${ctx.columnName}` : ''}`
+            : 'Filter cleared'
           : ctx.type === 'selection-changed'
-          ? `${ctx.selectedCount ?? 0} row(s) selected`
+          ? `${ctx.count ?? 0} row${(ctx.count ?? 0) !== 1 ? 's' : ''} selected`
           : ctx.type === 'cell-edit-started'
-          ? `Editing ${ctx.columnId ?? 'cell'}`
+          ? `Editing ${ctx.columnName ?? 'cell'}, row ${(ctx.rowIndex ?? 0) + 1}`
+          : ctx.type === 'cell-edit-stopped'
+          ? `Done editing ${ctx.columnName ?? 'cell'}`
+          : ctx.type === 'cell-focused'
+          ? `${ctx.columnName ?? 'Cell'}, row ${(ctx.rowIndex ?? 0) + 1}`
           : ctx.type === 'page-changed'
           ? `Page ${ctx.page ?? ''} of ${ctx.totalPages ?? ''}`
+          : ctx.type === 'data-loaded'
+          ? `${ctx.rowCount ?? 0} rows loaded`
           : null;
         if (msg) setAnnouncements(prev => [msg, ...prev.slice(0, 4)]);
         return msg;

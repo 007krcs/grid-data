@@ -221,6 +221,18 @@ export const iconPaths: Record<string, React.ReactNode> = {
     React.createElement('path', { d: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' })
   ),
 
+  users: React.createElement(React.Fragment, null,
+    React.createElement('path', { d: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2' }),
+    React.createElement('circle', { cx: '9', cy: '7', r: '4' }),
+    React.createElement('path', { d: 'M23 21v-2a4 4 0 0 0-3-3.87' }),
+    React.createElement('path', { d: 'M16 3.13a4 4 0 0 1 0 7.75' })
+  ),
+
+  'heart-pulse': React.createElement(React.Fragment, null,
+    React.createElement('path', { d: 'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z' }),
+    React.createElement('path', { d: 'M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27' })
+  ),
+
   clock: React.createElement(React.Fragment, null,
     React.createElement('circle', { cx: '12', cy: '12', r: '10' }),
     React.createElement('polyline', { points: '12 6 12 12 16 14' })

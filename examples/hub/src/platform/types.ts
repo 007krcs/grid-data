@@ -35,6 +35,28 @@ export interface ProductManifest {
   keyFeatures: string[];
   quickLinks: ProductQuickLink[];
   tags: string[];
+  /** Optional SEO metadata — used by useSeo hook to set <head> tags per product page */
+  seo?: ProductSeoMeta;
+}
+
+// ── SEO Metadata ─────────────────────────────────────────────────
+// Each product declares SEO metadata in its manifest. The platform
+// useSeo hook reads this and injects it into <head> on route change.
+export interface ProductSeoMeta {
+  /** Full <title> tag value — 50-60 chars ideal */
+  title: string;
+  /** <meta name="description"> — 140-155 chars ideal */
+  description: string;
+  /** Target keywords for the product page */
+  keywords: string[];
+  /** og:image / twitter:image URL (relative or absolute) */
+  ogImage?: string;
+  /** JSON-LD @type for the product's SoftwareApplication schema */
+  jsonLdType: 'SoftwareApplication' | 'WebApplication' | 'Service';
+  /** Google's applicationCategory for SoftwareApplication schema */
+  applicationCategory?: string;
+  /** operatingSystem field in SoftwareApplication schema */
+  operatingSystem?: string;
 }
 
 export interface PlatformConfig {

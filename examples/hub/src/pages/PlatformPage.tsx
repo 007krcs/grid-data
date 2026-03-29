@@ -215,7 +215,7 @@ export function PlatformPage() {
             What's <span className="section-accent">coming next</span>
           </h2>
           <p className="section-sub">
-            The DataStorm platform grows as new products integrate using the{' '}
+            NexaForge grows as new products integrate using the{' '}
             <code>ProductManifest</code> contract — a single file registration.
           </p>
           <div className="plat-roadmap-grid">

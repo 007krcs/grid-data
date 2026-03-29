@@ -31,6 +31,26 @@ export const analyticsStudioManifest: ProductManifest = {
   ],
   quickLinks: [],
   tags: ['Coming Soon', 'Analytics', 'BI', 'Charts', 'Pivoting'],
+  seo: {
+    title: 'Analytics Studio — Visual BI & Data Analytics | NexaForge',
+    description:
+      'Drag-and-drop analytics builder with 20+ chart types, pivot tables, KPI dashboards, ' +
+      'and scheduled reports. No SQL required. Powered by GridStorm.',
+    keywords: [
+      'business intelligence software',
+      'visual analytics platform',
+      'drag drop BI tool',
+      'KPI dashboard software',
+      'pivot table builder',
+      'data visualization tool',
+      'no-code analytics',
+      'Analytics Studio NexaForge',
+    ],
+    ogImage: '/og-analytics-studio.png',
+    jsonLdType: 'SoftwareApplication',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'All',
+  },
 };
 
 export const dataFlowManifest: ProductManifest = {
@@ -64,4 +84,24 @@ export const dataFlowManifest: ProductManifest = {
   ],
   quickLinks: [],
   tags: ['Coming Soon', 'Streaming', 'Real-time', 'WebSocket', 'Kafka'],
+  seo: {
+    title: 'DataFlow — Real-Time Streaming Data Platform | NexaForge',
+    description:
+      'Connect live data feeds via WebSocket, SSE, and Kafka directly to GridStorm grids. ' +
+      'Sub-10ms update latency, anomaly alerting, and backpressure control.',
+    keywords: [
+      'real-time data streaming',
+      'WebSocket data grid',
+      'Kafka dashboard',
+      'live data visualization',
+      'SSE streaming platform',
+      'real-time analytics grid',
+      'streaming data software',
+      'DataFlow NexaForge',
+    ],
+    ogImage: '/og-dataflow.png',
+    jsonLdType: 'SoftwareApplication',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'All',
+  },
 };

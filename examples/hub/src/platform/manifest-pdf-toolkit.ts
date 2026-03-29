@@ -37,4 +37,25 @@ export const pdfToolkitManifest: ProductManifest = {
     { label: 'Form Fill Guide', path: '/docs/guides/pdf-toolkit' },
   ],
   tags: ['WASM', 'Rust', 'Enterprise', 'PDF', 'PII', 'Encryption', 'Digital Signatures'],
+  seo: {
+    title: 'PDF Toolkit — WASM-Powered PDF Processing | NexaForge',
+    description:
+      'Rust/WASM PDF toolkit with 13 annotation types, smart form auto-fill, ' +
+      'PII detection, digital signatures, and AES-256 encryption. Enterprise-grade.',
+    keywords: [
+      'WASM PDF viewer',
+      'PDF annotation library',
+      'JavaScript PDF toolkit',
+      'PDF digital signatures',
+      'PII detection PDF',
+      'AES-256 PDF encryption',
+      'browser PDF editor',
+      'Rust WASM PDF renderer',
+      'PDF Toolkit NexaForge',
+    ],
+    ogImage: '/og-pdf-toolkit.png',
+    jsonLdType: 'SoftwareApplication',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'All',
+  },
 };

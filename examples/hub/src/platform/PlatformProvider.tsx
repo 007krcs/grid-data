@@ -4,8 +4,8 @@ import { getAllProducts, getProduct } from './registry';
 import { navigate } from '../App';
 
 const PLATFORM_CONFIG: PlatformConfig = {
-  name: 'DataStorm Platform',
-  tagline: 'Professional data tools for engineering teams',
+  name: 'NexaForge',
+  tagline: 'Enterprise software, engineered to scale',
   version: '0.1.2',
   githubUrl: 'https://github.com/007krcs/grid-data',
 };

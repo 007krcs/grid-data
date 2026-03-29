@@ -1,4 +1,4 @@
-// ─── DataStorm Platform — Core Types ───
+// ─── NexaForge Platform — Core Types ───
 // This is the integration contract every product must implement.
 // New products register a ProductManifest; the platform shell
 // handles routing, navigation, and shared services automatically.
@@ -26,7 +26,7 @@ export interface ProductQuickLink {
 
 // ── Product Manifest ──────────────────────────────────────────────
 //
-// Every product on the DataStorm platform declares one of these.
+// Every product on the NexaForge platform declares one of these.
 // The platform shell reads manifests from the ProductRegistry and:
 //   1. Renders product cards on the platform launcher
 //   2. Builds the product switcher in the top nav
@@ -101,7 +101,7 @@ export interface ProductManifest {
 // Top-level platform config — set once in the shell, read everywhere.
 //
 export interface PlatformConfig {
-  /** Platform brand name, e.g. "DataStorm Platform" */
+  /** Platform brand name, e.g. "NexaForge Platform" */
   name: string;
 
   /** Short tagline shown in the platform launcher hero */

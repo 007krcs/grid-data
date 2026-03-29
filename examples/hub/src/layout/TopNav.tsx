@@ -137,7 +137,7 @@ export function TopNav({ route }: TopNavProps) {
           onClick={(e) => { e.preventDefault(); navigate('/products'); }}
           title={config.name}
         >
-          <div className="top-nav-logo">DS</div>
+          <div className="top-nav-logo">NF</div>
           <span className="top-nav-name">{config.name}</span>
         </a>
 

@@ -39,4 +39,26 @@ export const gridstormManifest: ProductManifest = {
     { label: 'Playground',        path: '/playground/', external: true, isNew: true },
   ],
   tags: ['MIT', 'TypeScript', 'React', 'Vue', 'Svelte', 'Virtual Scroll', 'WCAG 2.1 AA'],
+  seo: {
+    title: 'GridStorm — Enterprise React Data Grid | NexaForge',
+    description:
+      'Open-source enterprise data grid with virtual scrolling (100K rows @ 60fps), ' +
+      'WCAG 2.1 AA, 42 Excel formula functions, and 35 composable plugins. Free forever.',
+    keywords: [
+      'enterprise data grid',
+      'react data grid',
+      'open source data table',
+      'ag grid alternative',
+      'virtual scrolling grid',
+      'TypeScript data grid',
+      'WCAG accessible grid',
+      'excel formula data grid',
+      'headless data grid',
+      'GridStorm',
+    ],
+    ogImage: '/og-gridstorm.png',
+    jsonLdType: 'SoftwareApplication',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'All',
+  },
 };

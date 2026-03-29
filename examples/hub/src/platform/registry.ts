@@ -1,22 +1,26 @@
 // ─── Platform Product Registry ───
-// Registers all products known to the DataStorm platform shell.
+// Registers all products known to the NexaForge platform shell.
 //
 // HOW TO ADD A NEW PRODUCT:
-//   1. Create   src/platform/manifest-<product>.ts
-//   2. Add      your manifest to PRODUCT_MANIFESTS below
+//   1. Create   src/platform/manifest-<product>.ts  (implement ProductManifest)
+//   2. Import   it below and add to PRODUCT_MANIFESTS
 //   3. Done — the launcher, nav, and routing pick it up automatically.
 
 import type { ProductManifest } from './types';
 import { gridstormManifest } from './manifest-gridstorm';
 import { pdfToolkitManifest } from './manifest-pdf-toolkit';
+import { nexaRecruitManifest } from './manifest-nexa-recruit';
+import { nexaCareManifest } from './manifest-nexa-care';
 import { analyticsStudioManifest, dataFlowManifest } from './manifest-coming-soon';
 
 /** Ordered list — determines display order in launcher + nav */
 const PRODUCT_MANIFESTS: ProductManifest[] = [
-  gridstormManifest,
-  pdfToolkitManifest,
-  analyticsStudioManifest,
-  dataFlowManifest,
+  gridstormManifest,       // GA   — Data Grid
+  pdfToolkitManifest,      // Beta — PDF Toolkit
+  nexaRecruitManifest,     // Soon — ATS & Resume Builder
+  nexaCareManifest,        // Soon — Healthcare Platform
+  analyticsStudioManifest, // Soon — Analytics Studio
+  dataFlowManifest,        // Soon — Real-time Streaming
 ];
 
 export function getAllProducts(): readonly ProductManifest[] {

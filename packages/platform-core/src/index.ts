@@ -1,5 +1,5 @@
 // ─── @gridstorm/platform-core ───
-// Integration contract for the DataStorm platform.
+// Integration contract for the NexaForge platform.
 //
 // HOW TO INTEGRATE A NEW PRODUCT:
 //

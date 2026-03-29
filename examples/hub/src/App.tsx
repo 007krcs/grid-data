@@ -10,6 +10,8 @@ import { ProductHomePage } from './pages/ProductHomePage';
 import { TopNav } from './layout/TopNav';
 import { Footer } from './layout/Footer';
 import { getActiveProductId } from './platform/registry';
+import { useSeo } from './platform/useSeo';
+import { getSeoForRoute } from './platform/seoConfig';
 
 function useHashRoute(): string {
   const [hash, setHash] = React.useState(window.location.hash.slice(1) || '/');
@@ -28,6 +30,9 @@ export function navigate(path: string) {
 export function App() {
   const route = useHashRoute();
   const activeProductId = getActiveProductId(route);
+
+  // Inject dynamic <head> meta, OG tags, Twitter card, and JSON-LD per route
+  useSeo(getSeoForRoute(route));
 
   let page: React.ReactNode;
 

@@ -77,42 +77,58 @@ export function TemporalPlugin(options: TemporalOptions = {}): GridPlugin {
       const unregisterUndo = ctx.commandBus.registerHandler(
         'temporal:undo' as never,
         () => {
-          ctx.setState(PLUGIN_STATE_KEY, (prev: unknown) => {
-            const state = prev as TemporalState;
-            if (state.undoStack.length === 0) return state;
-            const undoStack = [...state.undoStack];
-            const target = undoStack.pop()!;
-            const redoStack = state.current
-              ? [...state.redoStack, state.current]
-              : state.redoStack;
-            applySnapshot(ctx, target);
-            ctx.eventBus.emit(
-              'temporal:restored' as never,
-              { snapshot: target, direction: 'undo' } as never,
-            );
-            return { ...state, undoStack, redoStack, current: target };
-          });
+          const state = ctx.getState(PLUGIN_STATE_KEY) as TemporalState;
+          if (state.undoStack.length === 0) return;
+
+          const undoStack = [...state.undoStack];
+          const target = undoStack.pop()!;
+          const redoStack = state.current
+            ? [...state.redoStack, state.current]
+            : [...state.redoStack];
+
+          // Apply grid state BEFORE updating plugin state (avoids nested setState)
+          applySnapshot(ctx, target);
+
+          ctx.setState(PLUGIN_STATE_KEY, (_prev: unknown) => ({
+            ...state,
+            undoStack,
+            redoStack,
+            current: target,
+          }));
+
+          ctx.eventBus.emit(
+            'temporal:restored' as never,
+            { snapshot: target, direction: 'undo' } as never,
+          );
         },
       );
 
       const unregisterRedo = ctx.commandBus.registerHandler(
         'temporal:redo' as never,
         () => {
-          ctx.setState(PLUGIN_STATE_KEY, (prev: unknown) => {
-            const state = prev as TemporalState;
-            if (state.redoStack.length === 0) return state;
-            const redoStack = [...state.redoStack];
-            const target = redoStack.pop()!;
-            const undoStack = state.current
-              ? [...state.undoStack, state.current]
-              : state.undoStack;
-            applySnapshot(ctx, target);
-            ctx.eventBus.emit(
-              'temporal:restored' as never,
-              { snapshot: target, direction: 'redo' } as never,
-            );
-            return { ...state, redoStack, undoStack, current: target };
-          });
+          const state = ctx.getState(PLUGIN_STATE_KEY) as TemporalState;
+          if (state.redoStack.length === 0) return;
+
+          const redoStack = [...state.redoStack];
+          const target = redoStack.pop()!;
+          const undoStack = state.current
+            ? [...state.undoStack, state.current]
+            : [...state.undoStack];
+
+          // Apply grid state BEFORE updating plugin state (avoids nested setState)
+          applySnapshot(ctx, target);
+
+          ctx.setState(PLUGIN_STATE_KEY, (_prev: unknown) => ({
+            ...state,
+            redoStack,
+            undoStack,
+            current: target,
+          }));
+
+          ctx.eventBus.emit(
+            'temporal:restored' as never,
+            { snapshot: target, direction: 'redo' } as never,
+          );
         },
       );
 

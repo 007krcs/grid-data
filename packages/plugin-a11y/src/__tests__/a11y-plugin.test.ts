@@ -165,7 +165,7 @@ describe('A11yPlugin', () => {
     });
 
     await new Promise((r) => setTimeout(r, 50));
-    expect(mock.liveRegion.textContent).toBe('Filter applied on name');
+    expect(mock.liveRegion.textContent).toBe('Filter applied on Name');
   });
 
   it('announces selection changes', async () => {

@@ -9,6 +9,8 @@ function makeMockCtx(rows: RowNode[] = []) {
   const handlers: Record<string, ((p: unknown) => void)[]> = {};
   const eventHandlers: Record<string, ((p: unknown) => void)[]> = {};
   const emitted: Array<{ event: string; payload: unknown }> = [];
+  // Minimal grid state for ctx.store
+  let gridState: Record<string, unknown> = { rowNodes: new Map() };
 
   return {
     ctx: {
@@ -20,6 +22,12 @@ function makeMockCtx(rows: RowNode[] = []) {
       },
       setState(key: string, updater: (prev: unknown) => unknown) {
         state[key] = updater(state[key]);
+      },
+      store: {
+        getState() { return gridState; },
+        setState(updater: (prev: Record<string, unknown>) => Record<string, unknown>) {
+          gridState = updater(gridState);
+        },
       },
       commandBus: {
         registerHandler(cmd: string, fn: (p: unknown) => void) {
@@ -124,8 +132,10 @@ describe('CellFormulaPlugin', () => {
     });
 
     expect(computeFn).toHaveBeenCalledTimes(2);
-    expect(computeFn).toHaveBeenCalledWith({ price: 10, qty: 3 });
-    expect(computeFn).toHaveBeenCalledWith({ price: 5, qty: 4 });
+    // Use objectContaining because the write-back step adds the computed 'total'
+    // field to node.data in-place, mutating the recorded call argument
+    expect(computeFn).toHaveBeenCalledWith(expect.objectContaining({ price: 10, qty: 3 }));
+    expect(computeFn).toHaveBeenCalledWith(expect.objectContaining({ price: 5, qty: 4 }));
   });
 
   it('computed values are stored by columnId -> rowId -> value', () => {

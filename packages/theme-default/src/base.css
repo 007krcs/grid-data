@@ -123,7 +123,7 @@
 }
 
 .gs-cell:focus,
-.gs-cell.gs-cell-focused {
+.gs-root:focus-within .gs-cell.gs-cell-focused {
   outline: none;
   box-shadow: var(--gs-shadow-focus-ring);
   z-index: 1;

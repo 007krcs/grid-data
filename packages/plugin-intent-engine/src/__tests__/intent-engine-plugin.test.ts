@@ -199,9 +199,9 @@ describe('IntentEnginePlugin', () => {
     plugin.install(mock.ctx as never);
 
     // These events should not cause any records to be added
-    mock.triggerEvent('sort:changed', { sortModel: [{ colId: 'colA' }] });
+    mock.triggerEvent('column:sort:changed', { sortModel: [{ colId: 'colA' }] });
     mock.triggerEvent('filter:changed', { filterModel: { colB: {} } });
-    mock.triggerEvent('column:visibility-changed', { columnId: 'colC', visible: false });
+    mock.triggerEvent('column:visible', { column: { colId: 'colC' }, visible: false });
 
     const state = mock.state['intentEngine'] as IntentState;
     expect(state.records).toHaveLength(0);
@@ -211,7 +211,7 @@ describe('IntentEnginePlugin', () => {
     const plugin = IntentEnginePlugin({ autoTrack: true });
     plugin.install(mock.ctx as never);
 
-    mock.triggerEvent('sort:changed', { sortModel: [{ colId: 'colA' }, { colId: 'colB' }] });
+    mock.triggerEvent('column:sort:changed', { sortModel: [{ colId: 'colA' }, { colId: 'colB' }] });
 
     const state = mock.state['intentEngine'] as IntentState;
     expect(state.records).toHaveLength(2);
@@ -231,12 +231,12 @@ describe('IntentEnginePlugin', () => {
     expect(state.records[0]!.action).toBe('filter');
   });
 
-  it('autoTrack tracks column:visibility-changed hide/show correctly', () => {
+  it('autoTrack tracks column:visible hide/show correctly', () => {
     const plugin = IntentEnginePlugin({ autoTrack: true });
     plugin.install(mock.ctx as never);
 
-    mock.triggerEvent('column:visibility-changed', { columnId: 'colA', visible: false });
-    mock.triggerEvent('column:visibility-changed', { columnId: 'colA', visible: true });
+    mock.triggerEvent('column:visible', { column: { colId: 'colA' }, visible: false });
+    mock.triggerEvent('column:visible', { column: { colId: 'colA' }, visible: true });
 
     const state = mock.state['intentEngine'] as IntentState;
     expect(state.records).toHaveLength(2);
@@ -263,7 +263,7 @@ describe('IntentEnginePlugin', () => {
 
     cleanup();
 
-    mock.triggerEvent('sort:changed', { sortModel: [{ colId: 'colA' }] });
+    mock.triggerEvent('column:sort:changed', { sortModel: [{ colId: 'colA' }] });
 
     const state = mock.state['intentEngine'] as IntentState;
     expect(state.records).toHaveLength(0);

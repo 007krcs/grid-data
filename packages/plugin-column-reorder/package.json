@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-column-reorder",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "GridStorm column reorder plugin — drag and drop column reordering",
   "type": "module",
   "main": "./dist/index.cjs",

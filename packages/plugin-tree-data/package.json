@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-tree-data",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Tree data plugin for GridStorm — hierarchical parent-child row display",
   "type": "module",
   "main": "./dist/index.cjs",

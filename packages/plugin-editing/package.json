@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-editing",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "GridStorm editing plugin — cell and full-row editing with built-in editors",
   "type": "module",
   "main": "./dist/index.cjs",

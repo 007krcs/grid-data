@@ -1,25 +1,33 @@
 import { Icon } from '../icons/Icon';
 
 const gridFeatures = [
-  '15+ composable plugins',
-  'Virtual scroll (100K rows)',
-  'Light / dark / high-contrast',
-  'TypeScript-native',
-  'Cell editing & clipboard',
-  'Row grouping & aggregation',
-  'Column pinning & resize',
-  'Drag-and-drop reorder',
+  '35 composable plugins',
+  'Virtual scroll (100K rows @ 60fps)',
+  'WCAG 2.1 AA accessibility',
+  'Excel-compatible formula engine (42 fns)',
+  'True Excel copy/paste + type coercion',
+  'Row grouping, aggregation & pivoting',
+  'Server-side row model',
+  'Time travel (undo/redo snapshots)',
 ];
 
 const pdfFeatures = [
   'Rust PDF parser (WASM)',
   'Worker pool rendering',
   '13 annotation types',
-  'PKCS#7 signatures',
+  'PKCS#7 digital signatures',
   'Incremental save',
-  'Encryption / decryption',
-  'Text extraction & search',
-  'Permanent redaction',
+  'AES-256 encryption / decryption',
+  'Text extraction & full-text search',
+  'AI-powered PII detection',
+];
+
+const TIERS = [
+  { label: 'Core (Free)',         color: '#22c55e', count: 10, desc: 'Sort, filter, select, edit, paginate, pin, resize, reorder, context menu, clipboard' },
+  { label: 'Enterprise (Free)',   color: '#3b82f6', count: 11, desc: 'Grouping, aggregation, pivoting, master-detail, tree data, SSRM, Excel/PDF export, charts' },
+  { label: 'Next-Gen (Free)',     color: '#a855f7', count: 7,  desc: 'Streaming, AI, status bar, conditional formatting, state persistence, row pinning, autosize' },
+  { label: 'Differentiators',     color: '#f97316', count: 4,  desc: 'Formula engine, time travel, cell range selection, data validation' },
+  { label: 'Enterprise Tier',     color: '#ec4899', count: 3,  desc: 'WCAG 2.1 AA accessibility, formula engine pro (42 fns), clipboard pro (Excel copy/paste)' },
 ];
 
 export function Products() {
@@ -31,9 +39,25 @@ export function Products() {
         <span className="section-accent">document-driven apps</span>
       </h2>
       <p className="section-sub">
-        A unified platform — one license covers both the data grid and the
-        PDF toolkit, with a shared event and plugin architecture.
+        A unified platform — one license covers the data grid, the PDF toolkit,
+        and 35 plugins. Shared event and plugin architecture throughout.
       </p>
+
+      {/* Plugin tier breakdown */}
+      <div className="tier-strip">
+        {TIERS.map((t) => (
+          <div key={t.label} className="tier-item" title={t.desc}>
+            <span className="tier-dot" style={{ background: t.color }} />
+            <span className="tier-count">{t.count}</span>
+            <span className="tier-label">{t.label}</span>
+          </div>
+        ))}
+        <div className="tier-total">
+          <span className="tier-total-num">35</span>
+          <span className="tier-total-label">total plugins</span>
+        </div>
+      </div>
+
       <div className="products-grid" style={{ marginBottom: 64 }}>
         {/* Data Grid */}
         <div className="product-card grid-product">
@@ -43,8 +67,8 @@ export function Products() {
           </div>
           <h3>Enterprise Data Grid</h3>
           <p>
-            Headless, plugin-first architecture. Render 100K+ rows at 60fps with
-            virtual scrolling, CSS theming, and full keyboard navigation.
+            Headless, plugin-first architecture. 100K+ rows at 60fps with virtual
+            scrolling, WCAG 2.1 AA, Excel formulas, and full keyboard navigation.
           </p>
           <div className="product-features">
             {gridFeatures.map((feat) => (

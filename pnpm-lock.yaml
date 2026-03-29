@@ -257,12 +257,18 @@ importers:
       '@gridstorm/dom-renderer':
         specifier: workspace:*
         version: link:../../packages/dom-renderer
+      '@gridstorm/plugin-a11y':
+        specifier: workspace:*
+        version: link:../../packages/plugin-a11y
       '@gridstorm/plugin-aggregation':
         specifier: workspace:*
         version: link:../../packages/plugin-aggregation
       '@gridstorm/plugin-clipboard':
         specifier: workspace:*
         version: link:../../packages/plugin-clipboard
+      '@gridstorm/plugin-clipboard-pro':
+        specifier: workspace:*
+        version: link:../../packages/plugin-clipboard-pro
       '@gridstorm/plugin-column-pinning':
         specifier: workspace:*
         version: link:../../packages/plugin-column-pinning
@@ -281,6 +287,12 @@ importers:
       '@gridstorm/plugin-filtering':
         specifier: workspace:*
         version: link:../../packages/plugin-filtering
+      '@gridstorm/plugin-formula':
+        specifier: workspace:*
+        version: link:../../packages/plugin-formula
+      '@gridstorm/plugin-formula-engine':
+        specifier: workspace:*
+        version: link:../../packages/plugin-formula-engine
       '@gridstorm/plugin-grouping':
         specifier: workspace:*
         version: link:../../packages/plugin-grouping
@@ -428,6 +440,15 @@ importers:
       '@gridstorm/pdf-core':
         specifier: workspace:*
         version: link:../../packages/pdf-core
+      '@gridstorm/pdf-plugin-form-fill':
+        specifier: workspace:*
+        version: link:../../packages/pdf-plugin-form-fill
+      '@gridstorm/pdf-plugin-intelligence':
+        specifier: workspace:*
+        version: link:../../packages/pdf-plugin-intelligence
+      '@gridstorm/pdf-plugin-pii':
+        specifier: workspace:*
+        version: link:../../packages/pdf-plugin-pii
       '@gridstorm/pdf-plugin-text':
         specifier: workspace:*
         version: link:../../packages/pdf-plugin-text
@@ -868,6 +889,28 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  packages/platform-core:
+    devDependencies:
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  packages/plugin-a11y:
+    dependencies:
+      '@gridstorm/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      tsup:
+        specifier: ^8.2.0
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   packages/plugin-adaptive-renderer:
     devDependencies:
       '@gridstorm/core':
@@ -967,6 +1010,19 @@ importers:
       '@gridstorm/license':
         specifier: workspace:*
         version: link:../license
+    devDependencies:
+      tsup:
+        specifier: ^8.2.0
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  packages/plugin-clipboard-pro:
+    dependencies:
+      '@gridstorm/core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       tsup:
         specifier: ^8.2.0
@@ -1108,6 +1164,19 @@ importers:
         version: 5.9.3
 
   packages/plugin-formula:
+    dependencies:
+      '@gridstorm/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      tsup:
+        specifier: ^8.2.0
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  packages/plugin-formula-engine:
     dependencies:
       '@gridstorm/core':
         specifier: workspace:*

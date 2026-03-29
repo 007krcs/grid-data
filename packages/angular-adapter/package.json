@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/angular",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "GridStorm Angular adapter — standalone component for Angular 16+",
   "type": "module",
   "main": "./dist/index.cjs",

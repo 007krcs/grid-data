@@ -18,7 +18,7 @@ const OUT_DIR = path.join(ROOT_DIR, 'dist');
 
 console.log('Building GridStorm demos...');
 console.log('Repo root:', ROOT_DIR);
-console.log('Vercel root dir:', VERCEL_ROOT);
+console.log('Vercel root dir:', ROOT_DIR);
 console.log('Output:', OUT_DIR);
 console.log('CWD:', process.cwd());
 

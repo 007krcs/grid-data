@@ -2,23 +2,35 @@ import { Icon } from '../icons/Icon';
 
 const FOOTER_COLS = [
   {
-    heading: 'Product',
+    heading: 'Platform',
     links: [
-      { label: 'Data Grid',       href: '#/docs/core-concepts/architecture' },
-      { label: 'PDF Toolkit',     href: '#/docs/guides/pdf-toolkit' },
-      { label: 'AI & MCP',        href: '#/docs/core-concepts/architecture' },
-      { label: 'Plugin System',   href: '#/docs/plugins/plugin-system' },
-      { label: 'Changelog',       href: '#/docs/getting-started/introduction' },
+      { label: 'All Products',      href: '#/products' },
+      { label: 'GridStorm',         href: '#/product/gridstorm' },
+      { label: 'PDF Toolkit',       href: '#/product/pdf-toolkit' },
+      { label: 'NexaRecruit',       href: '#/product/nexa-recruit' },
+      { label: 'NexaCare',          href: '#/product/nexa-care' },
+      { label: 'Changelog',         href: '#/docs/getting-started/introduction' },
+    ],
+  },
+  {
+    heading: 'GridStorm',
+    links: [
+      { label: 'Data Grid',         href: '#/docs/core-concepts/architecture' },
+      { label: 'Plugin System',     href: '#/docs/plugins/plugin-system' },
+      { label: 'PDF Toolkit',       href: '#/docs/guides/pdf-toolkit' },
+      { label: 'AI & MCP',          href: '#/docs/core-concepts/architecture' },
+      { label: 'Migration Guide',   href: '#/docs/guides/migration-from-ag-grid' },
     ],
   },
   {
     heading: 'Documentation',
     links: [
-      { label: 'Quick Start',     href: '#/docs/getting-started/quick-start' },
-      { label: 'API Reference',   href: '#/docs/api/grid-api' },
-      { label: 'Column Defs',     href: '#/docs/api/column-definitions' },
-      { label: 'Migration Guide', href: '#/docs/guides/migration-from-ag-grid' },
-      { label: 'Contributing',    href: 'https://github.com/007krcs/grid-data/blob/main/CONTRIBUTING.md' },
+      { label: 'Quick Start',       href: '#/docs/getting-started/quick-start' },
+      { label: 'API Reference',     href: '#/docs/api/grid-api' },
+      { label: 'Column Defs',       href: '#/docs/api/column-definitions' },
+      { label: 'Accessibility',     href: '#/docs/plugins/a11y' },
+      { label: 'Migration Guide',   href: '#/docs/guides/migration-from-ag-grid' },
+      { label: 'Contributing',      href: 'https://github.com/007krcs/grid-data/blob/main/CONTRIBUTING.md' },
     ],
   },
   {
@@ -44,11 +56,11 @@ const FOOTER_COLS = [
   {
     heading: 'Community',
     links: [
-      { label: 'GitHub',             href: 'https://github.com/007krcs/grid-data' },
-      { label: 'Issues',             href: 'https://github.com/007krcs/grid-data/issues' },
-      { label: 'Discussions',        href: 'https://github.com/007krcs/grid-data/discussions' },
-      { label: 'Security Policy',    href: 'https://github.com/007krcs/grid-data/blob/main/SECURITY.md' },
-      { label: 'Code of Conduct',    href: 'https://github.com/007krcs/grid-data/blob/main/CODE_OF_CONDUCT.md' },
+      { label: 'GitHub',           href: 'https://github.com/007krcs/grid-data' },
+      { label: 'Issues',           href: 'https://github.com/007krcs/grid-data/issues' },
+      { label: 'Discussions',      href: 'https://github.com/007krcs/grid-data/discussions' },
+      { label: 'Security Policy',  href: 'https://github.com/007krcs/grid-data/blob/main/SECURITY.md' },
+      { label: 'Code of Conduct',  href: 'https://github.com/007krcs/grid-data/blob/main/CODE_OF_CONDUCT.md' },
     ],
   },
 ];
@@ -58,18 +70,18 @@ export function Footer() {
 
   return (
     <footer className="hub-footer-enterprise">
-      {/* Top: brand + newsletter placeholder */}
+      {/* Top: brand + badges */}
       <div className="hub-footer-top">
         <div className="hub-footer-brand">
-          <div className="hub-footer-logo">GS</div>
+          <div className="hub-footer-logo">NF</div>
           <div>
-            <div className="hub-footer-brand-name">GridStorm</div>
-            <div className="hub-footer-brand-tagline">The Enterprise Document Platform</div>
+            <div className="hub-footer-brand-name">NexaForge</div>
+            <div className="hub-footer-brand-tagline">Enterprise software, engineered to scale</div>
           </div>
         </div>
         <div className="hub-footer-badges">
-          <span className="hub-footer-badge">39 packages</span>
-          <span className="hub-footer-badge">1,619+ tests</span>
+          <span className="hub-footer-badge">6 products</span>
+          <span className="hub-footer-badge">57 packages</span>
           <span className="hub-footer-badge">TypeScript-native</span>
           <span className="hub-footer-badge">MIT License</span>
         </div>
@@ -100,7 +112,12 @@ export function Footer() {
       {/* Bottom bar */}
       <div className="hub-footer-bottom">
         <div className="hub-footer-copy">
-          &copy; {new Date().getFullYear()} GridStorm. All rights reserved.
+          &copy; {new Date().getFullYear()} NexaForge. All rights reserved.
+        </div>
+        <div className="hub-footer-bottom-links">
+          <a href="#/products" className="hub-footer-bottom-link">Products</a>
+          <a href="#/docs/getting-started/introduction" className="hub-footer-bottom-link">Docs</a>
+          <a href="https://github.com/007krcs/grid-data/blob/main/SECURITY.md" className="hub-footer-bottom-link" target="_blank" rel="noopener noreferrer">Security</a>
         </div>
         <div className="hub-footer-social">
           <a

@@ -1,0 +1,39 @@
+{
+  "name": "NexaForge",
+  "short_name": "NexaForge",
+  "description": "Enterprise software, engineered to scale. GridStorm, PDF Toolkit, NexaRecruit, NexaCare.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#3b82f6",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "developer", "productivity"],
+  "screenshots": [
+    {
+      "src": "/og-gridstorm.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "label": "GridStorm — Enterprise Data Grid"
+    },
+    {
+      "src": "/og-nexaforge.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "label": "NexaForge Platform"
+    }
+  ]
+}

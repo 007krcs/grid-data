@@ -214,11 +214,13 @@ export function A11yPlugin(options: A11yPluginOptions = {}): GridPlugin {
 
       // Try immediately — works when DOM renderer mounts synchronously
       if (!initDom()) {
-        // DOM not ready yet; defer to grid:ready event which fires after mount
-        const unsubReady = (ctx.eventBus as any).on('grid:ready', () => {
-          initDom();
-        });
-        cleanups.push(unsubReady);
+        // DOM not ready yet. grid:ready fires from the engine (before DOM renderer
+        // sets __gsRootEl), so we also listen for dom:headerRendered which is
+        // guaranteed to fire AFTER the DOM renderer has mounted and set __gsRootEl.
+        const tryInit = () => { initDom(); };
+        const unsubReady = (ctx.eventBus as any).on('grid:ready', tryInit);
+        const unsubHeader = (ctx.eventBus as any).on('dom:headerRendered', tryInit);
+        cleanups.push(unsubReady, unsubHeader);
       }
 
       // ── Disposer ──

@@ -440,6 +440,15 @@ importers:
       '@gridstorm/pdf-core':
         specifier: workspace:*
         version: link:../../packages/pdf-core
+      '@gridstorm/pdf-plugin-form-fill':
+        specifier: workspace:*
+        version: link:../../packages/pdf-plugin-form-fill
+      '@gridstorm/pdf-plugin-intelligence':
+        specifier: workspace:*
+        version: link:../../packages/pdf-plugin-intelligence
+      '@gridstorm/pdf-plugin-pii':
+        specifier: workspace:*
+        version: link:../../packages/pdf-plugin-pii
       '@gridstorm/pdf-plugin-text':
         specifier: workspace:*
         version: link:../../packages/pdf-plugin-text

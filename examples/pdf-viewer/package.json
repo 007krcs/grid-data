@@ -12,6 +12,9 @@
     "@gridstorm/pdf-core": "workspace:*",
     "@gridstorm/pdf-renderer": "workspace:*",
     "@gridstorm/pdf-plugin-text": "workspace:*",
+    "@gridstorm/pdf-plugin-form-fill": "workspace:*",
+    "@gridstorm/pdf-plugin-intelligence": "workspace:*",
+    "@gridstorm/pdf-plugin-pii": "workspace:*",
     "@gridstorm/pdf-theme": "workspace:*",
     "react": "^18.3.0",
     "react-dom": "^18.3.0"

@@ -147,21 +147,27 @@ export class KeyboardManager {
         }
         break;
       case 'Tab':
-        if (focused && !state.editing) {
-          const cols = this.getVisibleColumns();
-          const colIdx = cols.findIndex((c) => c.colId === focused.colId);
-          const isLastCell = !e.shiftKey &&
-            colIdx === cols.length - 1 &&
-            focused.rowIndex === state.displayedRowIds.length - 1;
-          const isFirstCell = e.shiftKey && colIdx === 0 && focused.rowIndex === 0;
+        if (!state.editing) {
+          if (focused) {
+            const cols = this.getVisibleColumns();
+            const colIdx = cols.findIndex((c) => c.colId === focused.colId);
+            const isLastCell = !e.shiftKey &&
+              colIdx === cols.length - 1 &&
+              focused.rowIndex === state.displayedRowIds.length - 1;
+            const isFirstCell = e.shiftKey && colIdx === 0 && focused.rowIndex === 0;
 
-          // Allow default Tab behavior to leave the grid on boundary cells
-          if (isLastCell || isFirstCell) {
-            break;
+            // Allow default Tab behavior to leave the grid on boundary cells
+            if (isLastCell || isFirstCell) {
+              break;
+            }
+
+            e.preventDefault();
+            this.moveFocus(e.shiftKey ? -1 : 1, 0);
+          } else if (!e.shiftKey && state.displayedRowIds.length > 0) {
+            // Grid root just received focus via Tab — enter grid at first cell
+            e.preventDefault();
+            this.setFocus(0, 0);
           }
-
-          e.preventDefault();
-          this.moveFocus(e.shiftKey ? -1 : 1, 0);
         }
         break;
     }

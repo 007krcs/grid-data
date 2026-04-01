@@ -477,6 +477,8 @@ export default function App() {
   const [showPii,     setShowPii]    = useState(true);
   const [encrypted,   setEncrypted]  = useState(false);
   const [fillData,    setFillData]   = useState({ name: 'John A. Smith', email: 'john.smith@techcorp.com', phone: '(555) 123-4567', company: 'TechCorp Inc.', amount: '$14,322.00', reference: 'INV-2024-0892' });
+  const [isMobile,    setIsMobile]   = useState(() => window.innerWidth < 768);
+  const [showPanel,   setShowPanel]  = useState(() => window.innerWidth >= 768);
 
   // Plugin states (read from engine after bump)
   const [formState,   setFormState]   = useState<FormFillPluginState | null>(null);
@@ -564,6 +566,17 @@ export default function App() {
     const raf = requestAnimationFrame(() => setRenderMs(performance.now() - t0));
     return () => cancelAnimationFrame(raf);
   }, [version, zoom]);
+
+  // ── Mobile detection ──
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const handler = (e: MediaQueryListEvent) => {
+      setIsMobile(e.matches);
+      if (!e.matches) setShowPanel(true);
+    };
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   // ── Ctrl+Scroll zoom ──
   useEffect(() => {
@@ -666,7 +679,7 @@ export default function App() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: C.bg, color: C.fg, fontFamily: '-apple-system,"Segoe UI",monospace', fontSize: 12, overflow: 'hidden' }}>
 
       {/* ── WASM Performance Banner ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '4px 16px', background: '#010409', borderBottom: `1px solid ${C.border}`, fontSize: 10.5, color: C.muted, flexShrink: 0 }}>
+      <div style={{ display: isMobile ? 'none' : 'flex', alignItems: 'center', gap: 16, padding: '4px 16px', background: '#010409', borderBottom: `1px solid ${C.border}`, fontSize: 10.5, color: C.muted, flexShrink: 0 }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: C.green }}><I.Chip /> WASM Renderer Active</span>
         <span>Canvas: {renderMs !== null ? `${renderMs.toFixed(1)}ms` : '—'}</span>
         <span>GPU: Accelerated (2× DPR)</span>
@@ -685,7 +698,7 @@ export default function App() {
           <div style={{ width: 34, height: 34, borderRadius: 8, background: 'linear-gradient(135deg,#ef4444,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 11, color: '#fff', letterSpacing: -0.5, boxShadow: '0 0 16px rgba(239,68,68,0.35)' }}>PDF</div>
           <div>
             <div style={{ fontWeight: 700, fontSize: 13, letterSpacing: -0.3 }}>GridStorm PDF Viewer</div>
-            <div style={{ fontSize: 10, color: C.muted }}>Rust · WASM · GPU · 13 Annotation Types · PII · Forms · AI Intel</div>
+            {!isMobile && <div style={{ fontSize: 10, color: C.muted }}>Rust · WASM · GPU · 13 Annotation Types · PII · Forms · AI Intel</div>}
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11 }}>
@@ -699,7 +712,7 @@ export default function App() {
       </header>
 
       {/* ── Controls ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 10px', height: 38, background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 10px', height: 38, background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0, overflowX: 'auto', overflowY: 'hidden', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
         <Btn onClick={() => goTo(0)} disabled={currentPage === 0}><I.First /></Btn>
         <Btn onClick={() => goTo(currentPage - 1)} disabled={currentPage === 0}><I.Prev /> Prev</Btn>
         <div style={{ padding: '2px 10px', border: `1px solid ${C.border}`, borderRadius: 4, fontFamily: 'monospace', fontSize: 12, color: C.muted, userSelect: 'none' }}>
@@ -737,10 +750,10 @@ export default function App() {
       </div>
 
       {/* ── Body ── */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', flexDirection: isMobile ? 'column' : 'row' }}>
 
         {/* PDF Scroll Area */}
-        <div ref={scrollRef} style={{ flex: 1, overflow: 'auto', background: '#010409', position: 'relative' }}>
+        <div ref={scrollRef} style={{ flex: isMobile ? 'none' : 1, height: isMobile ? (showPanel ? '42vh' : '100%') : undefined, overflow: 'auto', background: '#010409', position: 'relative' }}>
           <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', textAlign: 'center', padding: '4px 0', position: 'sticky', top: 0, zIndex: 10, pointerEvents: 'none' }}>
             Ctrl+Scroll to zoom · Click annotation to select
           </div>
@@ -765,7 +778,23 @@ export default function App() {
         </div>
 
         {/* ── Right Feature Panel ── */}
-        <div style={{ width: 320, borderLeft: `1px solid ${C.border}`, background: C.panel, display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+        <div style={{
+          width: isMobile ? '100%' : 320,
+          height: isMobile ? '58vh' : undefined,
+          borderLeft: isMobile ? 'none' : `1px solid ${C.border}`,
+          borderTop: isMobile ? `1px solid ${C.border}` : 'none',
+          background: C.panel,
+          display: showPanel ? 'flex' : 'none',
+          flexDirection: 'column',
+          flexShrink: 0,
+        }}>
+          {/* Mobile drag handle / close */}
+          {isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px 0', flexShrink: 0 }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: C.border, margin: '0 auto' }} />
+              <button onClick={() => setShowPanel(false)} style={{ position: 'absolute', right: 10, top: 4, background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
+            </div>
+          )}
           {/* Tabs */}
           <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, flexShrink: 0, overflowX: 'auto' }}>
             {TABS.map(t => (
@@ -988,8 +1017,27 @@ export default function App() {
         </div>
       </div>
 
+      {/* ── Mobile FAB: toggle panel ── */}
+      {isMobile && !showPanel && (
+        <button
+          onClick={() => setShowPanel(true)}
+          style={{
+            position: 'fixed', bottom: 24, right: 20, zIndex: 100,
+            width: 52, height: 52, borderRadius: '50%',
+            background: 'linear-gradient(135deg, #ef4444, #7c3aed)',
+            border: 'none', color: '#fff', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 4px 20px rgba(239,68,68,0.45)',
+            fontSize: 20,
+          }}
+          title="Open tools panel"
+        >
+          📋
+        </button>
+      )}
+
       {/* ── Status Bar ── */}
-      <footer style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', height: 24, background: C.panel, borderTop: `1px solid ${C.border}`, flexShrink: 0, fontSize: 10.5, color: C.muted }}>
+      <footer style={{ display: isMobile ? 'none' : 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', height: 24, background: C.panel, borderTop: `1px solid ${C.border}`, flexShrink: 0, fontSize: 10.5, color: C.muted }}>
         <div style={{ display: 'flex', gap: 14, fontFamily: 'monospace' }}>
           <span>Page <strong style={{ color: C.fg }}>{currentPage + 1}/{pageCount}</strong></span>
           <span>Zoom <strong style={{ color: C.fg }}>{Math.round(zoom * 100)}%</strong></span>

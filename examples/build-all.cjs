@@ -10,10 +10,11 @@ const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-const SCRIPT_DIR = __dirname; // examples/
-const ROOT_DIR = path.dirname(SCRIPT_DIR); // repo root
-
-// outputDirectory = "dist" in vercel.json resolves to <repo-root>/dist
+const SCRIPT_DIR = __dirname; // examples/ (absolute path of this script)
+// Vercel sets CWD to the repo root (where vercel.json lives).
+// Using process.cwd() guarantees dist/ ends up exactly where
+// vercel.json#outputDirectory expects it, regardless of __dirname.
+const ROOT_DIR = process.cwd();
 const OUT_DIR = path.join(ROOT_DIR, 'dist');
 
 console.log('Building GridStorm demos...');

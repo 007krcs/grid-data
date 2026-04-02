@@ -3,10 +3,13 @@ import path from 'path';
 
 export default defineConfig({
   entry: {
-    index: 'src/index.ts',
+    index:   'src/index.ts',
     plugins: 'src/plugins.ts',
-    pdf: 'src/pdf.ts',
-    react: 'src/react.ts',
+    pdf:     'src/pdf.ts',
+    react:   'src/react.ts',
+    vue:     'src/vue.ts',
+    svelte:  'src/svelte.ts',
+    angular: 'src/angular.ts',
   },
   format: ['esm', 'cjs'],
   dts: true,
@@ -15,6 +18,9 @@ export default defineConfig({
   external: [
     'react',
     'react-dom',
+    'vue',
+    'svelte',
+    '@angular/core',
   ],
   esbuildPlugins: [
     {

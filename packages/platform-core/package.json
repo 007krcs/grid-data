@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/platform-core",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Product registry and integration SDK for the DataStorm platform",
   "type": "module",
   "main": "./dist/index.cjs",

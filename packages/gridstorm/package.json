@@ -1,6 +1,6 @@
 {
   "name": "gridstorm",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "GridStorm — The complete enterprise data grid. One package, everything included: core engine, 32 plugins (incl. Formula Engine, Time Travel, Cell Range, Validation), DOM renderer, theming, i18n, and PDF toolkit.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -118,7 +118,7 @@
     "type": "git",
     "url": "https://github.com/007krcs/grid-data.git"
   },
-  "homepage": "https://grid-data-analytics-explorer.vercel.app/",
+  "homepage": "https://gridstorm.tekivex.com",
   "bugs": {
     "url": "https://github.com/007krcs/grid-data/issues"
   },

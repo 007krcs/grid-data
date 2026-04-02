@@ -55,10 +55,10 @@
   "bugs": {
     "url": "https://github.com/007krcs/grid-data/issues"
   },
-  "homepage": "https://grid-data-analytics-explorer.vercel.app/",
+  "homepage": "https://gridstorm.tekivex.com",
   "author": {
     "name": "GridStorm",
-    "url": "https://grid-data-analytics-explorer.vercel.app/"
+    "url": "https://gridstorm.tekivex.com/"
   },
   "engines": {
     "node": ">=18.0.0"

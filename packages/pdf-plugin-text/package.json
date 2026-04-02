@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/pdf-plugin-text",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Text extraction and search plugin for GridStorm PDF",
   "license": "MIT",
   "type": "module",
@@ -36,7 +36,7 @@
     "url": "https://github.com/007krcs/grid-data.git",
     "directory": "packages/pdf-plugin-text"
   },
-  "homepage": "https://grid-data-analytics-explorer.vercel.app/",
+  "homepage": "https://gridstorm.tekivex.com",
   "bugs": {
     "url": "https://github.com/007krcs/grid-data/issues"
   },

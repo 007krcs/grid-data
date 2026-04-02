@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-status-bar",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "GridStorm status bar plugin — aggregation summary bar with sum, avg, min, max, count",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -57,10 +57,10 @@
   "bugs": {
     "url": "https://github.com/007krcs/grid-data/issues"
   },
-  "homepage": "https://grid-data-analytics-explorer.vercel.app/",
+  "homepage": "https://gridstorm.tekivex.com",
   "author": {
     "name": "GridStorm",
-    "url": "https://grid-data-analytics-explorer.vercel.app/"
+    "url": "https://gridstorm.tekivex.com/"
   },
   "funding": {
     "type": "github",

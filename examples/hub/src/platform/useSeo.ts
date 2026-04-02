@@ -47,7 +47,7 @@ function setLink(rel: string, href: string) {
 }
 
 function setJsonLd(data: object | null) {
-  const id = '__nexaforge-jsonld__';
+  const id = '__gridstorm-jsonld__';
   let el = document.getElementById(id) as HTMLScriptElement | null;
   if (!data) {
     el?.remove();
@@ -65,7 +65,7 @@ function setJsonLd(data: object | null) {
 // ── Build SeoConfig from a ProductSeoMeta manifest entry ─────────────────
 export function seoFromManifest(
   seo: ProductSeoMeta,
-  baseUrl = 'https://nexaforge.dev',
+  baseUrl = 'https://gridstorm.tekivex.com',
   route = '/',
 ): SeoConfig {
   const canonical = `${baseUrl}/${route.replace(/^\//, '')}`;
@@ -92,7 +92,7 @@ export function seoFromManifest(
     },
     publisher: {
       '@type': 'Organization',
-      name: 'NexaForge',
+      name: 'GridStorm',
       url: baseUrl,
     },
   };
@@ -132,7 +132,7 @@ export function useSeo(config: SeoConfig) {
     setMeta('meta[property="og:type"]', config.ogType ?? 'website');
     setMeta('meta[property="og:title"]', config.ogTitle ?? config.title);
     setMeta('meta[property="og:description"]', config.ogDescription ?? config.description);
-    setMeta('meta[property="og:site_name"]', 'NexaForge');
+    setMeta('meta[property="og:site_name"]', 'GridStorm');
     if (config.ogImage) setMeta('meta[property="og:image"]', config.ogImage);
     if (config.canonical) setMeta('meta[property="og:url"]', config.canonical);
 

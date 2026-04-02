@@ -6,79 +6,76 @@
 import { type SeoConfig, seoFromManifest } from './useSeo';
 import { getProduct } from './registry';
 
-const BASE_URL = 'https://nexaforge.dev';
+const BASE_URL = 'https://gridstorm.tekivex.com';
 
 // ── Static route configs ───────────────────────────────────────────────────
 
 const HOME_SEO: SeoConfig = {
-  title: 'NexaForge — Enterprise Software, Engineered to Scale',
+  title: 'GridStorm — Open-Source Enterprise Data Grid Platform',
   description:
-    'NexaForge builds enterprise-grade developer tools: GridStorm (open-source data grid), ' +
-    'PDF Toolkit (WASM PDF processing), NexaRecruit (ATS), and NexaCare (healthcare platform).',
+    'GridStorm is an open-source enterprise data grid: virtual scrolling (100K rows), ' +
+    '35 composable plugins, PDF Toolkit, Analytics Studio, and framework adapters for React, Vue, Svelte, Angular.',
   keywords: [
-    'enterprise software platform',
-    'developer tools',
-    'data grid',
+    'enterprise data grid',
+    'open source data grid',
+    'react data grid',
+    'virtual scrolling',
+    'GridStorm',
     'PDF toolkit',
-    'ATS software',
-    'NexaForge',
+    'analytics',
     'open source enterprise',
   ],
   canonical: BASE_URL,
-  ogTitle: 'NexaForge — Enterprise Software, Engineered to Scale',
+  ogTitle: 'GridStorm — Open-Source Enterprise Data Grid Platform',
   ogDescription:
-    'Open-source and enterprise developer tools built to production quality. ' +
-    'GridStorm, PDF Toolkit, NexaRecruit, NexaCare, and more.',
-  ogImage: `${BASE_URL}/og-nexaforge.png`,
+    'Open-source enterprise data grid with virtual scrolling, 35 plugins, PDF Toolkit, and Analytics Studio.',
+  ogImage: `${BASE_URL}/og-gridstorm.png`,
   ogType: 'website',
-  twitterTitle: 'NexaForge — Enterprise Software, Engineered to Scale',
+  twitterTitle: 'GridStorm — Open-Source Enterprise Data Grid Platform',
   twitterDescription:
-    'GridStorm data grid, WASM PDF Toolkit, ATS, and healthcare platform — one engineering team.',
-  twitterImage: `${BASE_URL}/og-nexaforge.png`,
+    'High-performance data grid, WASM PDF Toolkit, Analytics Studio — open source, zero per-seat cost.',
+  twitterImage: `${BASE_URL}/og-gridstorm.png`,
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'NexaForge',
+    name: 'GridStorm',
     url: BASE_URL,
     logo: `${BASE_URL}/logo.svg`,
     description:
-      'NexaForge builds enterprise-grade developer tools including GridStorm, PDF Toolkit, NexaRecruit, and NexaCare.',
+      'GridStorm builds open-source enterprise developer tools including a high-performance data grid, PDF Toolkit, and Analytics Studio.',
     sameAs: ['https://github.com/007krcs/grid-data'],
     foundingDate: '2024',
     knowsAbout: [
       'Data Grids',
       'PDF Processing',
-      'Healthcare Software',
-      'Applicant Tracking Systems',
+      'Analytics',
       'Enterprise Software',
     ],
   },
 };
 
 const PRODUCTS_SEO: SeoConfig = {
-  title: 'All Products — NexaForge Platform',
+  title: 'All Products — GridStorm Platform',
   description:
-    'Explore all NexaForge products: GridStorm enterprise data grid, WASM PDF Toolkit, ' +
-    'NexaRecruit ATS, NexaCare healthcare platform, Analytics Studio, and DataFlow.',
+    'Explore all GridStorm products: enterprise data grid, WASM PDF Toolkit, and Analytics Studio.',
   keywords: [
-    'NexaForge products',
-    'enterprise software suite',
+    'GridStorm products',
+    'enterprise data grid',
     'GridStorm',
     'PDF Toolkit',
-    'NexaRecruit',
-    'NexaCare',
+    'Analytics Studio',
     'product catalog',
   ],
   canonical: `${BASE_URL}/products`,
-  ogTitle: 'All Products — NexaForge Platform',
+  ogTitle: 'All Products — GridStorm Platform',
   ogDescription:
-    'Enterprise software suite: data grids, PDF processing, ATS, healthcare, analytics, and streaming.',
-  ogImage: `${BASE_URL}/og-nexaforge.png`,
+    'Open-source enterprise software suite: data grids, PDF processing, and analytics.',
+  ogImage: `${BASE_URL}/og-gridstorm.png`,
   ogType: 'website',
-  twitterTitle: 'NexaForge Product Suite',
+  twitterTitle: 'GridStorm Product Suite',
   twitterDescription:
-    'GridStorm, PDF Toolkit, NexaRecruit, NexaCare — enterprise tools for every team.',
-  twitterImage: `${BASE_URL}/og-nexaforge.png`,
+    'GridStorm, PDF Toolkit, Analytics Studio — enterprise tools, zero per-seat cost.',
+  twitterImage: `${BASE_URL}/og-gridstorm.png`,
   jsonLd: null,
 };
 
@@ -111,10 +108,10 @@ const DOCS_SEO: SeoConfig = {
     description:
       'Complete documentation for GridStorm enterprise data grid with plugin reference and framework guides.',
     url: `${BASE_URL}/docs`,
-    author: { '@type': 'Organization', name: 'NexaForge' },
+    author: { '@type': 'Organization', name: 'GridStorm' },
     publisher: {
       '@type': 'Organization',
-      name: 'NexaForge',
+      name: 'GridStorm',
       url: BASE_URL,
     },
   },
@@ -168,13 +165,13 @@ export function getSeoForRoute(route: string): SeoConfig {
     // Fallback for products without seo field
     if (product) {
       return {
-        title: `${product.name} — NexaForge`,
+        title: `${product.name} — GridStorm`,
         description: product.description,
         keywords: product.tags,
         canonical: `${BASE_URL}${route}`,
-        ogTitle: `${product.name} — NexaForge`,
+        ogTitle: `${product.name} — GridStorm`,
         ogDescription: product.description,
-        ogImage: `${BASE_URL}/og-nexaforge.png`,
+        ogImage: `${BASE_URL}/og-gridstorm.png`,
         ogType: 'website',
         jsonLd: null,
       };

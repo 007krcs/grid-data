@@ -472,6 +472,7 @@ export function App() {
     const initial = parseConfig(getInitialJson());
     return initial.config?.options?.theme ?? 'light';
   });
+  const [selectedPreset, setSelectedPreset] = useState<string>('basic');
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [shareFeedback, setShareFeedback] = useState(false);
 
@@ -502,6 +503,7 @@ export function App() {
     (presetKey: string) => {
       const preset = PRESETS[presetKey];
       if (!preset) return;
+      setSelectedPreset(presetKey);
       const json = JSON.stringify(preset.config, null, 2);
       setEditorValue(json);
 
@@ -617,7 +619,7 @@ export function App() {
           {/* Preset selector */}
           <select
             onChange={(e) => handlePresetChange(e.target.value)}
-            value=""
+            value={selectedPreset}
             style={selectStyle}
           >
             <option value="" disabled>

@@ -137,7 +137,15 @@ export function TopNav({ route }: TopNavProps) {
           onClick={(e) => { e.preventDefault(); navigate('/products'); }}
           title={config.name}
         >
-          <div className="top-nav-logo">NF</div>
+          <div className="top-nav-logo">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="1" y="1" width="16" height="4" rx="1.5" fill="white"/>
+              <rect x="1" y="7" width="7" height="4" rx="1.5" fill="white" opacity="0.8"/>
+              <rect x="10" y="7" width="7" height="4" rx="1.5" fill="white" opacity="0.8"/>
+              <rect x="1" y="13" width="7" height="4" rx="1.5" fill="white" opacity="0.55"/>
+              <rect x="10" y="13" width="7" height="4" rx="1.5" fill="white" opacity="0.55"/>
+            </svg>
+          </div>
           <span className="top-nav-name">{config.name}</span>
         </a>
 

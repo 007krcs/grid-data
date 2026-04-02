@@ -73,10 +73,18 @@ export function Footer() {
       {/* Top: brand + badges */}
       <div className="hub-footer-top">
         <div className="hub-footer-brand">
-          <div className="hub-footer-logo">NF</div>
+          <div className="hub-footer-logo">
+            <svg width="22" height="22" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="1" y="1" width="16" height="4" rx="1.5" fill="white"/>
+              <rect x="1" y="7" width="7" height="4" rx="1.5" fill="white" opacity="0.8"/>
+              <rect x="10" y="7" width="7" height="4" rx="1.5" fill="white" opacity="0.8"/>
+              <rect x="1" y="13" width="7" height="4" rx="1.5" fill="white" opacity="0.55"/>
+              <rect x="10" y="13" width="7" height="4" rx="1.5" fill="white" opacity="0.55"/>
+            </svg>
+          </div>
           <div>
-            <div className="hub-footer-brand-name">NexaForge</div>
-            <div className="hub-footer-brand-tagline">Enterprise software, engineered to scale</div>
+            <div className="hub-footer-brand-name">GridStorm</div>
+            <div className="hub-footer-brand-tagline">Open-source enterprise data grid platform</div>
           </div>
         </div>
         <div className="hub-footer-badges">
@@ -112,7 +120,7 @@ export function Footer() {
       {/* Bottom bar */}
       <div className="hub-footer-bottom">
         <div className="hub-footer-copy">
-          &copy; {new Date().getFullYear()} NexaForge. All rights reserved.
+          &copy; {new Date().getFullYear()} GridStorm. All rights reserved.
         </div>
         <div className="hub-footer-bottom-links">
           <a href="#/products" className="hub-footer-bottom-link">Products</a>

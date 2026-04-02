@@ -4,8 +4,8 @@ import { getAllProducts, getProduct } from './registry';
 import { navigate } from '../App';
 
 const PLATFORM_CONFIG: PlatformConfig = {
-  name: 'NexaForge',
-  tagline: 'Enterprise software, engineered to scale',
+  name: 'GridStorm',
+  tagline: 'Open-source enterprise data grid platform',
   version: '0.1.2',
   githubUrl: 'https://github.com/007krcs/grid-data',
 };

@@ -1,12 +1,13 @@
 {
-  "name": "NexaForge",
-  "short_name": "NexaForge",
-  "description": "Enterprise software, engineered to scale. GridStorm, PDF Toolkit, NexaRecruit, NexaCare.",
+  "name": "GridStorm",
+  "short_name": "GridStorm",
+  "description": "Open-source enterprise data grid — virtual scrolling, 35 plugins, PDF Toolkit, Analytics Studio. MIT-licensed.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#3b82f6",
   "lang": "en",
+  "scope": "/",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -27,13 +28,7 @@
       "src": "/og-gridstorm.png",
       "sizes": "1200x630",
       "type": "image/png",
-      "label": "GridStorm — Enterprise Data Grid"
-    },
-    {
-      "src": "/og-nexaforge.png",
-      "sizes": "1200x630",
-      "type": "image/png",
-      "label": "NexaForge Platform"
+      "label": "GridStorm — Open-Source Enterprise Data Grid"
     }
   ]
 }

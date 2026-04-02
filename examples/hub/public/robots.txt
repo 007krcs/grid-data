@@ -1,13 +1,13 @@
 User-agent: *
 Allow: /
 
-# Sitemap location
-Sitemap: https://nexaforge.dev/sitemap.xml
+# Sitemap
+Sitemap: https://gridstorm.tekivex.com/sitemap.xml
 
-# Crawl-delay for well-behaved bots
+# Crawl-delay
 Crawl-delay: 1
 
-# Block AI training crawlers (opt-out)
+# Block AI training crawlers
 User-agent: GPTBot
 Disallow: /
 
@@ -18,4 +18,7 @@ User-agent: CCBot
 Disallow: /
 
 User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Google-Extended
 Disallow: /

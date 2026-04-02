@@ -765,12 +765,21 @@ importers:
 
   packages/gridstorm:
     dependencies:
+      '@angular/core':
+        specifier: '>=17.0.0'
+        version: 21.2.6(rxjs@7.8.2)
       react:
         specifier: '>=18.0.0'
         version: 18.3.1
       react-dom:
         specifier: '>=18.0.0'
         version: 18.3.1(react@18.3.1)
+      svelte:
+        specifier: '>=4.0.0'
+        version: 5.53.10
+      vue:
+        specifier: '>=3.0.0'
+        version: 3.5.31(typescript@5.9.3)
 
   packages/i18n:
     devDependencies:

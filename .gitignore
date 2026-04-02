@@ -48,3 +48,6 @@ coverage
 *.local
 *.bak
 *.tmp
+
+# Claude Code local config
+.claude/

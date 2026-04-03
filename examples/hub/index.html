@@ -42,18 +42,14 @@
   <!-- Replace ca-pub-XXXXXXXXXXXXXXXX with your real publisher ID from adsense.google.com -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
 
-  <!-- ── Google Analytics 4 ───────────────────────────────────────────── -->
-  <!-- Replace G-XXXXXXXXXX with your real Measurement ID from analytics.google.com -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-C65SFGKM00"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-XXXXXXXXXX', {
-      page_path: window.location.hash || '/',
-      send_page_view: true
-    });
-    // Track hash-router navigation
+    gtag('config', 'G-C65SFGKM00');
+    // Track hash-router navigation (SPA page views)
     window.addEventListener('hashchange', function() {
       gtag('event', 'page_view', {
         page_path: window.location.hash.replace('#', '') || '/'

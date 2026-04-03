@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import { GridSkeleton, GridError, GridEmpty } from '../../shared/GridSkeleton';
 import {
   GridStorm,
   useGridSelection,
@@ -788,6 +789,17 @@ export function App() {
     memory: null,
   });
 
+  // Initial load skeleton
+  useEffect(() => {
+    try {
+      const id = setTimeout(() => setLoading(false), 450);
+      return () => clearTimeout(id);
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : 'Unexpected error loading data.');
+      setLoading(false);
+    }
+  }, []);
+
   // FPS counter
   const fpsRef = useRef({ frames: 0, lastTime: performance.now() });
   useEffect(() => {
@@ -812,6 +824,9 @@ export function App() {
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
   }, []);
+
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Generate initial data
   const [rowData, setRowData] = useState<AnalyticsRow[]>(() => {
@@ -918,37 +933,45 @@ export function App() {
       <PerfPanel metrics={metrics} />
 
       {/* Grid */}
-      <GridStorm<AnalyticsRow>
-        columns={columns}
-        rowData={rowData}
-        getRowId={(row) => String(row.id)}
-        plugins={plugins}
-        rowHeight={36}
-        headerHeight={40}
-        height="100%"
-        width="100%"
-        pagination
-        paginationPageSize={100}
-        rowSelection="multiple"
-        onGridReady={handleGridReady}
-        theme={theme as any}
-        containerStyle={{ flex: 1, minHeight: 0 }}
-      >
-        <Toolbar
-          rowCountOptions={ROW_COUNT_OPTIONS}
-          activeRowCount={activeRowCount}
-          onRowCountChange={handleRowCountChange}
-          onTimedSort={handleTimedSort}
-          onTimedFilter={handleTimedFilter}
-          eventFilter={eventFilter}
-          setEventFilter={setEventFilter}
-          deviceFilter={deviceFilter}
-          setDeviceFilter={setDeviceFilter}
-          theme={theme}
-          setTheme={setTheme}
-        />
-        <PaginationFooter />
-      </GridStorm>
+      {loading ? (
+        <GridSkeleton columns={6} rows={12} height="100%" />
+      ) : loadError ? (
+        <GridError message={loadError} onRetry={() => { setLoadError(null); setLoading(true); }} height="100%" />
+      ) : rowData.length === 0 ? (
+        <GridEmpty message="No analytics data found. Try adjusting your filters." height="100%" />
+      ) : (
+        <GridStorm<AnalyticsRow>
+          columns={columns}
+          rowData={rowData}
+          getRowId={(row) => String(row.id)}
+          plugins={plugins}
+          rowHeight={36}
+          headerHeight={40}
+          height="100%"
+          width="100%"
+          pagination
+          paginationPageSize={100}
+          rowSelection="multiple"
+          onGridReady={handleGridReady}
+          theme={theme as any}
+          containerStyle={{ flex: 1, minHeight: 0 }}
+        >
+          <Toolbar
+            rowCountOptions={ROW_COUNT_OPTIONS}
+            activeRowCount={activeRowCount}
+            onRowCountChange={handleRowCountChange}
+            onTimedSort={handleTimedSort}
+            onTimedFilter={handleTimedFilter}
+            eventFilter={eventFilter}
+            setEventFilter={setEventFilter}
+            deviceFilter={deviceFilter}
+            setDeviceFilter={setDeviceFilter}
+            theme={theme}
+            setTheme={setTheme}
+          />
+          <PaginationFooter />
+        </GridStorm>
+      )}
     </div>
   );
 }

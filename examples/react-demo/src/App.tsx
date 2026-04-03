@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import { GridSkeleton } from '../../shared/GridSkeleton';
 import {
   GridStorm,
   useGridApi,
@@ -308,7 +309,12 @@ const plugins = [
 // ── App ──
 
 export function App() {
-  const [rowData] = useState(() => generateData(100_000));
+  const [rowData, setRowData] = useState<Employee[] | null>(null);
+
+  useEffect(() => {
+    const id = setTimeout(() => setRowData(generateData(100_000)), 400);
+    return () => clearTimeout(id);
+  }, []);
   const [theme, setTheme] = useState<string>('light');
   const apiRef = useRef<GridApi<Employee> | null>(null);
 
@@ -426,32 +432,34 @@ export function App() {
 
       {/* Grid */}
       <div style={{ flex: 1 }} data-theme={theme}>
-        <GridStorm<Employee>
-          columns={columns}
-          rowData={rowData}
-          plugins={plugins}
-          rowHeight={40}
-          headerHeight={48}
-          height="100%"
-          rowSelection="multiple"
-          ariaLabel="Employee Data Grid — 100K Rows"
-          onGridReady={handleGridReady}
-          contextMenu={GridContextMenu}
-          // Controlled sort (when enabled)
-          {...(useControlledSort
-            ? {
-                sortModel: controlledSort,
-                onSortModelChange: setControlledSort,
-              }
-            : {})}
-          // Event callbacks
-          onSelectionChanged={(e) =>
-            console.log('Selection:', e.selectedNodes.length, 'rows')
-          }
-          onSortChanged={(e) => console.log('Sort:', e.sortModel)}
-        >
-          <Toolbar rowCount={rowData.length} />
-        </GridStorm>
+        {rowData === null ? (
+          <GridSkeleton columns={7} rows={12} height="100%" />
+        ) : (
+          <GridStorm<Employee>
+            columns={columns}
+            rowData={rowData}
+            plugins={plugins}
+            rowHeight={40}
+            headerHeight={48}
+            height="100%"
+            rowSelection="multiple"
+            ariaLabel="Employee Data Grid — 100K Rows"
+            onGridReady={handleGridReady}
+            contextMenu={GridContextMenu}
+            {...(useControlledSort
+              ? {
+                  sortModel: controlledSort,
+                  onSortModelChange: setControlledSort,
+                }
+              : {})}
+            onSelectionChanged={(e) =>
+              console.log('Selection:', e.selectedNodes.length, 'rows')
+            }
+            onSortChanged={(e) => console.log('Sort:', e.sortModel)}
+          >
+            <Toolbar rowCount={rowData.length} />
+          </GridStorm>
+        )}
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import { GridSkeleton, GridError, GridEmpty } from '../../shared/GridSkeleton';
 import {
   GridStorm,
   useGridApi,
@@ -645,8 +646,23 @@ const plugins = [
 // ── App ──
 
 export function App() {
-  const [rowData, setRowData] = useState<SpreadsheetRow[]>(() => generateSpreadsheetData(500));
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [rowData, setRowData] = useState<SpreadsheetRow[] | null>(null);
   const [theme, setTheme] = useState('light');
+
+  useEffect(() => {
+    try {
+      const id = setTimeout(() => {
+        setRowData(generateSpreadsheetData(500));
+        setLoading(false);
+      }, 350);
+      return () => clearTimeout(id);
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : 'Failed to load spreadsheet data.');
+      setLoading(false);
+    }
+  }, []);
   const [editCount, setEditCount] = useState(0);
   const [focusedCellInfo, setFocusedCellInfo] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -933,6 +949,13 @@ export function App() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Grid Container */}
       <div style={{ flex: 1 }} data-theme={theme}>
+        {loading ? (
+          <GridSkeleton columns={8} rows={14} height="100%" />
+        ) : loadError ? (
+          <GridError message={loadError} onRetry={() => { setLoadError(null); setLoading(true); setRowData(null); }} height="100%" />
+        ) : rowData === null || rowData.length === 0 ? (
+          <GridEmpty message="No spreadsheet data available." height="100%" />
+        ) : (
         <GridStorm<SpreadsheetRow>
           columns={columns}
           rowData={rowData}
@@ -994,7 +1017,7 @@ export function App() {
           }}
         >
           <Toolbar
-            rowCount={rowData.length}
+            rowCount={rowData?.length ?? 0}
             editCount={editCount}
             theme={theme}
             onThemeChange={setTheme}
@@ -1002,6 +1025,7 @@ export function App() {
             onDeleteSelected={handleDeleteSelected}
           />
         </GridStorm>
+        )}
       </div>
 
       {/* Formula Bar at bottom */}

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import { GridSkeleton } from '../../shared/GridSkeleton';
 import {
   GridStorm,
   useGridApi,
@@ -1025,6 +1026,7 @@ const columns: ReactColumnDef<StockTick>[] = [
 const ROW_COUNT = 50_000;
 
 export function App() {
+  const [loading, setLoading] = useState(true);
   const [rowData, setRowData] = useState(() => {
     const data = generateStocks(ROW_COUNT);
     // Seed initial price history
@@ -1047,6 +1049,12 @@ export function App() {
 
   const handleGridReady = useCallback((api: GridApi<StockTick>) => {
     apiRef.current = api;
+  }, []);
+
+  // ── Initial load skeleton ──
+  useEffect(() => {
+    const id = setTimeout(() => setLoading(false), 500);
+    return () => clearTimeout(id);
   }, []);
 
   // ── Real-time update simulation ──
@@ -1162,6 +1170,9 @@ export function App() {
 
       {/* Grid with overlay */}
       <div style={{ flex: 1, position: 'relative' }} data-theme={theme}>
+        {loading ? (
+          <GridSkeleton columns={8} rows={14} height="100%" />
+        ) : (
         <GridStorm<StockTick>
           columns={columns}
           rowData={filteredData}
@@ -1192,6 +1203,7 @@ export function App() {
             onThemeChange={setTheme}
           />
         </GridStorm>
+        )}
 
         <PerformanceOverlay
           rowCount={filteredData.length}

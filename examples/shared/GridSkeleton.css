@@ -1,0 +1,216 @@
+/* ── GridSkeleton — shimmer placeholder for GridStorm grids ──────────────── */
+
+.gs-skeleton {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--gs-border, #e2e8f0);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--gs-bg, #ffffff);
+  box-sizing: border-box;
+}
+
+/* ── Header ── */
+.gs-skeleton-header {
+  display: flex;
+  flex-shrink: 0;
+  height: 40px;
+  background: var(--gs-header-bg, #f8fafc);
+  border-bottom: 2px solid var(--gs-border, #e2e8f0);
+}
+
+/* ── Body ── */
+.gs-skeleton-body {
+  flex: 1;
+  overflow: hidden;
+}
+
+.gs-skeleton-row {
+  display: flex;
+  height: 36px;
+  border-bottom: 1px solid var(--gs-border, #f1f5f9);
+}
+
+.gs-skeleton-row:last-child {
+  border-bottom: none;
+}
+
+/* ── Cell ── */
+.gs-skeleton-cell {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-right: 1px solid var(--gs-cell-border, #f1f5f9);
+  min-width: 0;
+}
+
+.gs-skeleton-cell:last-child {
+  border-right: none;
+}
+
+.gs-skeleton-header-cell {
+  align-items: center;
+}
+
+/* ── Shimmer animation ── */
+@keyframes gs-shimmer-move {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+
+.gs-shimmer {
+  height: 11px;
+  border-radius: 5px;
+  background: linear-gradient(
+    90deg,
+    #e2e8f0 0px,
+    #f8fafc 150px,
+    #e2e8f0 300px
+  );
+  background-size: 600px 100%;
+  animation: gs-shimmer-move 1.5s ease-in-out infinite;
+}
+
+.gs-shimmer-header {
+  height: 13px;
+  background: linear-gradient(
+    90deg,
+    #cbd5e1 0px,
+    #e2e8f0 150px,
+    #cbd5e1 300px
+  );
+  background-size: 600px 100%;
+  animation: gs-shimmer-move 1.5s ease-in-out infinite;
+}
+
+/* ── Dark mode (CSS variable override for GridStorm dark theme) ── */
+[data-theme="dark"] .gs-skeleton,
+[data-gs-theme="dark"] .gs-skeleton,
+.dark .gs-skeleton {
+  background: #111113;
+  border-color: #27272a;
+}
+
+[data-theme="dark"] .gs-skeleton-header,
+[data-gs-theme="dark"] .gs-skeleton-header,
+.dark .gs-skeleton-header {
+  background: #18181b;
+  border-color: #27272a;
+}
+
+[data-theme="dark"] .gs-skeleton-row,
+[data-gs-theme="dark"] .gs-skeleton-row,
+.dark .gs-skeleton-row {
+  border-color: #27272a;
+}
+
+[data-theme="dark"] .gs-skeleton-cell,
+[data-gs-theme="dark"] .gs-skeleton-cell,
+.dark .gs-skeleton-cell {
+  border-color: #1e1e22;
+}
+
+[data-theme="dark"] .gs-shimmer,
+[data-gs-theme="dark"] .gs-shimmer,
+.dark .gs-shimmer {
+  background: linear-gradient(90deg, #27272a 0px, #3f3f46 150px, #27272a 300px);
+  background-size: 600px 100%;
+}
+
+[data-theme="dark"] .gs-shimmer-header,
+[data-gs-theme="dark"] .gs-shimmer-header,
+.dark .gs-shimmer-header {
+  background: linear-gradient(90deg, #3f3f46 0px, #52525b 150px, #3f3f46 300px);
+  background-size: 600px 100%;
+}
+
+/* ── Error / Empty states ── */
+
+.gs-state-box {
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--gs-border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--gs-bg, #ffffff);
+  box-sizing: border-box;
+  padding: 32px;
+  text-align: center;
+}
+
+.gs-state-icon {
+  font-size: 2rem;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.gs-error-icon { color: #ef4444; }
+.gs-empty-icon  { color: #94a3b8; }
+
+.gs-state-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--gs-text, #0f172a);
+}
+
+.gs-state-message {
+  font-size: 0.85rem;
+  color: var(--gs-text-muted, #64748b);
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.gs-retry-btn {
+  margin-top: 8px;
+  padding: 6px 18px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #ffffff;
+  background: #3b82f6;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.gs-retry-btn:hover { background: #2563eb; }
+
+/* Dark error/empty */
+@media (prefers-color-scheme: dark) {
+  .gs-state-box {
+    background: #111113;
+    border-color: #27272a;
+  }
+  .gs-state-title   { color: #fafafa; }
+  .gs-state-message { color: #71717a; }
+}
+
+/* ── System dark mode fallback ── */
+@media (prefers-color-scheme: dark) {
+  .gs-skeleton {
+    background: #111113;
+    border-color: #27272a;
+  }
+  .gs-skeleton-header {
+    background: #18181b;
+    border-color: #27272a;
+  }
+  .gs-skeleton-row  { border-color: #27272a; }
+  .gs-skeleton-cell { border-color: #1e1e22; }
+  .gs-shimmer {
+    background: linear-gradient(90deg, #27272a 0px, #3f3f46 150px, #27272a 300px);
+    background-size: 600px 100%;
+  }
+  .gs-shimmer-header {
+    background: linear-gradient(90deg, #3f3f46 0px, #52525b 150px, #3f3f46 300px);
+    background-size: 600px 100%;
+  }
+}

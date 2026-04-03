@@ -3,6 +3,7 @@
 // Each example is self-contained and easy to copy-paste.
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { GridSkeleton, GridError } from '../../shared/GridSkeleton';
 import {
   GridStorm,
   useGridState,
@@ -2331,6 +2332,21 @@ export function App() {
   const [activeExample, navigate] = useHashRoute('basic-grid');
   const ExampleComponent = EXAMPLES[activeExample];
 
+  const [exampleLoading, setExampleLoading] = useState(true);
+  const [exampleError, setExampleError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setExampleLoading(true);
+    setExampleError(null);
+    try {
+      const id = setTimeout(() => setExampleLoading(false), 300);
+      return () => clearTimeout(id);
+    } catch (e) {
+      setExampleError(e instanceof Error ? e.message : 'Failed to load example.');
+      setExampleLoading(false);
+    }
+  }, [activeExample]);
+
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       {/* Sidebar */}
@@ -2401,8 +2417,16 @@ export function App() {
       </nav>
 
       {/* Content */}
-      <main style={{ flex: 1, overflow: 'auto' }}>
-        {ExampleComponent ? (
+      <main style={{ flex: 1, overflow: 'auto', padding: exampleLoading || exampleError ? 16 : 0 }}>
+        {exampleLoading ? (
+          <GridSkeleton columns={5} rows={12} height="500px" />
+        ) : exampleError ? (
+          <GridError
+            message={exampleError}
+            onRetry={() => { setExampleError(null); setExampleLoading(true); }}
+            height="500px"
+          />
+        ) : ExampleComponent ? (
           <ExampleComponent />
         ) : (
           <div style={{ padding: 40, color: '#999' }}>

@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { GridSkeleton } from '../../shared/GridSkeleton';
 import { GridStorm } from '@gridstorm/react';
 import type { ColumnDef, GridPlugin, GridApi } from '@gridstorm/core';
 import { SortingPlugin } from '@gridstorm/plugin-sorting';
@@ -1855,6 +1856,13 @@ export function App() {
   const feature = FEATURES.find(f => f.id === activeDemo)!;
   const DemoComponent = DEMO_MAP[activeDemo];
 
+  const [demoLoading, setDemoLoading] = useState(true);
+  useEffect(() => {
+    setDemoLoading(true);
+    const id = setTimeout(() => setDemoLoading(false), 300);
+    return () => clearTimeout(id);
+  }, [activeDemo]);
+
   const groupedFeatures = useMemo(() => {
     const groups: Record<string, FeatureDemo[]> = {};
     for (const f of FEATURES) {
@@ -1909,7 +1917,13 @@ export function App() {
 
         {/* Grid Area */}
         <div style={{ flex: 1, padding: 16, minHeight: 0 }}>
-          {DemoComponent ? <DemoComponent /> : <div>Select a demo</div>}
+          {demoLoading ? (
+            <GridSkeleton columns={5} rows={10} height="100%" />
+          ) : DemoComponent ? (
+            <DemoComponent />
+          ) : (
+            <div style={{ color: '#999', padding: 20 }}>Select a demo from the sidebar</div>
+          )}
         </div>
       </main>
     </div>

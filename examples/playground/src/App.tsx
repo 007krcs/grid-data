@@ -1,8 +1,10 @@
+import { GridSkeleton, GridError, GridEmpty } from '../../shared/GridSkeleton';
 import {
   useState,
   useCallback,
   useMemo,
   useRef,
+  useEffect,
   useEffect,
 } from 'react';
 import Editor from '@monaco-editor/react';
@@ -372,6 +374,14 @@ function GridPreview({
   config: PlaygroundConfig;
   gridKey: number;
 }) {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    const id = setTimeout(() => setLoading(false), 300);
+    return () => clearTimeout(id);
+  }, [gridKey]);
+
   const plugins = useMemo(() => buildPlugins(config), [gridKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const columns = useMemo<ColumnDef[]>(() => {
@@ -382,6 +392,7 @@ function GridPreview({
   }, [config.columns]);
 
   const theme = config.options?.theme ?? 'light';
+  const colCount = columns.length || 4;
 
   return (
     <div
@@ -393,17 +404,23 @@ function GridPreview({
         overflow: 'hidden',
       }}
     >
-      <GridStorm
-        key={gridKey}
-        columns={columns}
-        rowData={config.rowData}
-        plugins={plugins}
-        rowHeight={config.options?.rowHeight ?? 40}
-        headerHeight={config.options?.headerHeight ?? 48}
-        height="100%"
-        rowSelection={config.options?.rowSelection}
-        ariaLabel="GridStorm Playground Preview"
-      />
+      {loading ? (
+        <GridSkeleton columns={colCount} rows={10} height="100%" />
+      ) : config.rowData.length === 0 ? (
+        <GridEmpty message="No rows in rowData. Add some data to see the grid." height="100%" />
+      ) : (
+        <GridStorm
+          key={gridKey}
+          columns={columns}
+          rowData={config.rowData}
+          plugins={plugins}
+          rowHeight={config.options?.rowHeight ?? 40}
+          headerHeight={config.options?.headerHeight ?? 48}
+          height="100%"
+          rowSelection={config.options?.rowSelection}
+          ariaLabel="GridStorm Playground Preview"
+        />
+      )}
     </div>
   );
 }

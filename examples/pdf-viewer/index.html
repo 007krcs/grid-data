@@ -14,12 +14,68 @@
     </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GridStorm PDF Viewer</title>
+    <meta name="description" content="PDF viewer demo built with GridStorm — WASM-rendered PDF display, annotation panel with data grid, smart form auto-fill, PII detection, and AES-256 encryption. MIT-licensed." />
+    <meta name="keywords" content="WASM PDF viewer, PDF annotation grid, GridStorm PDF, browser PDF renderer, form auto-fill, PII detection, AES-256 PDF encryption" />
+    <meta name="author" content="Tekivex" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="canonical" href="https://gridstorm.tekivex.com/pdf-viewer/" />
+    <title>GridStorm PDF Viewer — WASM-Powered PDF Rendering with Annotation Grid</title>
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="GridStorm" />
+    <meta property="og:title" content="GridStorm PDF Viewer — WASM-Powered PDF Rendering with Annotation Grid" />
+    <meta property="og:description" content="PDF viewer demo built with GridStorm — WASM-rendered PDF display, annotation panel with data grid, smart form auto-fill, PII detection, and AES-256 encryption. MIT-licensed." />
+    <meta property="og:url" content="https://gridstorm.tekivex.com/pdf-viewer/" />
+    <meta property="og:image" content="https://gridstorm.tekivex.com/og-gridstorm.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="GridStorm — Open-Source Enterprise Data Grid" />
+    <meta property="og:locale" content="en_US" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@tekivex" />
+    <meta name="twitter:title" content="GridStorm PDF Viewer — WASM-Powered PDF Rendering with Annotation Grid" />
+    <meta name="twitter:description" content="PDF viewer demo built with GridStorm — WASM-rendered PDF display, annotation panel with data grid, smart form auto-fill, PII detection, and AES-256 encryption. MIT-licensed." />
+    <meta name="twitter:image" content="https://gridstorm.tekivex.com/og-gridstorm.png" />
+    <meta name="twitter:image:alt" content="GridStorm — Open-Source Enterprise Data Grid" />
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
       #root { height: 100vh; display: flex; flex-direction: column; }
     </style>
+  
+  <!-- JSON-LD: SoftwareApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "GridStorm PDF Viewer",
+    "description": "WASM-powered PDF viewer built with GridStorm — PDF display with annotation grid panel, smart form auto-fill, PII detection, and AES-256 encryption.",
+    "url": "https://gridstorm.tekivex.com/pdf-viewer/",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "All",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "GridStorm",
+      "url": "https://gridstorm.tekivex.com"
+    },
+    "featureList": ["WASM PDF rendering in browser", "Annotation data grid panel", "Smart form field auto-fill", "PII detection and masking", "AES-256 PDF encryption", "Page navigation and zoom"],
+    "softwareVersion": "0.2.1",
+    "license": "https://opensource.org/licenses/MIT",
+    "isPartOf": {
+      "@type": "SoftwareApplication",
+      "name": "GridStorm Platform",
+      "url": "https://gridstorm.tekivex.com"
+    }
+  }
+  </script>
   </head>
   <body>
     <div id="root"></div>

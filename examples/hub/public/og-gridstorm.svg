@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#0c1a2e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <linearGradient id="hexG" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <filter id="softglow">
+      <feGaussianBlur stdDeviation="40" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Glow blobs -->
+  <ellipse cx="180" cy="180" rx="320" ry="200" fill="#6366f1" opacity="0.07" filter="url(#softglow)"/>
+  <ellipse cx="1080" cy="500" rx="260" ry="180" fill="#06b6d4" opacity="0.06" filter="url(#softglow)"/>
+
+  <!-- Top accent line -->
+  <rect x="0" y="0" width="1200" height="4" fill="url(#accent)"/>
+
+  <!-- Grid preview (right side visual) -->
+  <!-- Grid container -->
+  <rect x="680" y="120" width="460" height="390" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Grid header row -->
+  <rect x="680" y="120" width="460" height="44" rx="12" fill="#1e293b"/>
+  <rect x="680" y="148" width="460" height="16" fill="#1e293b"/>
+  <!-- Header cells -->
+  <rect x="692" y="132" width="80" height="20" rx="4" fill="#6366f1" fill-opacity="0.3"/>
+  <rect x="784" y="132" width="100" height="20" rx="4" fill="#6366f1" fill-opacity="0.3"/>
+  <rect x="896" y="132" width="80" height="20" rx="4" fill="#6366f1" fill-opacity="0.3"/>
+  <rect x="988" y="132" width="70" height="20" rx="4" fill="#6366f1" fill-opacity="0.3"/>
+  <!-- Header divider -->
+  <line x1="680" y1="164" x2="1140" y2="164" stroke="#334155" stroke-width="1"/>
+
+  <!-- Data rows -->
+  <!-- Row 1 -->
+  <rect x="692" y="174" width="70" height="12" rx="3" fill="#475569"/>
+  <rect x="784" y="174" width="90" height="12" rx="3" fill="#475569"/>
+  <rect x="896" y="174" width="60" height="12" rx="3" fill="#22d3ee" fill-opacity="0.6"/>
+  <rect x="988" y="174" width="50" height="12" rx="3" fill="#475569"/>
+  <line x1="680" y1="196" x2="1140" y2="196" stroke="#1e293b" stroke-width="1"/>
+
+  <!-- Row 2 (highlighted) -->
+  <rect x="680" y="197" width="460" height="30" fill="#6366f1" fill-opacity="0.08"/>
+  <rect x="692" y="205" width="80" height="12" rx="3" fill="#818cf8"/>
+  <rect x="784" y="205" width="75" height="12" rx="3" fill="#818cf8"/>
+  <rect x="896" y="205" width="65" height="12" rx="3" fill="#22d3ee" fill-opacity="0.8"/>
+  <rect x="988" y="205" width="55" height="12" rx="3" fill="#818cf8"/>
+  <line x1="680" y1="227" x2="1140" y2="227" stroke="#1e293b" stroke-width="1"/>
+
+  <!-- Row 3 -->
+  <rect x="692" y="237" width="65" height="12" rx="3" fill="#475569"/>
+  <rect x="784" y="237" width="95" height="12" rx="3" fill="#475569"/>
+  <rect x="896" y="237" width="55" height="12" rx="3" fill="#10b981" fill-opacity="0.6"/>
+  <rect x="988" y="237" width="60" height="12" rx="3" fill="#475569"/>
+  <line x1="680" y1="259" x2="1140" y2="259" stroke="#1e293b" stroke-width="1"/>
+
+  <!-- Row 4 -->
+  <rect x="692" y="269" width="75" height="12" rx="3" fill="#475569"/>
+  <rect x="784" y="269" width="85" height="12" rx="3" fill="#475569"/>
+  <rect x="896" y="269" width="70" height="12" rx="3" fill="#f59e0b" fill-opacity="0.6"/>
+  <rect x="988" y="269" width="45" height="12" rx="3" fill="#475569"/>
+  <line x1="680" y1="291" x2="1140" y2="291" stroke="#1e293b" stroke-width="1"/>
+
+  <!-- Row 5 -->
+  <rect x="692" y="301" width="60" height="12" rx="3" fill="#475569"/>
+  <rect x="784" y="301" width="100" height="12" rx="3" fill="#475569"/>
+  <rect x="896" y="301" width="60" height="12" rx="3" fill="#22d3ee" fill-opacity="0.5"/>
+  <rect x="988" y="301" width="55" height="12" rx="3" fill="#475569"/>
+  <line x1="680" y1="323" x2="1140" y2="323" stroke="#1e293b" stroke-width="1"/>
+
+  <!-- More faded rows -->
+  <rect x="692" y="333" width="70" height="10" rx="3" fill="#334155"/>
+  <rect x="784" y="333" width="80" height="10" rx="3" fill="#334155"/>
+  <rect x="896" y="333" width="65" height="10" rx="3" fill="#334155"/>
+  <line x1="680" y1="353" x2="1140" y2="353" stroke="#1e293b" stroke-width="1"/>
+  <rect x="692" y="363" width="55" height="10" rx="3" fill="#1e293b" fill-opacity="0.8"/>
+  <rect x="784" y="363" width="90" height="10" rx="3" fill="#1e293b" fill-opacity="0.8"/>
+  <line x1="680" y1="383" x2="1140" y2="383" stroke="#1e293b" stroke-width="1"/>
+
+  <!-- Fade overlay at bottom of grid -->
+  <defs>
+    <linearGradient id="gridFade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.95"/>
+    </linearGradient>
+  </defs>
+  <rect x="680" y="350" width="460" height="160" fill="url(#gridFade)" rx="0"/>
+
+  <!-- Vertical column lines -->
+  <line x1="776" y1="120" x2="776" y2="510" stroke="#334155" stroke-width="1" opacity="0.5"/>
+  <line x1="888" y1="120" x2="888" y2="510" stroke="#334155" stroke-width="1" opacity="0.5"/>
+  <line x1="980" y1="120" x2="980" y2="510" stroke="#334155" stroke-width="1" opacity="0.5"/>
+
+  <!-- ── LEFT SIDE: Branding ── -->
+  <!-- Logo hex icon, center (140, 200), r=80 -->
+  <!-- Flat-top hex: 0°:(220,200), 60°:(180,269.3), 120°:(100,269.3), 180°:(60,200), 240°:(100,130.7), 300°:(180,130.7) -->
+  <polygon points="220,200 180,269.3 100,269.3 60,200 100,130.7 180,130.7"
+           fill="url(#hexG)" opacity="0.9"/>
+  <!-- T crossbar -->
+  <rect x="80" y="178" width="120" height="18" rx="9" fill="white"/>
+  <!-- T stem -->
+  <rect x="131" y="196" width="18" height="52" rx="9" fill="white"/>
+  <!-- Data dots -->
+  <circle cx="178" cy="187" r="7" fill="white" opacity="0.65"/>
+  <circle cx="178" cy="216" r="7" fill="white" opacity="0.45"/>
+  <circle cx="178" cy="245" r="7" fill="white" opacity="0.25"/>
+
+  <!-- Brand name -->
+  <text x="60" y="340"
+    font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="72" font-weight="800" fill="url(#accent)" letter-spacing="-2">GridStorm</text>
+
+  <!-- Tagline -->
+  <text x="62" y="392"
+    font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="24" font-weight="400" fill="#94a3b8" letter-spacing="0.3">Open-source enterprise data grid</text>
+
+  <!-- Divider -->
+  <rect x="62" y="418" width="480" height="2" fill="url(#accent)" opacity="0.35" rx="1"/>
+
+  <!-- Feature pills -->
+  <rect x="62" y="438" width="148" height="36" rx="18" fill="#6366f1" fill-opacity="0.18" stroke="#6366f1" stroke-opacity="0.5" stroke-width="1.5"/>
+  <text x="136" y="461" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#a5b4fc">100K rows @ 60fps</text>
+
+  <rect x="222" y="438" width="110" height="36" rx="18" fill="#06b6d4" fill-opacity="0.15" stroke="#06b6d4" stroke-opacity="0.4" stroke-width="1.5"/>
+  <text x="277" y="461" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#67e8f9">35 plugins</text>
+
+  <rect x="344" y="438" width="106" height="36" rx="18" fill="#10b981" fill-opacity="0.15" stroke="#10b981" stroke-opacity="0.4" stroke-width="1.5"/>
+  <text x="397" y="461" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#6ee7b7">MIT license</text>
+
+  <!-- Domain -->
+  <text x="600" y="590" text-anchor="middle"
+    font-family="Inter, sans-serif" font-size="18" font-weight="500" fill="#475569" letter-spacing="1">
+    gridstorm.tekivex.com
+  </text>
+
+  <!-- Bottom accent -->
+  <rect x="0" y="626" width="1200" height="4" fill="url(#accent)" opacity="0.5"/>
+</svg>

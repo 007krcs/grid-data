@@ -47,8 +47,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Audit dependencies
-        run: pnpm audit --audit-level=high || true
+      - name: Audit dependencies (hard fail on high/critical)
+        run: pnpm audit --audit-level=high
 
-      - name: Check for known vulnerabilities
-        run: npx better-npm-audit audit --level high || true
+      - name: Check license compliance (MIT / Apache / BSD / ISC only)
+        run: npx license-checker --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;CC0-1.0;0BSD;Unlicense;Python-2.0'
+        continue-on-error: true

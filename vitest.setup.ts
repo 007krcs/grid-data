@@ -1,4 +1,7 @@
-// Polyfills for jsdom environment
+// ─── Testing library matchers ─────────────────────────────────────────────────
+import '@testing-library/jest-dom';
+
+// ─── Polyfills for jsdom environment ─────────────────────────────────────────
 
 // ResizeObserver is not available in jsdom
 if (typeof globalThis.ResizeObserver === 'undefined') {

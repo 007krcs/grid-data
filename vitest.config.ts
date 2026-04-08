@@ -79,8 +79,15 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
-      include: ['packages/*/src/**/*.ts'],
-      exclude: ['**/*.test.ts', '**/index.ts', '**/*.d.ts'],
+      include: ['packages/*/src/**/*.{ts,tsx}'],
+      exclude: ['**/*.test.{ts,tsx}', '**/index.ts', '**/*.d.ts'],
+      thresholds: {
+        // react-adapter: new React rendering tests bring this up to 75%+
+        // core + plugins: existing 86-file suite keeps us at 80%+
+        lines: 70,
+        functions: 65,
+        branches: 60,
+      },
     },
   },
 });

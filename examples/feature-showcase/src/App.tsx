@@ -2405,6 +2405,7 @@ export function App() {
     return hash && DEMO_MAP[hash] ? hash : 'sorting';
   };
   const [activeDemo, setActiveDemo] = useState(getHashDemo);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     const onHashChange = () => setActiveDemo(getHashDemo());
@@ -2415,6 +2416,8 @@ export function App() {
   const selectDemo = useCallback((id: string) => {
     window.location.hash = id;
     setActiveDemo(id);
+    // Close sidebar on small screens after selecting a demo
+    if (window.innerWidth < 768) setSidebarOpen(false);
   }, []);
 
   const feature = FEATURES.find(f => f.id === activeDemo)!;
@@ -2438,14 +2441,57 @@ export function App() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      {/* ── Sidebar overlay backdrop (mobile) ── */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            display: 'none',
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 99,
+          }}
+          className="sidebar-backdrop"
+        />
+      )}
+
       {/* ── Sidebar ── */}
-      <aside style={sidebarStyle}>
-        <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid #e5e7eb' }}>
-          <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>
-            <span style={{ color: '#2563eb' }}>GridStorm</span>{' '}
-            <span style={{ fontWeight: 400, color: '#666' }}>Features</span>
-          </h1>
-          <p style={{ fontSize: 11, color: '#999', marginTop: 4 }}>33 interactive demos</p>
+      <aside style={{
+        ...sidebarStyle,
+        transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+        transition: 'transform 0.22s ease',
+        position: sidebarOpen ? 'relative' : 'absolute',
+        zIndex: 100,
+        width: sidebarOpen ? 220 : 0,
+        minWidth: sidebarOpen ? 220 : 0,
+      }}>
+        <div style={{ padding: '14px 12px 10px', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+          <div>
+            <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>
+              <a
+                href="https://gridstorm.trekivex.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#2563eb', textDecoration: 'none' }}
+                title="Go to GridStorm home"
+              >GridStorm</a>{' '}
+              <span style={{ fontWeight: 400, color: '#666' }}>Features</span>
+            </h1>
+            <p style={{ fontSize: 11, color: '#999', marginTop: 3, marginBottom: 0 }}>33 interactive demos</p>
+          </div>
+          {/* Close button */}
+          <button
+            onClick={() => setSidebarOpen(false)}
+            title="Close menu"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              padding: '2px 4px', fontSize: 18, lineHeight: 1,
+              color: '#9ca3af', flexShrink: 0, marginTop: 1,
+              borderRadius: 4,
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#374151')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#9ca3af')}
+          >
+            ✕
+          </button>
         </div>
         <nav style={{ flex: 1, overflow: 'auto', padding: '8px 0' }}>
           {Object.entries(groupedFeatures).map(([cat, features]) => (
@@ -2472,11 +2518,27 @@ export function App() {
       </aside>
 
       {/* ── Main Content ── */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto', minWidth: 0 }}>
         {/* Header */}
-        <header style={{ padding: '12px 20px', borderBottom: '1px solid #e5e7eb', background: '#fafafa', flexShrink: 0 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{feature.title}</h2>
-          <p style={{ fontSize: 13, color: '#666', marginTop: 2 }}>{feature.description}</p>
+        <header style={{ padding: '10px 16px', borderBottom: '1px solid #e5e7eb', background: '#fafafa', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* Hamburger — visible when sidebar is closed */}
+          {!sidebarOpen && (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              title="Open menu"
+              style={{
+                background: 'none', border: '1px solid #e5e7eb', cursor: 'pointer',
+                padding: '5px 8px', fontSize: 16, lineHeight: 1,
+                color: '#374151', borderRadius: 6, flexShrink: 0,
+              }}
+            >
+              ☰
+            </button>
+          )}
+          <div style={{ minWidth: 0 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{feature.title}</h2>
+            <p style={{ fontSize: 13, color: '#666', marginTop: 2, marginBottom: 0 }}>{feature.description}</p>
+          </div>
         </header>
 
         {/* Grid Area */}
@@ -2497,12 +2559,12 @@ export function App() {
 // ── Styles ──
 
 const sidebarStyle: React.CSSProperties = {
-  width: 220,
   borderRight: '1px solid #e5e7eb',
   background: '#fff',
   display: 'flex',
   flexDirection: 'column',
   flexShrink: 0,
+  overflow: 'hidden',
 };
 
 const categoryLabelStyle: React.CSSProperties = {

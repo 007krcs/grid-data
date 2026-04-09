@@ -136,6 +136,21 @@ export function CellFormulaPlugin(options: CellFormulaOptions = {}): GridPlugin 
             computedValues.delete(columnId);
             return { ...state, definitions, computedValues };
           });
+
+          // Clear the column value from every row's data and bump node.version
+          // so the DOM renderer rebuilds those cells (same pattern as recompute)
+          let anyCleared = false;
+          ctx.api.forEachNode?.((node: { id: string; data: Record<string, unknown>; version: number }) => {
+            if (columnId in node.data) {
+              node.data[columnId] = null;
+              node.version = (node.version ?? 0) + 1;
+              anyCleared = true;
+            }
+          });
+
+          if (anyCleared) {
+            ctx.store.setState((prev) => ({ ...prev, rowNodes: new Map(prev.rowNodes) }));
+          }
         },
       );
 

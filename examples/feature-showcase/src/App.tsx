@@ -2471,7 +2471,7 @@ export function App() {
           <div>
             <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>
               <a
-                href="https://gridstorm.trekivex.com"
+                href="https://gridstorm.tekivex.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ color: '#2563eb', textDecoration: 'none' }}

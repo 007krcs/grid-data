@@ -68,7 +68,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
     focusedCell: null,
     pagination: {
       currentPage: 0,
-      pageSize: config.paginationPageSize ?? 100,
+      pageSize: config.paginationPageSize ?? 0,
       totalRows: initialRowNodes.length,
     },
     quickFilterText: '',
@@ -121,6 +121,10 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
       const { currentPage, pageSize } = state.pagination;
       const start = currentPage * pageSize;
       displayedIds = allIds.slice(start, start + pageSize);
+      // Re-assign rowTop positions relative to this page (0, rowHeight, 2*rowHeight…)
+      // so that rows on page 2+ render at the top of the viewport, not off-screen.
+      const displayedNodes = nodes.slice(start, start + pageSize);
+      assignDisplayPositions(displayedNodes);
     }
 
     store.setState((prev) => ({

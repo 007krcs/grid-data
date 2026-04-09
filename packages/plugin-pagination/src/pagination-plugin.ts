@@ -48,6 +48,10 @@ export function PaginationPlugin(options: PaginationPluginOptions = {}): GridPlu
         }));
       }
 
+      // Always trigger an initial reprocess so displayedRowIds is sliced
+      // to the first page (important now that the engine defaults pageSize to 0).
+      ctx.api.paginationGoToPage(0);
+
       // ── Register pagination:goToPage command ──
       const unregisterGoTo = ctx.commandBus.registerHandler(
         'pagination:goToPage',

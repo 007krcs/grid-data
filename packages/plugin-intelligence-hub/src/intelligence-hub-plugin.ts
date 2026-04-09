@@ -282,9 +282,9 @@ export function IntelligenceHubPlugin(options: IntelligenceHubOptions = {}): Gri
         }),
       );
 
-      // ─── Auto-publish on sort:changed ───
+      // ─── Auto-publish on column:sort:changed ───
       unsubscribers.push(
-        bus.on('sort:changed', (payload: unknown) => {
+        bus.on('column:sort:changed', (payload: unknown) => {
           if (!currentOptions.shareSortPatterns) return;
           transport.publish({
             type: 'sort-pattern',

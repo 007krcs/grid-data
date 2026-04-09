@@ -1729,18 +1729,24 @@ function CollabDemo() {
 
 function SemanticDemo() {
   const apiRef = useRef<GridApi | null>(null);
-  const [analysis, setAnalysis] = useState<Record<string, string>>({});
+  const [colTypes, setColTypes] = useState<Array<{ id: string; type: string; confidence: number }>>([]);
+  const [relationships, setRelationships] = useState<Array<{ colA: string; colB: string; desc: string }>>([]);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [lastRan, setLastRan] = useState<string>('');
+
   const plugins = useMemo(() => [
     SortingPlugin(),
     ColumnResizePlugin(),
     SemanticPlugin({ autoAnalyze: true, sampleSize: 100 }),
   ], []);
+
   const semanticData = useMemo(() => EMPLOYEES_50.map((e: any) => ({
     ...e,
     email: `${e.name.toLowerCase().replace(' ', '.')}@company.com`,
     phone: `+1-${String(Math.floor(Math.random() * 900) + 100)}-${String(Math.floor(Math.random() * 900) + 100)}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
     ip: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
   })), []);
+
   const columns: ColumnDef[] = useMemo(() => [
     { field: 'name', headerName: 'Name', width: 160 },
     { field: 'email', headerName: 'Email', width: 220 },
@@ -1749,23 +1755,93 @@ function SemanticDemo() {
     { field: 'salary', headerName: 'Salary', width: 110,
       valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
   ], []);
+
+  // Color per semantic type
+  const typeColor: Record<string, string> = {
+    email: '#2563eb', phone: '#7c3aed', 'ip-address': '#0891b2',
+    currency: '#059669', integer: '#d97706', decimal: '#d97706',
+    name: '#db2777', date: '#ea580c', url: '#16a34a', text: '#6b7280',
+    unknown: '#9ca3af', id: '#64748b',
+  };
+
+  function handleGridReady(api: any) {
+    apiRef.current = api;
+
+    // Fires once per column as analysis runs
+    api.addEventListener('semantic:column-typed', (_result: any) => {
+      // We'll use analysis-complete for the full snapshot instead
+    });
+
+    // Fires when full analysis is done (autoAnalyze on grid:ready, or manual trigger)
+    api.addEventListener('semantic:analysis-complete', (result: any) => {
+      setColTypes(
+        (result.columns ?? [])
+          .filter((c: any) => c.detectedType !== 'unknown')
+          .map((c: any) => ({ id: c.columnId, type: c.detectedType, confidence: Math.round(c.confidence * 100) }))
+      );
+      setRelationships(
+        (result.relationships ?? []).map((r: any) => ({ colA: r.columnA, colB: r.columnB, desc: r.description }))
+      );
+      setAnalyzing(false);
+      const t = new Date();
+      setLastRan(`${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}:${t.getSeconds().toString().padStart(2,'0')}`);
+    });
+  }
+
   return (
     <>
-      <p style={hintStyle}>Click Analyze to let the Semantic plugin detect column data types from value patterns.</p>
-      <div style={{ marginBottom: 8, display: 'flex', gap: 8 }}>
-        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('semantic:analyze', {})}>🔍 Analyze Columns</button>
-        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('semantic:get-analysis', {})}>Get Analysis</button>
+      <p style={hintStyle}>
+        Column types are <strong>detected automatically on load</strong> from value patterns (no config needed).
+        Click <strong>"Re-analyze"</strong> to re-scan all columns, or <strong>"Get Cached Analysis"</strong> to retrieve the last result — both update the timestamp below.
+      </p>
+      <div style={{ marginBottom: 6, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <button style={{ ...chipBtn, background: '#2563eb', color: '#fff' }} onClick={() => {
+          setAnalyzing(true);
+          apiRef.current?.dispatchCommand?.('semantic:analyze', {});
+        }}>🔍 Re-analyze</button>
+        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('semantic:get-analysis', {})}>
+          Get Cached Analysis
+        </button>
+        {analyzing && <span style={{ fontSize: 11, color: '#6b7280' }}>Analyzing…</span>}
+        {!analyzing && lastRan && <span style={{ fontSize: 11, color: '#059669' }}>✓ Last run at {lastRan}</span>}
       </div>
-      {Object.keys(analysis).length > 0 && (
-        <div style={{ fontSize: 11, marginBottom: 6, display: 'flex', gap: 12 }}>
-          {Object.entries(analysis).map(([col, type]) => (
-            <span key={col}><strong>{col}</strong>: <code>{type}</code></span>
-          ))}
+
+      {/* Column type badges */}
+      {colTypes.length > 0 && (
+        <div style={{ marginBottom: 6 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>Detected Types</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {colTypes.map(({ id, type, confidence }) => (
+              <span key={id} style={{
+                fontSize: 11, borderRadius: 4, padding: '2px 10px',
+                background: `${typeColor[type] ?? '#6b7280'}18`,
+                border: `1px solid ${typeColor[type] ?? '#6b7280'}40`,
+                color: typeColor[type] ?? '#374151',
+              }}>
+                <strong>{id}</strong> → {type} <span style={{ opacity: 0.7 }}>({confidence}%)</span>
+              </span>
+            ))}
+          </div>
         </div>
       )}
+
+      {/* Relationship badges */}
+      {relationships.length > 0 && (
+        <div style={{ marginBottom: 6 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>Detected Relationships</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {relationships.map((r, i) => (
+              <span key={i} style={{ fontSize: 11, background: '#fef3c7', border: '1px solid #fbbf24', borderRadius: 4, padding: '2px 10px', color: '#92400e' }}>
+                🔗 {r.desc}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       <GridStorm columns={columns} rowData={semanticData} plugins={plugins}
-        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
-        onGridReady={(api: any) => { apiRef.current = api; }}
+        rowHeight={40} headerHeight={44} height={colTypes.length > 0 ? GRID_HEIGHT - 70 : GRID_HEIGHT}
+        onGridReady={handleGridReady}
         ariaLabel="Semantic Analysis Demo" />
       <CodeGuide
         install="npm install @gridstorm/plugin-semantic"
@@ -1958,15 +2034,15 @@ api.dispatchCommand('privacy:export-map', {});`}
 
 function AdaptiveRendererDemo() {
   const apiRef = useRef<GridApi | null>(null);
-  const [rec, setRec] = useState<string>('');
+  const [rec, setRec] = useState<{ mode: string; rowHeight: number; showPagination: boolean; reason: string } | null>(null);
+  const [profile, setProfile] = useState<Record<string, string> | null>(null);
+
   const plugins = useMemo(() => [
     SortingPlugin(),
     ColumnResizePlugin(),
-    AdaptiveRendererPlugin({
-      autoApply: false,
-      onRecommendation: (r: any) => setRec(`Mode: ${r.mode} | Row height: ${r.rowHeight}px | Pagination: ${r.showPagination} | Reason: ${r.reason}`),
-    }),
+    AdaptiveRendererPlugin({ autoApply: false }),
   ], []);
+
   const columns: ColumnDef[] = useMemo(() => [
     { field: 'id', headerName: 'ID', width: 70, sortable: true },
     { field: 'name', headerName: 'Name', width: 180 },
@@ -1975,17 +2051,89 @@ function AdaptiveRendererDemo() {
       valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
     { field: 'city', headerName: 'City', width: 130 },
   ], []);
+
+  function handleGridReady(api: any) {
+    apiRef.current = api;
+
+    // "Detect Device" fires this (via onRecommendation callback path or event)
+    api.addEventListener('adaptive:recommendation', (r: any) => {
+      setRec({ mode: r.mode, rowHeight: r.rowHeight, showPagination: r.showPagination, reason: r.reason });
+    });
+
+    // "Get Profile" fires this
+    api.addEventListener('adaptive:device-profiled', (p: any) => {
+      setProfile({
+        'Device class': p.deviceClass,
+        'Screen': `${p.screenWidth} × ${p.screenHeight}`,
+        'Pixel ratio': `${p.pixelRatio}x`,
+        'Touch': p.hasTouch ? 'Yes' : 'No',
+        'Connection': p.connectionSpeed,
+        'Color scheme': p.prefersColorScheme,
+        'Reduced motion': p.prefersReducedMotion ? 'Yes' : 'No',
+        'High contrast': p.prefersHighContrast ? 'Yes' : 'No',
+      });
+    });
+  }
+
   return (
     <>
-      <p style={hintStyle}>The Adaptive Renderer detects your device profile and recommends optimal grid layout settings.</p>
+      <p style={hintStyle}>
+        <strong>Try it:</strong> Click <strong>"Detect Device"</strong> to get layout recommendations for your screen,
+        or <strong>"Get Profile"</strong> to inspect your full device capabilities.
+      </p>
       <div style={{ marginBottom: 8, display: 'flex', gap: 8 }}>
-        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('adaptive:recalculate', {})}>📱 Detect Device</button>
-        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('adaptive:get-device-profile', {})}>Get Profile</button>
+        <button style={{ ...chipBtn, background: '#2563eb', color: '#fff' }}
+          onClick={() => apiRef.current?.dispatchCommand?.('adaptive:recalculate', {})}>📱 Detect Device</button>
+        <button style={chipBtn}
+          onClick={() => apiRef.current?.dispatchCommand?.('adaptive:get-device-profile', {})}>🔍 Get Profile</button>
       </div>
-      {rec && <div style={{ fontSize: 11, color: '#2563eb', background: '#eff6ff', borderRadius: 4, padding: '6px 10px', marginBottom: 8 }}>{rec}</div>}
+
+      {/* Layout recommendation panel */}
+      {rec && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 6, padding: '8px 12px' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', marginBottom: 6, letterSpacing: 0.6 }}>📐 Layout Recommendation</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px', fontSize: 12 }}>
+              {[
+                ['Mode', rec.mode],
+                ['Row height', `${rec.rowHeight}px`],
+                ['Pagination', rec.showPagination ? 'On' : 'Off'],
+              ].map(([k, v]) => (
+                <span key={k}><span style={{ color: '#6b7280' }}>{k}: </span><strong>{v}</strong></span>
+              ))}
+            </div>
+            <div style={{ fontSize: 11, color: '#374151', marginTop: 5, fontStyle: 'italic' }}>💡 {rec.reason}</div>
+          </div>
+
+          {/* Device profile panel (shown once Get Profile is clicked) */}
+          {profile && (
+            <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 6, padding: '8px 12px' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#166534', textTransform: 'uppercase', marginBottom: 6, letterSpacing: 0.6 }}>🔍 Device Profile</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px', fontSize: 12 }}>
+                {Object.entries(profile).map(([k, v]) => (
+                  <span key={k}><span style={{ color: '#6b7280' }}>{k}: </span><strong>{v}</strong></span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Show profile alone if detect hasn't been run yet */}
+      {!rec && profile && (
+        <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 6, padding: '8px 12px', marginBottom: 8 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#166534', textTransform: 'uppercase', marginBottom: 6, letterSpacing: 0.6 }}>🔍 Device Profile</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px', fontSize: 12 }}>
+            {Object.entries(profile).map(([k, v]) => (
+              <span key={k}><span style={{ color: '#6b7280' }}>{k}: </span><strong>{v}</strong></span>
+            ))}
+          </div>
+        </div>
+      )}
+
       <GridStorm columns={columns} rowData={EMPLOYEES_200} plugins={plugins}
-        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
-        onGridReady={(api: any) => { apiRef.current = api; }}
+        rowHeight={40} headerHeight={44} height={rec || profile ? GRID_HEIGHT - 80 : GRID_HEIGHT}
+        onGridReady={handleGridReady}
         ariaLabel="Adaptive Renderer Demo" />
       <CodeGuide
         install="npm install @gridstorm/plugin-adaptive-renderer"
@@ -2025,7 +2173,11 @@ api.dispatchCommand('adaptive:get-device-profile', {});`}
 function IntelligenceHubDemo() {
   const apiRef1 = useRef<GridApi | null>(null);
   const apiRef2 = useRef<GridApi | null>(null);
-  const [insights, setInsights] = useState<string[]>([]);
+  const [connected, setConnected] = useState(false);
+  const [sampleCount, setSampleCount] = useState(0);
+  const [log, setLog] = useState<string[]>([]);
+  const [hubInsights, setHubInsights] = useState<Array<{ type: string; confidence: number; sourceCount: number }>>([]);
+
   const plugins1 = useMemo(() => [
     SortingPlugin(),
     FilteringPlugin(),
@@ -2045,35 +2197,121 @@ function IntelligenceHubDemo() {
     { field: 'salary', headerName: 'Salary', width: 100, sortable: true,
       valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
   ], []);
+
+  function handleGrid1Ready(api: any) {
+    apiRef1.current = api;
+
+    api.addEventListener('hub:connected', () => {
+      setConnected(true);
+      setLog(l => ['✓ Both grids connected — sort or filter to publish samples', ...l.slice(0, 4)]);
+    });
+
+    api.addEventListener('hub:sample-published', (p: any) => {
+      setSampleCount(c => c + 1);
+      setLog(l => [`📊 Sample: ${p.type} from ${p.gridId}`, ...l.slice(0, 4)]);
+    });
+
+    api.addEventListener('hub:insight-received', (insight: any) => {
+      setHubInsights(prev => {
+        const next = prev.filter(i => i.type !== insight.type);
+        return [{ type: insight.type, confidence: insight.confidence, sourceCount: insight.sourceCount }, ...next];
+      });
+      setLog(l => [`💡 Insight: ${insight.type} (${Math.round(insight.confidence * 100)}% confidence, ${insight.sourceCount} source(s))`, ...l.slice(0, 4)]);
+    });
+
+    api.addEventListener('hub:insights-listed', (p: any) => {
+      if (!p.insights || p.insights.length === 0) {
+        setLog(l => ['ℹ️ No insights yet — need 3+ samples of same type. Click "Simulate Samples".', ...l.slice(0, 4)]);
+      } else {
+        setHubInsights(p.insights.map((i: any) => ({ type: i.type, confidence: i.confidence, sourceCount: i.sourceCount })));
+        setLog(l => [`📋 ${p.insights.length} insight(s) in hub`, ...l.slice(0, 4)]);
+      }
+    });
+  }
+
+  function handleGrid2Ready(api: any) {
+    apiRef2.current = api;
+    api.addEventListener('hub:sample-published', () => setSampleCount(c => c + 1));
+  }
+
+  function connectBoth() {
+    apiRef1.current?.dispatchCommand?.('hub:connect', {});
+    apiRef2.current?.dispatchCommand?.('hub:connect', {});
+  }
+
+  function simulateSamples() {
+    // Publish 4 sort + 4 filter samples across both grids to cross the minSamples=3 threshold
+    const ts = Date.now();
+    const sortPayload = [{ colId: 'salary', sort: 'desc' }];
+    const filterPayload = { department: { type: 'contains', filter: 'Eng' } };
+    ['grid-A', 'grid-B', 'grid-A', 'grid-B'].forEach((gridId, i) => {
+      apiRef1.current?.dispatchCommand?.('hub:publish-sample', { type: 'sort-pattern', data: sortPayload, timestamp: ts + i, gridId });
+      apiRef1.current?.dispatchCommand?.('hub:publish-sample', { type: 'filter-pattern', data: filterPayload, timestamp: ts + i + 10, gridId });
+    });
+  }
+
+  function resetHub() {
+    apiRef1.current?.dispatchCommand?.('hub:reset', {});
+    setSampleCount(0);
+    setHubInsights([]);
+    setLog(l => ['🗑 Hub reset — samples and insights cleared', ...l.slice(0, 4)]);
+  }
+
   return (
     <>
-      <p style={hintStyle}>Two grid instances share behavioral patterns via the Intelligence Hub. Connect both and sort/filter to generate shared insights.</p>
-      <div style={{ marginBottom: 8, display: 'flex', gap: 8 }}>
-        <button style={chipBtn} onClick={() => {
-          apiRef1.current?.dispatchCommand?.('hub:connect', {});
-          apiRef2.current?.dispatchCommand?.('hub:connect', {});
-          setInsights(i => ['Both grids connected to hub', ...i]);
-        }}>Connect Both</button>
-        <button style={chipBtn} onClick={() => {
-          apiRef1.current?.dispatchCommand?.('hub:get-insights', {});
-          setInsights(i => ['Requested insights from hub...', ...i.slice(0, 3)]);
-        }}>Get Insights</button>
-        <button style={chipBtn} onClick={() => apiRef1.current?.dispatchCommand?.('hub:reset', {})}>Reset Hub</button>
+      <p style={hintStyle}>
+        <strong>Try it:</strong> Click <strong>"Connect Both"</strong>, then <strong>"Simulate Samples"</strong>
+        (or sort/filter either grid manually) to feed behavioral data. Once 3+ samples of the same type arrive,
+        an <em>insight</em> is generated automatically.
+      </p>
+
+      <div style={{ marginBottom: 6, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <button style={{ ...chipBtn, background: connected ? '#059669' : '#2563eb', color: '#fff' }}
+          onClick={connectBoth}>
+          {connected ? '✓ Connected' : '🔗 Connect Both'}
+        </button>
+        <button style={chipBtn} onClick={simulateSamples}>⚡ Simulate Samples</button>
+        <button style={chipBtn} onClick={() => apiRef1.current?.dispatchCommand?.('hub:get-insights', {})}>📋 Get Insights</button>
+        <button style={{ ...chipBtn, background: '#ef4444', color: '#fff' }} onClick={resetHub}>🗑 Reset Hub</button>
+        <span style={{ fontSize: 11, color: '#6b7280' }}>
+          {sampleCount} sample{sampleCount !== 1 ? 's' : ''} collected
+          {sampleCount > 0 && sampleCount < 3 && <span style={{ color: '#f59e0b' }}> (need 3+ for insights)</span>}
+        </span>
       </div>
-      {insights.length > 0 && <div style={{ fontSize: 11, color: '#666', marginBottom: 6 }}>{insights[0]}</div>}
+
+      {/* Insights badges */}
+      {hubInsights.length > 0 && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+          {hubInsights.map(ins => (
+            <span key={ins.type} style={{ fontSize: 11, background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 4, padding: '2px 10px', color: '#166534' }}>
+              💡 <strong>{ins.type}</strong> — {Math.round(ins.confidence * 100)}% confidence · {ins.sourceCount} source{ins.sourceCount !== 1 ? 's' : ''}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Activity log */}
+      {log.length > 0 && (
+        <div style={{ fontSize: 11, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 4, padding: '6px 10px', marginBottom: 8 }}>
+          {log.map((entry, i) => (
+            <div key={i} style={{ color: i === 0 ? '#1e40af' : '#9ca3af' }}>{entry}</div>
+          ))}
+        </div>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div>
-          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#2563eb' }}>Grid A</div>
+          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#2563eb' }}>Grid A — sort or filter here</div>
           <GridStorm columns={columns} rowData={EMPLOYEES_50} plugins={plugins1}
-            rowHeight={36} headerHeight={40} height={240}
-            onGridReady={(api: any) => { apiRef1.current = api; }}
+            rowHeight={36} headerHeight={40} height={220}
+            onGridReady={handleGrid1Ready}
             ariaLabel="Hub Grid A" />
         </div>
         <div>
-          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#10b981' }}>Grid B</div>
+          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#10b981' }}>Grid B — sort or filter here</div>
           <GridStorm columns={columns} rowData={EMPLOYEES_50.slice(0, 25)} plugins={plugins2}
-            rowHeight={36} headerHeight={40} height={240}
-            onGridReady={(api: any) => { apiRef2.current = api; }}
+            rowHeight={36} headerHeight={40} height={220}
+            onGridReady={handleGrid2Ready}
             ariaLabel="Hub Grid B" />
         </div>
       </div>

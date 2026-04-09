@@ -81,12 +81,18 @@ export function CellFormulaPlugin(options: CellFormulaOptions = {}): GridPlugin 
           // Write computed values back into row node data so the renderer displays them
           const state = ctx.getState(PLUGIN_STATE_KEY) as FormulaState;
           let anyUpdated = false;
-          ctx.api.forEachNode?.((node: { id: string; data: Record<string, unknown> }) => {
+          ctx.api.forEachNode?.((node: { id: string; data: Record<string, unknown>; version: number }) => {
+            let nodeUpdated = false;
             for (const [colId, valueMap] of state.computedValues) {
               if (valueMap.has(node.id)) {
                 node.data[colId] = valueMap.get(node.id);
-                anyUpdated = true;
+                nodeUpdated = true;
               }
+            }
+            if (nodeUpdated) {
+              // Increment version so the DOM renderer knows to rebuild this row's cells
+              node.version = (node.version ?? 0) + 1;
+              anyUpdated = true;
             }
           });
 

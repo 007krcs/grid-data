@@ -335,9 +335,13 @@ function RowReorderDemo() {
     { field: 'city', headerName: 'City', width: 130 },
   ], []);
 
-  const onRowMoved = useCallback((e: any) => {
+  const handleRowMoved = useCallback((e: any) => {
     setLastMove(`Row moved from index ${e.fromIndex} to ${e.toIndex}`);
   }, []);
+
+  const onGridReady = useCallback((api: GridApi) => {
+    (api as any).addEventListener('row:moved', handleRowMoved);
+  }, [handleRowMoved]);
 
   return (
     <>
@@ -347,7 +351,7 @@ function RowReorderDemo() {
       </p>
       <GridStorm columns={columns} rowData={EMPLOYEES_50} plugins={plugins}
         rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
-        onRowMoved={onRowMoved}
+        onGridReady={onGridReady}
         ariaLabel="Row Reorder Demo" />
     </>
   );
@@ -734,7 +738,7 @@ function ClipboardProDemo() {
     ColumnResizePlugin(),
     EditingPlugin(),
     ClipboardProPlugin({
-      copyHeaders: true,
+      includeHeaders: true,
       typeCoercion: true,
       pasteValidation: true,
       formulaAwarePaste: true,
@@ -1240,7 +1244,7 @@ function IntentEngineDemo() {
     IntentEnginePlugin({
       autoTrack: true,
       maxRecords: 100,
-      onRankingUpdated: (r) => setRanking(r.map(c => ({ columnId: c.columnId, score: c.score, frequency: c.frequency, recency: c.recency }))),
+      onRankingUpdated: (r: any[]) => setRanking(r.map((c: any) => ({ columnId: c.columnId, score: c.score, frequency: c.frequency, recency: c.recency }))),
     }),
   ], []);
 

@@ -1807,6 +1807,9 @@ api.on('semantic:analyzed', ({ columns }) => {
 function PrivacyLensDemo() {
   const apiRef = useRef<GridApi | null>(null);
   const [log, setLog] = useState<string[]>([]);
+  const [scanResults, setScanResults] = useState<Record<string, string[]>>({});
+  const [maskedCols, setMaskedCols] = useState<Set<string>>(new Set());
+
   const piiData = useMemo(() => EMPLOYEES_50.map((e: any) => ({
     id: e.id,
     name: e.name,
@@ -1815,38 +1818,105 @@ function PrivacyLensDemo() {
     salary: e.salary,
     department: e.department,
   })), []);
+
   const plugins = useMemo(() => [
     SortingPlugin(),
     ColumnResizePlugin(),
     PrivacyLensPlugin({
       autoDetect: false,
       defaultRevealPolicy: 'on-click',
-      onReveal: (entry: any) => setLog(l => [`Revealed: ${entry.columnId}/${entry.rowId}`, ...l.slice(0, 3)]),
+      onReveal: (entry: any) => setLog(l => [`👁 Revealed: ${entry.columnId} / row ${entry.rowId}`, ...l.slice(0, 3)]),
     }),
   ], []);
+
+  // Columns re-computed when maskedCols changes — valueFormatter checks live masking state
   const columns: ColumnDef[] = useMemo(() => [
     { field: 'id', headerName: 'ID', width: 60 },
     { field: 'name', headerName: 'Name', width: 160 },
-    { field: 'email', headerName: 'Email', width: 220 },
-    { field: 'ssn', headerName: 'SSN', width: 140 },
+    { field: 'email', headerName: 'Email', width: 220,
+      valueFormatter: (p: any) => maskedCols.has('email') ? '████████████████' : String(p.value ?? '') },
+    { field: 'ssn', headerName: 'SSN', width: 140,
+      valueFormatter: (p: any) => maskedCols.has('ssn') ? '███-██-████' : String(p.value ?? '') },
     { field: 'salary', headerName: 'Salary', width: 110,
       valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
     { field: 'department', headerName: 'Department', width: 140 },
-  ], []);
+  ], [maskedCols]);
+
+  // Push updated column defs to the grid whenever masking state changes
+  useEffect(() => {
+    apiRef.current?.setColumnDefs?.(columns);
+  }, [columns]);
+
+  function handleGridReady(api: any) {
+    apiRef.current = api;
+
+    // Show scan result as a badge + log entry
+    api.addEventListener('privacy:pii-detected', (p: any) => {
+      setScanResults(prev => ({ ...prev, [p.columnId]: p.piiCategories }));
+      setLog(l => [
+        `✓ Scanned "${p.columnId}" → ${p.piiCategories.join(', ')} (${Math.round((p.confidence ?? 0) * 100)}% confidence)`,
+        ...l.slice(0, 3),
+      ]);
+    });
+
+    // Visual masking: update maskedCols state → triggers column def re-compute
+    api.addEventListener('privacy:column-masked', (p: any) => {
+      setMaskedCols(prev => new Set([...prev, p.columnId]));
+      setLog(l => [`🔒 "${p.columnId}" is now masked`, ...l.slice(0, 3)]);
+    });
+
+    api.addEventListener('privacy:column-unmasked', (p: any) => {
+      setMaskedCols(prev => { const n = new Set(prev); n.delete(p.columnId); return n; });
+      setLog(l => [`🔓 "${p.columnId}" unmasked — values visible again`, ...l.slice(0, 3)]);
+    });
+
+    // Show exported data map summary
+    api.addEventListener('privacy:map-exported', (map: any) => {
+      if (map.totalPiiColumns === 0) {
+        setLog(l => ['📋 Data map: no PII detected yet — click Scan Email or Scan SSN first', ...l.slice(0, 3)]);
+      } else {
+        const summary = map.columns
+          .map((c: any) => `${c.columnId} [${c.piiCategories.join(', ')}]`)
+          .join(' · ');
+        setLog(l => [`📋 Exported: ${summary} — ${map.totalPiiCells} PII cells total`, ...l.slice(0, 3)]);
+      }
+    });
+  }
+
   return (
     <>
-      <p style={hintStyle}>Configure PII masking for sensitive columns. Export a GDPR data map of all detected PII.</p>
-      <div style={{ marginBottom: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('privacy:scan-column', { columnId: 'email' })}>Scan Email</button>
-        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('privacy:scan-column', { columnId: 'ssn' })}>Scan SSN</button>
-        <button style={{ ...chipBtn, background: '#ef4444', color: '#fff' }} onClick={() => apiRef.current?.dispatchCommand?.('privacy:mask', { columnId: 'ssn' })}>Mask SSN</button>
-        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('privacy:unmask', { columnId: 'ssn' })}>Unmask SSN</button>
-        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('privacy:export-map', {})}>Export Data Map</button>
+      <p style={hintStyle}>
+        <strong>Try it:</strong> Click <strong>Scan Email</strong> or <strong>Scan SSN</strong> to detect PII types,
+        then <strong>Mask SSN</strong> to hide the column values, <strong>Unmask SSN</strong> to restore them,
+        and <strong>Export Data Map</strong> for a GDPR summary.
+      </p>
+      <div style={{ marginBottom: 6, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('privacy:scan-column', { columnId: 'email' })}>🔍 Scan Email</button>
+        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('privacy:scan-column', { columnId: 'ssn' })}>🔍 Scan SSN</button>
+        <button style={{ ...chipBtn, background: '#ef4444', color: '#fff' }} onClick={() => apiRef.current?.dispatchCommand?.('privacy:mask', { columnId: 'ssn' })}>🔒 Mask SSN</button>
+        <button style={{ ...chipBtn, background: maskedCols.has('ssn') ? '#059669' : undefined, color: maskedCols.has('ssn') ? '#fff' : undefined }}
+          onClick={() => apiRef.current?.dispatchCommand?.('privacy:unmask', { columnId: 'ssn' })}>🔓 Unmask SSN</button>
+        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('privacy:export-map', {})}>📋 Export Data Map</button>
       </div>
-      {log.length > 0 && <div style={{ fontSize: 11, color: '#666', marginBottom: 6 }}>{log[0]}</div>}
+      {/* Scan result badges */}
+      {Object.keys(scanResults).length > 0 && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+          {Object.entries(scanResults).map(([col, cats]) => (
+            <span key={col} style={{ fontSize: 11, background: '#fef3c7', border: '1px solid #fbbf24', borderRadius: 4, padding: '2px 8px', color: '#92400e' }}>
+              <strong>{col}</strong>: {cats.join(', ')}
+            </span>
+          ))}
+        </div>
+      )}
+      {/* Activity log */}
+      {log.length > 0 && (
+        <div style={{ fontSize: 11, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 4, padding: '6px 10px', marginBottom: 8 }}>
+          {log.map((entry, i) => <div key={i} style={{ color: i === 0 ? '#1e40af' : '#9ca3af' }}>{entry}</div>)}
+        </div>
+      )}
       <GridStorm columns={columns} rowData={piiData} plugins={plugins}
-        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
-        onGridReady={(api: any) => { apiRef.current = api; }}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT - 60}
+        onGridReady={handleGridReady}
         ariaLabel="Privacy Lens Demo" />
       <CodeGuide
         install="npm install @gridstorm/plugin-privacy-lens"

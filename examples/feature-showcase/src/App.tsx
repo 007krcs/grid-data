@@ -1591,6 +1591,9 @@ function NlQueryDemo() {
 function AnomalyDemo() {
   const apiRef = useRef<GridApi | null>(null);
   const [anomalies, setAnomalies] = useState<string[]>([]);
+  const [sampleCount, setSampleCount] = useState(0);
+  const sampleCountRef = useRef(0);
+
   const plugins = useMemo(() => [
     SortingPlugin(),
     ColumnResizePlugin(),
@@ -1599,9 +1602,13 @@ function AnomalyDemo() {
         { columnId: 'salary', watchThreshold: 1.5, warningThreshold: 2.0, criticalThreshold: 2.5, windowSize: 50 },
         { columnId: 'rating', watchThreshold: 1.5, warningThreshold: 2.0, criticalThreshold: 2.5, windowSize: 50 },
       ],
-      onAnomaly: (ev: any) => setAnomalies(a => [`[${ev.severity.toUpperCase()}] ${ev.columnId}: ${ev.value} (z=${ev.zscore.toFixed(2)})`, ...a.slice(0, 4)]),
+      onAnomaly: (ev: any) => setAnomalies(a => [
+        `[${ev.severity.toUpperCase()}] ${ev.columnId}: ${ev.value} (z=${ev.zscore.toFixed(2)})`,
+        ...a.slice(0, 4),
+      ]),
     }),
   ], []);
+
   const columns: ColumnDef[] = useMemo(() => [
     { field: 'id', headerName: 'ID', width: 70, sortable: true },
     { field: 'name', headerName: 'Name', width: 180 },
@@ -1610,23 +1617,50 @@ function AnomalyDemo() {
       valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
     { field: 'rating', headerName: 'Rating', width: 90, sortable: true },
   ], []);
+
+  function feedNormal() {
+    EMPLOYEES_50.slice(0, 10).forEach((e: any, i: number) =>
+      apiRef.current?.dispatchCommand?.('anomaly:feed', { rowId: `e${i}`, columnId: 'salary', value: e.salary })
+    );
+    sampleCountRef.current += 10;
+    setSampleCount(sampleCountRef.current);
+  }
+
+  function feedOutlier() {
+    // Auto-seed baseline if not enough samples yet (plugin needs ≥10)
+    if (sampleCountRef.current < 10) feedNormal();
+    apiRef.current?.dispatchCommand?.('anomaly:feed', { rowId: 'outlier', columnId: 'salary', value: 999999 });
+    sampleCountRef.current += 1;
+    setSampleCount(sampleCountRef.current);
+  }
+
+  const ready = sampleCount >= 10;
+
   return (
     <>
-      <p style={hintStyle}>Feed data points to the anomaly engine. It uses rolling z-score statistics to flag outliers.</p>
-      <div style={{ marginBottom: 8, display: 'flex', gap: 8 }}>
-        <button style={chipBtn} onClick={() => {
-          apiRef.current?.dispatchCommand?.('anomaly:feed', { rowId: 'r1', columnId: 'salary', value: 999999 });
-        }}>Feed Outlier ($999K)</button>
-        <button style={chipBtn} onClick={() => {
-          EMPLOYEES_50.slice(0, 10).forEach((e: any, i: number) =>
-            apiRef.current?.dispatchCommand?.('anomaly:feed', { rowId: `e${i}`, columnId: 'salary', value: e.salary })
-          );
-        }}>Feed Normal Data</button>
-        <button style={{ ...chipBtn, background: '#ef4444', color: '#fff' }} onClick={() => setAnomalies([])}>Clear Log</button>
+      <p style={hintStyle}>
+        <strong>Step 1:</strong> Click <strong>"Feed Normal Data"</strong> to build a baseline (needs 10+ samples).
+        <strong> Step 2:</strong> Click <strong>"Feed Outlier"</strong> — the $999K salary will fire a CRITICAL alert.
+      </p>
+      <div style={{ marginBottom: 6, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <button style={{ ...chipBtn, background: ready ? '#059669' : '#2563eb', color: '#fff' }}
+          onClick={feedNormal}>
+          {ready ? '✓ Feed More Normal Data' : '① Feed Normal Data (builds baseline)'}
+        </button>
+        <button style={{ ...chipBtn, background: '#ef4444', color: '#fff' }}
+          onClick={feedOutlier}>
+          ⚡ Feed Outlier ($999K)
+        </button>
+        <button style={chipBtn} onClick={() => { setAnomalies([]); }}>Clear Log</button>
+        <span style={{ fontSize: 11, color: ready ? '#059669' : '#f59e0b', fontWeight: 600 }}>
+          {sampleCount} samples {ready ? '— baseline ready ✓' : `— need ${10 - sampleCount} more`}
+        </span>
       </div>
       {anomalies.length > 0 && (
         <div style={{ fontSize: 11, background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 4, padding: '6px 10px', marginBottom: 8 }}>
-          {anomalies.map((a, i) => <div key={i}>{a}</div>)}
+          {anomalies.map((a, i) => (
+            <div key={i} style={{ color: a.includes('CRITICAL') ? '#dc2626' : a.includes('WARNING') ? '#d97706' : '#374151' }}>{a}</div>
+          ))}
         </div>
       )}
       <GridStorm columns={columns} rowData={EMPLOYEES_50} plugins={plugins}
@@ -1728,7 +1762,7 @@ function CollabDemo() {
 }
 
 function SemanticDemo() {
-  const apiRef = useRef<GridApi | null>(null);
+  const [gridApi, setGridApi] = useState<any>(null);
   const [colTypes, setColTypes] = useState<Array<{ id: string; type: string; confidence: number }>>([]);
   const [relationships, setRelationships] = useState<Array<{ colA: string; colB: string; desc: string }>>([]);
   const [analyzing, setAnalyzing] = useState(false);
@@ -1756,24 +1790,10 @@ function SemanticDemo() {
       valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
   ], []);
 
-  // Color per semantic type
-  const typeColor: Record<string, string> = {
-    email: '#2563eb', phone: '#7c3aed', 'ip-address': '#0891b2',
-    currency: '#059669', integer: '#d97706', decimal: '#d97706',
-    name: '#db2777', date: '#ea580c', url: '#16a34a', text: '#6b7280',
-    unknown: '#9ca3af', id: '#64748b',
-  };
-
-  function handleGridReady(api: any) {
-    apiRef.current = api;
-
-    // Fires once per column as analysis runs
-    api.addEventListener('semantic:column-typed', (_result: any) => {
-      // We'll use analysis-complete for the full snapshot instead
-    });
-
-    // Fires when full analysis is done (autoAnalyze on grid:ready, or manual trigger)
-    api.addEventListener('semantic:analysis-complete', (result: any) => {
+  // Wire up event listeners via useEffect so React manages the subscription lifecycle
+  useEffect(() => {
+    if (!gridApi) return;
+    const unsub = gridApi.addEventListener('semantic:analysis-complete', (result: any) => {
       setColTypes(
         (result.columns ?? [])
           .filter((c: any) => c.detectedType !== 'unknown')
@@ -1786,7 +1806,16 @@ function SemanticDemo() {
       const t = new Date();
       setLastRan(`${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}:${t.getSeconds().toString().padStart(2,'0')}`);
     });
-  }
+    return unsub;
+  }, [gridApi]);
+
+  // Color per semantic type
+  const typeColor: Record<string, string> = {
+    email: '#2563eb', phone: '#7c3aed', 'ip-address': '#0891b2',
+    currency: '#059669', integer: '#d97706', decimal: '#d97706',
+    name: '#db2777', date: '#ea580c', url: '#16a34a', text: '#6b7280',
+    unknown: '#9ca3af', id: '#64748b',
+  };
 
   return (
     <>
@@ -1797,9 +1826,9 @@ function SemanticDemo() {
       <div style={{ marginBottom: 6, display: 'flex', gap: 8, alignItems: 'center' }}>
         <button style={{ ...chipBtn, background: '#2563eb', color: '#fff' }} onClick={() => {
           setAnalyzing(true);
-          apiRef.current?.dispatchCommand?.('semantic:analyze', {});
+          gridApi?.dispatchCommand?.('semantic:analyze', {});
         }}>🔍 Re-analyze</button>
-        <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('semantic:get-analysis', {})}>
+        <button style={chipBtn} onClick={() => gridApi?.dispatchCommand?.('semantic:get-analysis', {})}>
           Get Cached Analysis
         </button>
         {analyzing && <span style={{ fontSize: 11, color: '#6b7280' }}>Analyzing…</span>}
@@ -1841,7 +1870,7 @@ function SemanticDemo() {
 
       <GridStorm columns={columns} rowData={semanticData} plugins={plugins}
         rowHeight={40} headerHeight={44} height={colTypes.length > 0 ? GRID_HEIGHT - 70 : GRID_HEIGHT}
-        onGridReady={handleGridReady}
+        onGridReady={(api: any) => setGridApi(api)}
         ariaLabel="Semantic Analysis Demo" />
       <CodeGuide
         install="npm install @gridstorm/plugin-semantic"

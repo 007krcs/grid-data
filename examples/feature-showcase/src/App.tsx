@@ -1327,9 +1327,63 @@ function IntentEngineDemo() {
   );
 }
 
+// ── Code Guide component — shows usage instructions + copy-pasteable code ──
+function CodeGuide({ install, title, code, features }: {
+  install: string;
+  title: string;
+  code: string;
+  features: string[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  return (
+    <div style={{ marginTop: 14, border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{ width: '100%', padding: '9px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderBottom: open ? '1px solid #e2e8f0' : 'none' }}
+      >
+        <span style={{ fontWeight: 600, fontSize: 12, color: '#374151' }}>📋 How to use <em style={{ fontStyle: 'normal', color: '#2563eb' }}>{title}</em> in your project</span>
+        <span style={{ fontSize: 11, color: '#6b7280', fontWeight: 500 }}>{open ? '▲ Collapse' : '▼ Expand'}</span>
+      </button>
+      {open && (
+        <div style={{ padding: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          {/* Left: code */}
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.8 }}>Install &amp; Quick Start</div>
+            <div style={{ background: '#1e1e2e', borderRadius: 6, padding: '4px 0', overflow: 'hidden' }}>
+              <div style={{ padding: '6px 12px 2px', fontSize: 11, color: '#a6adc8', borderBottom: '1px solid #313244', marginBottom: 4 }}>
+                <code style={{ background: 'transparent', color: '#cba6f7' }}>{install}</code>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <pre style={{ margin: 0, padding: '10px 14px', color: '#cdd6f4', fontSize: 11, lineHeight: 1.7, overflow: 'auto', maxHeight: 240, fontFamily: "'Fira Code', 'Consolas', monospace" }}><code>{code}</code></pre>
+                <button
+                  onClick={() => { navigator.clipboard?.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                  style={{ position: 'absolute', top: 6, right: 6, padding: '2px 8px', fontSize: 10, background: copied ? '#40a02b' : '#45475a', color: '#cdd6f4', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'inherit' }}
+                >{copied ? '✓ Copied' : 'Copy'}</button>
+              </div>
+            </div>
+          </div>
+          {/* Right: features */}
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.8 }}>What this plugin does</div>
+            <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+              {features.map((f, i) => (
+                <li key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12, color: '#374151', marginBottom: 8, lineHeight: 1.5 }}>
+                  <span style={{ color: '#10b981', fontSize: 14, lineHeight: 1, marginTop: 1 }}>✓</span>
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CellFormulaDemo() {
   const apiRef = useRef<GridApi | null>(null);
-  const [computed, setComputed] = useState<string>('');
+  const [status, setStatus] = useState<{ msg: string; ok: boolean } | null>(null);
   const plugins = useMemo(() => [
     SortingPlugin(),
     ColumnResizePlugin(),
@@ -1342,31 +1396,69 @@ function CellFormulaDemo() {
       valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
     { field: 'quantity', headerName: 'Qty', width: 80, sortable: true },
     { field: 'revenue', headerName: 'Revenue (computed)', width: 180, sortable: true,
-      valueFormatter: (p: any) => p.value != null ? `$${Number(p.value).toLocaleString()}` : '—' },
+      valueFormatter: (p: any) => p.value != null && p.value !== 0 ? `$${Number(p.value).toLocaleString()}` : p.value === 0 ? '$0' : '—' },
   ], []);
   const data = useMemo(() => PRODUCTS_100.map(p => ({ ...p, revenue: null })), []);
   return (
     <>
-      <p style={hintStyle}>Click "Define Formula" to compute Revenue = Price × Quantity for each row using the Cell Formula plugin.</p>
+      <p style={hintStyle}>
+        <strong>Try it:</strong> Click <strong>"Define Formula"</strong> — the Revenue column will be computed as Price × Quantity for every row automatically.
+      </p>
       <div style={{ marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
-        <button style={chipBtn} onClick={() => {
+        <button style={{ ...chipBtn, background: '#2563eb', color: '#fff' }} onClick={() => {
           apiRef.current?.dispatchCommand?.('formula:define', {
             columnId: 'revenue',
             dependencies: ['price', 'quantity'],
             compute: (row: any) => (row.price ?? 0) * (row.quantity ?? 0),
           });
-          setComputed('Formula active: revenue = price × quantity');
-        }}>Define Formula</button>
+          // Force recalculate in case rows were not yet initialised
+          setTimeout(() => apiRef.current?.dispatchCommand?.('formula:recalculate', {}), 30);
+          setStatus({ msg: '✓ Formula active: revenue = price × quantity', ok: true });
+        }}>▶ Define Formula</button>
         <button style={chipBtn} onClick={() => {
           apiRef.current?.dispatchCommand?.('formula:remove', { columnId: 'revenue' });
-          setComputed('Formula removed');
+          setStatus({ msg: '✗ Formula removed — Revenue column cleared', ok: false });
         }}>Remove Formula</button>
-        {computed && <span style={{ fontSize: 12, color: '#2563eb' }}>{computed}</span>}
+        {status && (
+          <span style={{ fontSize: 12, color: status.ok ? '#10b981' : '#ef4444', fontWeight: 600 }}>
+            {status.msg}
+          </span>
+        )}
       </div>
       <GridStorm columns={columns} rowData={data} plugins={plugins}
-        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT - 80}
         onGridReady={(api: any) => { apiRef.current = api; }}
         ariaLabel="Cell Formula Demo" />
+      <CodeGuide
+        install="npm install @gridstorm/plugin-cell-formula"
+        title="Cell Formula Plugin"
+        code={`import { CellFormulaPlugin } from '@gridstorm/plugin-cell-formula';
+
+// 1. Add to plugins array
+const plugins = [
+  CellFormulaPlugin({ onError: 'report' }),
+];
+
+// 2. Define a formula on any column at runtime
+api.dispatchCommand('formula:define', {
+  columnId: 'revenue',       // column to compute
+  dependencies: ['price', 'quantity'],  // re-run when these change
+  compute: (row) => row.price * row.quantity,
+});
+
+// 3. Remove a formula
+api.dispatchCommand('formula:remove', { columnId: 'revenue' });
+
+// 4. Force recalculate all formulas
+api.dispatchCommand('formula:recalculate', {});`}
+        features={[
+          'Define JavaScript formulas for any column — no server needed',
+          'Automatically re-computes when dependency columns change',
+          'Multiple formulas per grid, each with its own dependencies',
+          'Error modes: "report" emits formula:error events, "throw" raises exceptions',
+          'Works with sorting and virtualised rows — values always stay in sync',
+        ]}
+      />
     </>
   );
 }
@@ -1541,6 +1633,43 @@ function AnomalyDemo() {
         rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
         onGridReady={(api: any) => { apiRef.current = api; }}
         ariaLabel="Anomaly Detection Demo" />
+      <CodeGuide
+        install="npm install @gridstorm/plugin-anomaly"
+        title="Anomaly Detection Plugin"
+        code={`import { AnomalyPlugin } from '@gridstorm/plugin-anomaly';
+
+const plugins = [
+  AnomalyPlugin({
+    columns: [
+      {
+        columnId: 'salary',
+        watchThreshold: 1.5,    // z-score for WATCH
+        warningThreshold: 2.0,  // z-score for WARNING
+        criticalThreshold: 2.5, // z-score for CRITICAL
+        windowSize: 50,         // rolling window size
+      },
+    ],
+    onAnomaly: (event) => {
+      console.log(event.severity, event.columnId,
+        event.value, event.zscore);
+    },
+  }),
+];
+
+// Feed a data point to the rolling stats engine:
+api.dispatchCommand('anomaly:feed', {
+  rowId: 'row-1',
+  columnId: 'salary',
+  value: 999999,       // triggers CRITICAL if z > 2.5
+});`}
+        features={[
+          'Real-time outlier detection using rolling Z-score statistics',
+          'Per-column thresholds: WATCH / WARNING / CRITICAL severity levels',
+          'Configurable rolling window size — adapts to streaming data',
+          'onAnomaly callback fires instantly when a threshold is crossed',
+          'Works alongside live streaming data — no batch processing needed',
+        ]}
+      />
     </>
   );
 }
@@ -1638,6 +1767,39 @@ function SemanticDemo() {
         rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
         onGridReady={(api: any) => { apiRef.current = api; }}
         ariaLabel="Semantic Analysis Demo" />
+      <CodeGuide
+        install="npm install @gridstorm/plugin-semantic"
+        title="Semantic Analysis Plugin"
+        code={`import { SemanticPlugin } from '@gridstorm/plugin-semantic';
+
+const plugins = [
+  SemanticPlugin({
+    autoAnalyze: true,   // analyze on data load
+    sampleSize: 100,     // rows to sample per column
+  }),
+];
+
+// Trigger analysis manually at any time:
+api.dispatchCommand('semantic:analyze', {});
+
+// Get the detected type map:
+api.dispatchCommand('semantic:get-analysis', {});
+// Emits 'semantic:analyzed' event with:
+// { columns: { email: 'email', salary: 'currency',
+//              ip: 'ip-address', phone: 'phone' } }
+
+// Listen for results:
+api.on('semantic:analyzed', ({ columns }) => {
+  console.log(columns); // { email: 'email', ... }
+});`}
+        features={[
+          'Detects data types from values — email, phone, IP, currency, date, URL, and more',
+          'Auto-analyzes on grid load when autoAnalyze: true is set',
+          'Configurable sample size for large datasets (analyzes a subset for speed)',
+          'No regex config needed — built-in patterns cover 15+ semantic types',
+          'Emits semantic:analyzed event with a column→type map for custom logic',
+        ]}
+      />
     </>
   );
 }
@@ -1686,6 +1848,40 @@ function PrivacyLensDemo() {
         rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
         onGridReady={(api: any) => { apiRef.current = api; }}
         ariaLabel="Privacy Lens Demo" />
+      <CodeGuide
+        install="npm install @gridstorm/plugin-privacy-lens"
+        title="Privacy Lens Plugin"
+        code={`import { PrivacyLensPlugin } from '@gridstorm/plugin-privacy-lens';
+
+const plugins = [
+  PrivacyLensPlugin({
+    autoDetect: false,
+    defaultRevealPolicy: 'on-click', // 'always'|'never'|'on-click'
+    onReveal: (entry) => {
+      console.log('Revealed:', entry.columnId, entry.rowId);
+    },
+  }),
+];
+
+// Scan a column and auto-detect PII type:
+api.dispatchCommand('privacy:scan-column', { columnId: 'email' });
+
+// Mask a column (replaces visible values with ████):
+api.dispatchCommand('privacy:mask', { columnId: 'ssn' });
+
+// Unmask (show real values again):
+api.dispatchCommand('privacy:unmask', { columnId: 'ssn' });
+
+// Export a GDPR data map (all detected PII locations):
+api.dispatchCommand('privacy:export-map', {});`}
+        features={[
+          'Mask any column — replaces cell values with ████ blocks in the UI',
+          'Reveal policy: always visible, never visible, or click-to-reveal per column',
+          'Auto-detects PII types (email, SSN, phone, credit card) via semantic scan',
+          'onReveal audit callback fires whenever a user clicks to see a masked value',
+          'Export a GDPR-ready data map listing every PII column and its type',
+        ]}
+      />
     </>
   );
 }
@@ -1721,6 +1917,37 @@ function AdaptiveRendererDemo() {
         rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
         onGridReady={(api: any) => { apiRef.current = api; }}
         ariaLabel="Adaptive Renderer Demo" />
+      <CodeGuide
+        install="npm install @gridstorm/plugin-adaptive-renderer"
+        title="Adaptive Renderer Plugin"
+        code={`import { AdaptiveRendererPlugin } from '@gridstorm/plugin-adaptive-renderer';
+
+const plugins = [
+  AdaptiveRendererPlugin({
+    autoApply: false,   // set true to apply recommendations automatically
+    onRecommendation: (rec) => {
+      // rec.mode: 'desktop'|'tablet'|'mobile'
+      // rec.rowHeight: recommended px (e.g. 56 on mobile)
+      // rec.showPagination: true if dataset is large on mobile
+      // rec.reason: human-readable explanation
+      console.log(rec.mode, rec.rowHeight, rec.reason);
+    },
+  }),
+];
+
+// Trigger device detection + new recommendation:
+api.dispatchCommand('adaptive:recalculate', {});
+
+// Get the full device profile:
+api.dispatchCommand('adaptive:get-device-profile', {});`}
+        features={[
+          'Detects device type (desktop / tablet / mobile) from screen size and touch support',
+          'Recommends optimal rowHeight, column visibility, and pagination settings',
+          'autoApply: true automatically updates the grid layout without any extra code',
+          'onRecommendation callback gives you full control to apply changes selectively',
+          'Re-evaluates on window resize — grid always fits the current viewport',
+        ]}
+      />
     </>
   );
 }

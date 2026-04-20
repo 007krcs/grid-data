@@ -36,7 +36,7 @@
     "build-storybook": "storybook build"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.27.0",
+    "@changesets/cli": "^2.31.0",
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.0",
@@ -47,10 +47,10 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-security": "^3.0.0",
     "jsdom": "^25.0.0",
-    "prettier": "^3.3.0",
+    "prettier": "^3.8.3",
     "tsup": "^8.2.0",
     "typescript": "^5.5.0",
-    "typescript-eslint": "^8.57.2",
+    "typescript-eslint": "^8.58.2",
     "vitest": "^2.0.0"
   },
   "engines": {

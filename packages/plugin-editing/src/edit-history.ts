@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Edit History ───
 // Tracks cell value changes for undo/redo support.
 

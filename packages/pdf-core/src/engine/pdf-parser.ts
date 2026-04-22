@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 /**
  * Interface for pluggable PDF parsing backends.
  * Phase 2 will provide a pdf.js implementation.

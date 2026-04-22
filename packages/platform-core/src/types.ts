@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── NexaForge Platform — Core Types ───
 // This is the integration contract every product must implement.
 // New products register a ProductManifest; the platform shell

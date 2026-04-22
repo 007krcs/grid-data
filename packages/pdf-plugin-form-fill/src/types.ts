@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 export type FieldType = 'text' | 'date' | 'email' | 'phone' | 'address' | 'name' | 'number' | 'checkbox' | 'signature' | 'custom';
 
 export interface FormField {

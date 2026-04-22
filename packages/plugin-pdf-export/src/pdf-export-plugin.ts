@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── PDF Export Plugin ───
 // Provides PDF export capabilities for GridStorm grids.
 // Generates a formatted PDF table with headers, grid lines, and page breaks.

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── GridStorm Error Boundary ───
 // Catches rendering errors in the grid and displays a fallback UI.
 

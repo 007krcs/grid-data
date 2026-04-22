@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Cross-Cell Validator ───
 // Compare one cell's value against another cell in the same row.
 

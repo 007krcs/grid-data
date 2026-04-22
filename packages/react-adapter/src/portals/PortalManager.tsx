@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Portal Manager ───
 // Central orchestrator for all React portals: cell renderers, header
 // renderers, editors, and context menus.

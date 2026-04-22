@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 import type { LocaleStrings } from '../types';
 
 export const ruStrings: LocaleStrings = {

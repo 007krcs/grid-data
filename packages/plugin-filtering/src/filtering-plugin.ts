@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Filtering Plugin ───
 // Provides column-level filtering and quick filter through the plugin system.
 // Registers command handlers for setting/clearing filters and manages

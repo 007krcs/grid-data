@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Tree Data Plugin ───
 // Provides hierarchical parent-child row display with expand/collapse.
 

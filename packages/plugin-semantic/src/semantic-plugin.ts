@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Semantic Detection Plugin ───
 // Analyzes column values to detect semantic data types and mathematical
 // relationships between numeric columns.

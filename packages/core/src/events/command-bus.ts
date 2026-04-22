@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Command Bus ───
 // Commands are the only way to mutate grid state.
 // Each command type maps to a handler. Multiple handlers per type are supported (middleware pattern).

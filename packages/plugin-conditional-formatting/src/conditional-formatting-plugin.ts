@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Conditional Formatting Plugin ───
 // Provides rule-based cell styling (like Excel conditional formatting).
 // Evaluates formatting rules against cell values and applies computed

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Range Model ───
 // Pure functions for creating, expanding, querying, and merging cell ranges.
 

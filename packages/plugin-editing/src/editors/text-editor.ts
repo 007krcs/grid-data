@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Built-in Text Cell Editor ───
 
 import type { CellEditorDef, CellEditorParams } from '@gridstorm/core';

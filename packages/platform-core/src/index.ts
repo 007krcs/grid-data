@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── @gridstorm/platform-core ───
 // Integration contract for the NexaForge platform.
 //

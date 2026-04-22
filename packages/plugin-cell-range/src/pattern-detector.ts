@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Pattern Detector ───
 // Detects patterns from a sequence of values for auto-fill.
 

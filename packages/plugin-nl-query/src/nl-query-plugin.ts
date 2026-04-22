@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── NL Query Plugin ───
 // Parses natural language queries and translates them into GridStorm
 // filter/sort/group commands using deterministic regex pattern matching.

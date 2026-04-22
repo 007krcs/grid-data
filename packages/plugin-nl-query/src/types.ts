@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── NL Query Plugin Types ───
 
 export type QueryOperationType = 'filter' | 'sort' | 'quickFilter' | 'group' | 'clearFilters' | 'clearSort';

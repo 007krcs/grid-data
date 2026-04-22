@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Formula Tokenizer ───
 // Lexer that converts a formula string (without leading `=`) into Token[].
 

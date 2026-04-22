@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Validation Engine ───
 // Central validation logic for cells, rows, and the entire grid.
 

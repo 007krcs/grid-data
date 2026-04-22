@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Anomaly Detection Plugin ───
 // Maintains a rolling statistical baseline (mean, std dev) per configured
 // numeric column. Detects cells that deviate beyond configurable z-score

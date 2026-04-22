@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 /** BCP 47 language tags that use RTL script */
 export const RTL_LOCALES = new Set([
   'ar', 'ar-SA', 'ar-EG', 'ar-AE', 'ar-MA',

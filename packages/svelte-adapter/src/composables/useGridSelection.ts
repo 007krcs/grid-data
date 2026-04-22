@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Grid Selection Helpers ───
 // Convenience functions for managing row selection in Svelte components.
 

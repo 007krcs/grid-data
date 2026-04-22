@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Anomaly Detector ───
 // Statistical anomaly detection using Z-Score and IQR methods.
 // Works entirely locally with pure computation — no external dependencies.

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 import type { LicenseKey, LicenseInfo, LicenseValidationResult } from './types';
 
 // Module-level license state (singleton)

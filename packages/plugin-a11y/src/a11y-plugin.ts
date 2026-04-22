@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Accessibility Plugin ───
 // WCAG 2.1 AA compliance for GridStorm.
 

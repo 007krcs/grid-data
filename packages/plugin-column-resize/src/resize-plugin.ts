@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Column Resize Plugin ───
 // Adds drag-to-resize handles on column header borders.
 // Dispatches column width changes through the API.

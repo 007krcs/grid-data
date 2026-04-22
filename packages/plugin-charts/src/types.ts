@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Chart Types ───
 
 export type ChartType = 'bar' | 'line' | 'pie' | 'scatter';

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Client-Side Row Model ───
 // Transforms raw data into RowNode[] and manages the display pipeline:
 // raw data → RowNodes → filter → sort → group → flatten → paginate → display

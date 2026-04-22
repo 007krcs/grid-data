@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── PDF Renderer ───
 //
 // Main renderer class that assembles canvas pages, text layers, and annotation layers

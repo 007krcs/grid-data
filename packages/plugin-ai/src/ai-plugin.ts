@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── AI Integration Plugin ───
 // Natural language queries, anomaly detection, and smart suggestions for GridStorm.
 // All AI features work locally without API calls. The optional LLM adapter enables

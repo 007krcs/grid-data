@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 export interface ClipboardProPluginOptions {
   /** Process cell value before copy. */
   processCellForClipboard?: (params: ProcessCellParams) => string;

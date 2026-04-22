@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── AG Grid → GridStorm Import Map ───
 // Maps AG Grid package imports to their GridStorm equivalents.
 

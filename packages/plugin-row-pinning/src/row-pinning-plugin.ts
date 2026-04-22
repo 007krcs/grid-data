@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Row Pinning Plugin ───
 // Allows pinning rows to the top or bottom of the grid (floating rows).
 // Pinned rows remain visible outside the normal scroll area and are

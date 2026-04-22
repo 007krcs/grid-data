@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── State Persistence Plugin ───
 // Saves and restores grid state (column widths, sort model, filter model,
 // column order, visibility, etc.) to localStorage or a custom storage adapter.

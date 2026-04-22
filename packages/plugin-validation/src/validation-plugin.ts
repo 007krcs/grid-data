@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Validation Plugin ───
 // Provides data validation with 10+ built-in validators, cross-cell rules,
 // and editing integration for GridStorm.

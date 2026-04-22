@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Svelte Adapter Types ───
 // Central type definitions for the Svelte 5 GridStorm adapter.
 

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── @gridstorm/plugin-clipboard-pro — Public API ───
 
 export { ClipboardProPlugin } from './clipboard-pro-plugin';

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Cell Editor Portal ───
 // Renders a React cell editor component as an absolutely-positioned
 // overlay on top of the editing cell.

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Lightweight Reactive Store ───
 // Custom store optimized for grid state patterns.
 // Supports batched updates and selector-based subscriptions.

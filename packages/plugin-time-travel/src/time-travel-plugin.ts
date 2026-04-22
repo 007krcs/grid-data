@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Time Travel Plugin ───
 // Git-for-grids: full state history with undo/redo, snapshots, diffs, and branches.
 // Provides named checkpoints, state diffing, and what-if branches.

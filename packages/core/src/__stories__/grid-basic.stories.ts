@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 import type { Meta, StoryObj } from '@storybook/html';
 import { createGrid } from '@gridstorm/core';
 import { DomRenderer } from '@gridstorm/dom-renderer';

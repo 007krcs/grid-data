@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Built-in Validators ───
 // Each returns true if valid, or an error message string if invalid.
 

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 import type { FormFillConfig, FormFillPluginState, FormField } from './types';
 import { detectFields, resetFieldCounter } from './field-detector';
 import { mapDataToFields } from './field-mapper';

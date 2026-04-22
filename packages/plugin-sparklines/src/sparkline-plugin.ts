@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 import type { GridPlugin, PluginContext } from '@gridstorm/core';
 import type { SparklineConfig, SparklineParams, SparklineType } from './types';
 import { renderLineSparkline } from './renderers/line';

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 /** All translatable UI strings used by GridStorm */
 export interface LocaleStrings {
   // Pagination

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── PDF Builder ───
 // Builds a formatted PDF table from grid export data.
 // Handles column layout, page breaks, headers, footers, and grid lines.

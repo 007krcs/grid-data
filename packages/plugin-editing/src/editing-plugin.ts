@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Editing Plugin ───
 // Provides cell editing with built-in editors (text, number, select).
 // Manages the editing lifecycle: start → value change → stop (commit/cancel).

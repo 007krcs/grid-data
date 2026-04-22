@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Intelligence Hub Plugin ───
 // Aggregates behavioral patterns across multiple GridStorm instances.
 // Implements differential privacy via Laplace noise injection.

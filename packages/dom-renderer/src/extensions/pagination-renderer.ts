@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Pagination Renderer Extension ───
 // Renders a pagination bar below the grid with navigation buttons and page size selector.
 

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── @gridstorm/pdf-theme ───
 //
 // CSS custom properties and theme utilities for GridStorm PDF viewer.

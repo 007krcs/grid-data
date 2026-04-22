@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Grid API Store ───
 // Lightweight store for the current GridApi reference.
 // In Svelte 5, there is no provide/inject like Vue or React context.

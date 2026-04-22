@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Floating Filter Renderer Extension ───
 // Renders a row of filter inputs below the header for per-column filtering.
 

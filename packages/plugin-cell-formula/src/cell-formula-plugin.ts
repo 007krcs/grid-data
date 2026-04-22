@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 import type { GridPlugin } from '@gridstorm/core';
 import type { FormulaDefinition, FormulaState, FormulaError, CellFormulaOptions } from './types';
 

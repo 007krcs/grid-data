@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Collab Plugin ───
 // Multi-user presence tracking for GridStorm. Tracks which user is focused
 // on which cell, broadcasts presence changes, and implements optimistic

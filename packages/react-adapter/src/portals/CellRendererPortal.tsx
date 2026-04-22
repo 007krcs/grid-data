@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Cell Renderer Portal ───
 // Memoized wrapper for individual React cell renderer portals.
 // Custom comparator prevents re-renders when cell data hasn't changed.

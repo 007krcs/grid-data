@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 export { ExcelExportPlugin } from './excel-export-plugin';
 export type {
   ExcelExportOptions,

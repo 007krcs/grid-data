@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Grouping Plugin ───
 // Provides row grouping by one or more columns.
 // Creates hierarchical group rows with expand/collapse support.

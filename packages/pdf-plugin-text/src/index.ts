@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── @gridstorm/pdf-plugin-text ───
 //
 // Text extraction and search plugin for GridStorm PDF.

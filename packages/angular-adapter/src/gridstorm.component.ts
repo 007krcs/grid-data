@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── GridStorm Angular Component ───
 // Standalone Angular component wrapping the headless core engine + DOM renderer.
 // Uses ElementRef + ViewChild to mount the DomRenderer into the template container.

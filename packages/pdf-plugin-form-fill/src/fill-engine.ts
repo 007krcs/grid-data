@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 import type { FieldType } from './types';
 
 const DEFAULT_VALIDATORS: Record<FieldType, RegExp> = {

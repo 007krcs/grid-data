@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Grid Context ───
 // Provides the engine, API, and metadata to all child hooks and components.
 

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── DOM Renderer ───
 // Creates and manages the grid DOM structure.
 // Reads state from the core engine and renders rows/cells efficiently.

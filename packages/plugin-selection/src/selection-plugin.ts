@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Selection Plugin ───
 // Provides row selection (single, multiple), keyboard-driven selection,
 // Shift+Click range selection, and Ctrl+Click toggle.

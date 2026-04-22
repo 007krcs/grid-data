@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Structured Error Handler ───
 // Provides enterprise-grade error reporting with context, telemetry hooks,
 // and structured error types. Replaces ad-hoc console.error() calls.

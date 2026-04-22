@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Natural Language Query Parser ───
 // Parses human-readable queries into GridAction commands using regex patterns.
 // Works entirely locally — no LLM or API calls required for basic queries.

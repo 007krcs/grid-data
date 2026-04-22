@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 import type { IntelligencePluginState, ExtractedField, DetectedTable } from './types';
 import { classifyDocument } from './classifier';
 import { extractFields } from './extractor';

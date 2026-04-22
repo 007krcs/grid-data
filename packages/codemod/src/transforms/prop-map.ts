@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── AG Grid → GridStorm Prop Map ───
 // Maps AG Grid component prop names to their GridStorm equivalents.
 

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Column Pinning Plugin ───
 // Provides commands for pinning/unpinning columns to left or right edges.
 // Enforces max pinned limits and reorders columns for proper rendering.

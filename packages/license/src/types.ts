@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 /** License tier determines which plugins are available */
 export type LicenseTier = 'community' | 'starter' | 'professional' | 'enterprise';
 

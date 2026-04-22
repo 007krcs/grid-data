@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 export { EditingPlugin } from './editing-plugin';
 export type { EditingPluginOptions } from './editing-plugin';
 

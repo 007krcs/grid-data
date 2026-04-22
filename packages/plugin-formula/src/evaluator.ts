@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Formula Evaluator ───
 // Walks the AST tree and evaluates expressions.
 

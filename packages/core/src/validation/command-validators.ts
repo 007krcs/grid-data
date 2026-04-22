@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Built-in Command Payload Validators ───
 // Lightweight runtime validation for core command payloads.
 // Uses the CommandBus.registerValidator() mechanism — no external dependencies.

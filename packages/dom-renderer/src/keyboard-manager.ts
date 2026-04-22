@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Keyboard Manager ───
 // Handles keyboard navigation within the grid: arrow keys, Tab, Enter, Escape.
 // Implements roving tabindex for ARIA compliance.

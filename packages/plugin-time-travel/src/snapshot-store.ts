@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Snapshot Store ───
 // Manages snapshot capture, storage, and restoration for the time-travel plugin.
 

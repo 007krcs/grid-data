@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Streaming Data Plugin ───
 // Provides real-time live data updates with cell flash/highlight on changes.
 // Collects incoming row updates into batches and applies them at a configurable

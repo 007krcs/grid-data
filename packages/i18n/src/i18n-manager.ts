@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 import type { I18nConfig, LocaleStrings, LocaleFormatters } from './types';
 import { defaultStrings } from './locales/en';
 import { isRTL } from './rtl';

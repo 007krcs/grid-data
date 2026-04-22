@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Clipboard Pro Plugin ───
 // Enhanced Excel-compatible copy/paste for GridStorm.
 

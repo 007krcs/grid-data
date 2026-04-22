@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── GridStorm Svelte Action ───
 // The core of the Svelte 5 adapter. Implements a Svelte "action" — a function
 // that takes a DOM element and manages the GridStorm lifecycle (create, update, destroy).

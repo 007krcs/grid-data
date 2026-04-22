@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── GridStorm React Component ───
 // Production-grade React wrapper around the headless core engine.
 // Supports controlled + uncontrolled modes, React component cell/header

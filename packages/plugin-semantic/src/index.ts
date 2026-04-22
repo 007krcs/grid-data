@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── @gridstorm/plugin-semantic — Public API ───
 
 export { SemanticPlugin, detectSemanticType, detectRelationships } from './semantic-plugin';

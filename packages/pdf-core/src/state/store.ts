@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── PDF Store ───
 // Mirrors GridStorm's Store pattern exactly. Lightweight reactive store
 // with batched updates and selector-based subscriptions.

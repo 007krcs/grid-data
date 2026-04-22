@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Formula Engine Plugin ───
 // Extends the base formula plugin with 50+ Excel-compatible functions,
 // named ranges, and array formula support.

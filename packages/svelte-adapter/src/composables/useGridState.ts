@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Grid State Accessor ───
 // Provides direct access to the grid store state via a selector function.
 

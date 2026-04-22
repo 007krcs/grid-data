@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── PDF Writer ───
 // Minimal PDF 1.4 writer that generates valid PDF binary output.
 // Uses built-in Helvetica font (one of the standard 14 PDF fonts).

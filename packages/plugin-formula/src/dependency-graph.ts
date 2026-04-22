@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Dependency Graph ───
 // DAG for tracking formula cell dependencies and computing evaluation order.
 

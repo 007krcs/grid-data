@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── @gridstorm/pdf-core ───
 // Headless PDF document engine with command bus, undo/redo, and plugin system.
 

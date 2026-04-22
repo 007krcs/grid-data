@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Column Reorder Plugin ───
 // Provides column reordering via commands and drag-and-drop DOM interaction.
 

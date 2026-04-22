@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── AG Grid → GridStorm Transform ───
 // The main jscodeshift-based transform that converts AG Grid code to GridStorm.
 // Handles import rewrites, component renames, prop renames, type renames,

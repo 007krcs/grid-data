@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Master-Detail Types ───
 
 import type { RowNode } from '@gridstorm/core';

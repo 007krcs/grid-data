@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 import type { GridPlugin, PluginContext } from '@gridstorm/core';
 import type { IntentRecord, IntentState, IntentEngineOptions, ColumnScore, IntentAction } from './types';
 

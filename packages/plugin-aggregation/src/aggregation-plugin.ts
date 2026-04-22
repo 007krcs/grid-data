@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Aggregation Plugin ───
 // Computes aggregate values for group rows.
 // Walks the group tree bottom-up, computing aggregations for each group node.

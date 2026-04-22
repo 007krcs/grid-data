@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── GridStorm Vue 3 Component ───
 // Production-grade Vue wrapper around the headless core engine.
 // Uses defineComponent with a render function (no .vue SFC) for tsup compatibility.

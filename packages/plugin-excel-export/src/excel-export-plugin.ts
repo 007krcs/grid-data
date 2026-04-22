@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Excel Export Plugin ───
 // Provides CSV and Excel XML export capabilities for GridStorm grids.
 

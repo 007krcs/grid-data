@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Filter Predicates ───
 // Built-in filter predicate factories for common filter types.
 // Each function returns a predicate: (value: any) => boolean.

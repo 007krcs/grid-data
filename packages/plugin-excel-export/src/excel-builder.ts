@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Excel Builder ───
 // Generates CSV and SpreadsheetML (Excel XML) content from grid data.
 // Zero external dependencies.

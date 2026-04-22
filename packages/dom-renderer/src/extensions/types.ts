@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Renderer Extension Types ───
 // Defines the interface for modular renderer features.
 // Each extension can mount DOM, update on state change, and clean up.

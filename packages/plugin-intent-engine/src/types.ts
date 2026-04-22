@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 export type IntentAction = 'sort' | 'filter' | 'hide' | 'show' | 'reorder' | 'resize' | 'quickFilter';
 
 export interface IntentRecord {

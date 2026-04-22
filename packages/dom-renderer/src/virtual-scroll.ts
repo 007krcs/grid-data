@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Virtual Scroll Engine ───
 // Calculates which rows are visible in the viewport and manages
 // the scroll container geometry. Supports fixed and variable row heights.

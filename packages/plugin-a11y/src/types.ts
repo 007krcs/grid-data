@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 export interface A11yPluginOptions {
   /** Enable screen reader announcements. Default: true */
   announcements?: boolean;

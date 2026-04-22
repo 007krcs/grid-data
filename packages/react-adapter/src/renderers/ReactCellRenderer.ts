@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── React Cell Renderer Marker ───
 // Wraps a React component so it can be used as a CellRendererFn.
 // The DomRenderer will receive an empty string (creating an empty cell),

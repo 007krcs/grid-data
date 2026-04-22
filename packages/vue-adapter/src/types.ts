@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Vue Adapter Types ───
 // Central type definitions for all Vue-specific interfaces.
 

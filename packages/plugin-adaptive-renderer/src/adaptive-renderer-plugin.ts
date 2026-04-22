@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Adaptive Renderer Plugin ───
 // Detects device capabilities and data characteristics to recommend
 // and optionally apply optimal grid layout configurations.

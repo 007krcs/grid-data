@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Server-Side Row Model Plugin ───
 // Provides lazy loading of rows from a server data source with block-based caching.
 

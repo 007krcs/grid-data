@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Pivoting Plugin ───
 // Transforms row-grouped data into dynamic columns (pivot table).
 // Generates secondary columns based on distinct values in pivot columns.

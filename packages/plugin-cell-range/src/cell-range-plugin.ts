@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Cell Range Selection Plugin ───
 // Provides Excel-like cell range selection with fill handle and pattern detection.
 

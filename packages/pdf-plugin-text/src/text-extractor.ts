@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Text Extractor ───
 //
 // Extracts text content from PDF pages with character, word, and line bounding boxes.

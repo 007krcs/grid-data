@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Column Model ───
 // Processes ColumnDef[] into resolved ColumnState[].
 // Handles defaults, flattening of groups, flex sizing, and state tracking.

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Context Menu Plugin ───
 // Provides right-click context menus for grid cells and headers.
 // Supports custom menu items, built-in defaults, icons, submenus,

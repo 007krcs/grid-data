@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── ProductRegistry ───
 // Singleton that products register with at startup.
 // The platform shell reads all manifests to build nav + launcher.

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Column Auto-Size Plugin ───
 // Provides automatic column width fitting based on content width estimation.
 // Since GridStorm uses a headless architecture, content width is estimated

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Typed Command Map ───
 // Registry of all known commands and their payload types.
 // Plugins can extend this via declaration merging.

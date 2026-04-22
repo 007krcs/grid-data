@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Column Sidebar Renderer Extension ───
 // Renders a slide-in panel to show/hide columns with checkboxes and search.
 

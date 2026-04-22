@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Extended Error Types ───
 
 import type { ExtendedErrorType, ExtendedFormulaError } from './types';

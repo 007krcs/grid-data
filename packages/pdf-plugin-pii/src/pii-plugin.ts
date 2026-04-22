@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 import type { PiiConfig, PiiPluginState, PiiMatch } from './types';
 import { detectPatterns } from './detectors/patterns';
 import { detectNames } from './detectors/names';

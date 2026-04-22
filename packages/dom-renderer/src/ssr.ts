@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── SSR (Server-Side Rendering) Utilities ───
 // Provides environment detection and safe wrappers for DOM APIs
 // so the dom-renderer can be safely imported in Node.js, Deno, and Bun.

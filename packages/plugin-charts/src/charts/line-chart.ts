@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Line Chart Renderer ───
 
 import type { ChartConfig, ChartDataPoint } from '../types';

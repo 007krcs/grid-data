@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Scroll Manager ───
 // Manages scroll synchronization between pinned and center sections.
 // Uses passive scroll listeners and rAF for optimal performance.

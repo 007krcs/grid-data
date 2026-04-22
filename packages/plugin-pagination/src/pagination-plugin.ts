@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Pagination Plugin ───
 // Provides client-side pagination with page navigation commands.
 // Manages the pagination state slice and renders a pagination bar.

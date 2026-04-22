@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Row Reorder Plugin ───
 // Provides row reordering via commands and drag-and-drop DOM interaction.
 // Uses event delegation + CSS pseudo-elements for virtual-scroll compatibility.

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── PDF Export Types ───
 
 export type PageSize = 'a4' | 'letter' | 'legal' | 'a3';

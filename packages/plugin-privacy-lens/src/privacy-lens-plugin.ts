@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Privacy Lens Plugin ───
 // Scans grid cell values for PII using pattern recognition.
 // Masks sensitive values and generates GDPR/CCPA data maps.

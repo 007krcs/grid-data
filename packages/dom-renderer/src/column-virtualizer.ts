@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Column Virtual Scroll Engine ───
 // Calculates which columns are visible in the viewport and manages
 // horizontal virtualization. Pinned columns are always rendered.

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 import type { LocaleFormatters } from './types';
 
 export interface NumberFormatOptions extends Intl.NumberFormatOptions {}

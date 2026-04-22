@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── GridStorm Codemod CLI ───
 // Automated migration tool for converting AG Grid codebases to GridStorm.
 // Handles import rewrites, component renames, prop renames, type renames,

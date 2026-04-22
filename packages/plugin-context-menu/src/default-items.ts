@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Default Context Menu Items ───
 // Rich context-aware menu items for sort, pin, group, copy, and export actions.
 

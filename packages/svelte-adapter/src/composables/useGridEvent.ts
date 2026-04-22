@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Grid Event Subscription ───
 // Provides a helper to subscribe to grid events from Svelte components.
 

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── XLSX Builder ───
 // Generates Office Open XML Spreadsheet parts for true .xlsx format.
 // Requires a ZIP utility (e.g., fflate, JSZip) to bundle into a .xlsx file.

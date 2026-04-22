@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Platform Event Bus ───
 // Lightweight cross-product pub/sub.
 // Products can emit events (e.g. "user exported data") and

@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Context Menu Types ───
 
 import type { GridApi, ColumnState, RowNode } from '@gridstorm/core';

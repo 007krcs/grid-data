@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Status Bar Plugin ───
 // Provides an aggregation summary bar showing sum, avg, min, max, count
 // for selected cells or all rows. Listens to selection changes and

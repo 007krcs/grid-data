@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Grid Engine ───
 // The central orchestrator. Creates the store, event/command buses,
 // plugin manager, and processes data through the row model pipeline.

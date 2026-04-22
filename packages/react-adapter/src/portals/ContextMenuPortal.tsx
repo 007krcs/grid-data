@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Context Menu Portal ───
 // Renders a user-provided context menu component at the right-click position.
 

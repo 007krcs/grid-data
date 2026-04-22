@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Sorting Plugin ───
 // Provides single and multi-column sorting through the plugin system.
 // Listens for 'sort:toggle' commands from the header click handler

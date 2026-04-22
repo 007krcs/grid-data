@@ -1,3 +1,5 @@
+// © 2025 GridStorm / Tekivex — All Rights Reserved
+// Unauthorized reproduction or distribution is prohibited.
 // ─── Vue 3 Composables for GridStorm ───
 // Provide/inject-based composables that mirror the React hooks API.
 // All composables must be called inside a component that is a child of <GridStorm>.

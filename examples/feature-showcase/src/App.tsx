@@ -33,6 +33,12 @@ import { SemanticPlugin } from '@gridstorm/plugin-semantic';
 import { PrivacyLensPlugin } from '@gridstorm/plugin-privacy-lens';
 import { AdaptiveRendererPlugin } from '@gridstorm/plugin-adaptive-renderer';
 import { IntelligenceHubPlugin } from '@gridstorm/plugin-intelligence-hub';
+// Tier 3 new demos
+import { StatusBarPlugin } from '@gridstorm/plugin-status-bar';
+import { StatePersistencePlugin } from '@gridstorm/plugin-state-persistence';
+import { RowPinningPlugin } from '@gridstorm/plugin-row-pinning';
+import { ConditionalFormattingPlugin } from '@gridstorm/plugin-conditional-formatting';
+import { StreamingPlugin } from '@gridstorm/plugin-streaming';
 // Types from data generators used by demos
 
 // ── Feature Demos ──
@@ -60,6 +66,13 @@ const FEATURES: FeatureDemo[] = [
   { id: 'privacy-lens', title: 'Privacy Lens', description: 'PII detection and masking with GDPR data map export and audit log', category: 'enterprise' },
   { id: 'adaptive-renderer', title: 'Adaptive Renderer', description: 'Device-aware layout recommendations — mobile cards, compact tablet, virtual scroll thresholds', category: 'enterprise' },
   { id: 'intelligence-hub', title: 'Intelligence Hub', description: 'Cross-grid behavioral aggregation with differential privacy (Laplace noise)', category: 'enterprise' },
+  // ── Tier 3 — New features ──
+  { id: 'status-bar', title: 'Status Bar', description: 'Selection-aware aggregation bar — sum, avg, min, max, count auto-recalculate on row selection', category: 'enterprise' },
+  { id: 'state-persistence', title: 'State Persistence', description: 'Save and restore sort, filter, column widths, order, and scroll position to localStorage', category: 'enterprise' },
+  { id: 'row-pinning', title: 'Row Pinning', description: 'Pin rows to top or bottom — floating rows stay visible outside the scroll area', category: 'data' },
+  { id: 'conditional-formatting', title: 'Conditional Formatting', description: '18 condition types: color scales, data bars, icon sets, top-N, above/below average, and more', category: 'enterprise' },
+  { id: 'streaming', title: 'Live Streaming Data', description: 'Real-time cell updates at 60fps with flash animations and change-direction arrows', category: 'data' },
+  { id: 'ai-features', title: 'AI Features', description: 'NL Query + Anomaly Detection — both work completely offline with no API key required', category: 'enterprise' },
   { id: 'sorting', title: 'Sorting', description: 'Single & multi-column sorting with custom sort cycles', category: 'core' },
   { id: 'filtering', title: 'Filtering', description: 'Quick-filter search across all columns', category: 'core' },
   { id: 'selection', title: 'Row Selection', description: 'Click rows to select with multi-select support', category: 'core' },
@@ -2352,6 +2365,752 @@ function IntelligenceHubDemo() {
   );
 }
 
+// ── Tier 3 Demo Components ──
+
+function StatusBarDemo() {
+  const [selCount, setSelCount] = useState(0);
+  const [stats, setStats] = useState<Record<string, { sum: number; avg: number; min: number; max: number; count: number }>>({});
+  const apiRef = useRef<GridApi | null>(null);
+
+  const plugins = useMemo(() => [
+    SortingPlugin({ multiSort: true }),
+    SelectionPlugin({ mode: 'multiple' }),
+    ColumnResizePlugin(),
+    StatusBarPlugin({
+      showOnSelection: true,
+      showForAllRows: true,
+      panels: [
+        { id: 'left-panel', align: 'left' },
+        { id: 'right-panel', align: 'right' },
+      ],
+    }),
+  ], []);
+
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 60 },
+    { field: 'name', headerName: 'Name', width: 170, sortable: true },
+    { field: 'department', headerName: 'Department', width: 140, sortable: true },
+    { field: 'salary', headerName: 'Salary', width: 120, sortable: true,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+    { field: 'rating', headerName: 'Rating', width: 90, sortable: true },
+    { field: 'yearsExp', headerName: 'Years Exp', width: 100, sortable: true },
+  ], []);
+
+  const data = useMemo(() => EMPLOYEES_200.map((e: any, i: number) => ({
+    ...e,
+    yearsExp: Math.floor(Math.random() * 20) + 1,
+    rating: +(Math.random() * 4 + 1).toFixed(1),
+  })), []);
+
+  const onGridReady = useCallback((api: GridApi) => {
+    apiRef.current = api;
+    api.addEventListener('status-bar:updated' as any, (e: any) => {
+      setStats(e.aggregations ?? {});
+    });
+  }, []);
+
+  const onSelectionChanged = useCallback((e: any) => {
+    setSelCount(e.selectedNodes?.length ?? 0);
+  }, []);
+
+  const salaryStats = stats['salary'];
+  const ratingStats = stats['rating'];
+
+  return (
+    <>
+      <p style={hintStyle}>
+        Select rows (Ctrl+Click / Shift+Click) — the status bar aggregations update instantly. With nothing selected, stats show across <em>all rows</em>.
+        Currently <strong>{selCount > 0 ? `${selCount} rows selected` : 'all rows'}</strong>.
+      </p>
+
+      {/* Status Bar UI */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid #e2e8f0', borderBottom: 'none', borderRadius: '6px 6px 0 0', padding: '6px 14px', fontSize: 12 }}>
+        <div style={{ display: 'flex', gap: 20 }}>
+          {salaryStats && (
+            <>
+              <span><span style={{ color: '#6b7280' }}>Salary avg: </span><strong style={{ color: '#2563eb' }}>${Math.round(salaryStats.avg).toLocaleString()}</strong></span>
+              <span><span style={{ color: '#6b7280' }}>Min: </span><strong>${salaryStats.min.toLocaleString()}</strong></span>
+              <span><span style={{ color: '#6b7280' }}>Max: </span><strong>${salaryStats.max.toLocaleString()}</strong></span>
+              <span><span style={{ color: '#6b7280' }}>Sum: </span><strong>${salaryStats.sum.toLocaleString()}</strong></span>
+            </>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 20 }}>
+          {ratingStats && (
+            <span><span style={{ color: '#6b7280' }}>Avg Rating: </span><strong style={{ color: '#059669' }}>{ratingStats.avg.toFixed(2)}</strong></span>
+          )}
+          <span style={{ color: '#6b7280' }}>Rows: <strong style={{ color: '#374151' }}>{salaryStats?.count ?? 0}</strong></span>
+        </div>
+      </div>
+
+      <GridStorm columns={columns} rowData={data} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT - 40}
+        rowSelection="multiple" checkboxSelection
+        onGridReady={onGridReady} onSelectionChanged={onSelectionChanged}
+        ariaLabel="Status Bar Demo" />
+      <CodeGuide
+        install="npm install @gridstorm/plugin-status-bar"
+        title="Status Bar Plugin"
+        code={`import { StatusBarPlugin } from '@gridstorm/plugin-status-bar';
+
+const plugins = [
+  SelectionPlugin({ mode: 'multiple' }),
+  StatusBarPlugin({
+    showOnSelection: true,   // stats update when rows are selected
+    showForAllRows: true,    // fall back to all rows when nothing selected
+  }),
+];
+
+// Listen for aggregation updates:
+api.addEventListener('status-bar:updated', (e) => {
+  const { salary } = e.aggregations;
+  console.log(salary.sum, salary.avg, salary.min, salary.max, salary.count);
+});`}
+        features={[
+          'Auto-recalculates on every selection change — no extra code needed',
+          'Falls back to all-row stats when nothing is selected',
+          'Computes: sum, avg, min, max, count, first, last per column',
+          'Configurable panels: left / center / right alignment',
+          'Works alongside GroupingPlugin — aggregates within the visible filtered set',
+        ]}
+      />
+    </>
+  );
+}
+
+function StatePersistenceDemo() {
+  const STORAGE_KEY = 'gridstorm-demo-state';
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [restoredAt, setRestoredAt] = useState<string | null>(null);
+  const [cleared, setCleared] = useState(false);
+  const apiRef = useRef<GridApi | null>(null);
+
+  const plugins = useMemo(() => [
+    SortingPlugin({ multiSort: true }),
+    FilteringPlugin(),
+    ColumnResizePlugin(),
+    ColumnPinningPlugin(),
+    ColumnReorderPlugin(),
+    PaginationPlugin({ pageSize: 20 }),
+    StatePersistencePlugin({
+      storageKey: STORAGE_KEY,
+      autoSave: true,
+      debounceMs: 600,
+      include: ['sortModel', 'filterModel', 'columnState', 'pagination'],
+    }),
+  ], []);
+
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 60, sortable: true },
+    { field: 'name', headerName: 'Name', width: 180, sortable: true, filterable: true, resizable: true },
+    { field: 'department', headerName: 'Department', width: 140, sortable: true, filterable: true, resizable: true },
+    { field: 'role', headerName: 'Role', width: 160, sortable: true, resizable: true },
+    { field: 'salary', headerName: 'Salary', width: 120, sortable: true, resizable: true,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+    { field: 'city', headerName: 'City', width: 130, sortable: true, filterable: true, resizable: true },
+    { field: 'status', headerName: 'Status', width: 110, sortable: true, filterable: true },
+  ], []);
+
+  const onGridReady = useCallback((api: GridApi) => { apiRef.current = api; }, []);
+
+  const handleSave = () => {
+    apiRef.current?.dispatchCommand?.('state:save', {});
+    setSavedAt(new Date().toLocaleTimeString());
+    setCleared(false);
+  };
+
+  const handleRestore = () => {
+    apiRef.current?.dispatchCommand?.('state:restore', {});
+    setRestoredAt(new Date().toLocaleTimeString());
+  };
+
+  const handleClear = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setCleared(true);
+    setSavedAt(null);
+  };
+
+  return (
+    <>
+      <p style={hintStyle}>
+        Sort, filter, resize, or reorder columns — state <strong>auto-saves after 600ms</strong>.
+        Reload the page: your grid state is restored automatically. Or use the buttons below.
+      </p>
+      <div style={{ marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <button style={{ ...chipBtn, background: '#2563eb', color: '#fff' }} onClick={handleSave}>💾 Save Now</button>
+        <button style={{ ...chipBtn, background: '#059669', color: '#fff' }} onClick={handleRestore}>♻️ Restore</button>
+        <button style={{ ...chipBtn, background: '#f1f5f9', color: '#374151', border: '1px solid #e2e8f0' }} onClick={handleClear}>🗑️ Clear Saved State</button>
+        {savedAt && !cleared && <span style={{ fontSize: 11, color: '#059669' }}>✓ Saved at {savedAt}</span>}
+        {restoredAt && <span style={{ fontSize: 11, color: '#2563eb' }}>↩ Restored at {restoredAt}</span>}
+        {cleared && <span style={{ fontSize: 11, color: '#ef4444' }}>✗ Cleared — next save starts fresh</span>}
+      </div>
+      <GridStorm columns={columns} rowData={EMPLOYEES_200} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT - 60}
+        floatingFilter floatingFilterDebounce={300} enablePagination pageSizeOptions={[10, 20, 50]}
+        onGridReady={onGridReady} ariaLabel="State Persistence Demo" />
+      <CodeGuide
+        install="npm install @gridstorm/plugin-state-persistence"
+        title="State Persistence Plugin"
+        code={`import { StatePersistencePlugin } from '@gridstorm/plugin-state-persistence';
+
+const plugins = [
+  StatePersistencePlugin({
+    storageKey: 'my-grid-state',
+    autoSave: true,          // save after every state change
+    debounceMs: 500,         // debounce to avoid excessive writes
+    include: ['sortModel', 'filterModel', 'columnState', 'pagination'],
+  }),
+];
+
+// State is auto-restored on mount. Manual save/restore/clear:
+api.dispatchCommand('state:save', {});
+api.dispatchCommand('state:restore', {});
+api.dispatchCommand('state:clear', {});
+
+// Custom async storage adapter (e.g. server-side):
+StatePersistencePlugin({
+  storage: {
+    getItem: async (key) => fetch('/state/' + key).then(r => r.text()),
+    setItem: async (key, val) => fetch('/state/' + key, { method: 'PUT', body: val }),
+    removeItem: async (key) => fetch('/state/' + key, { method: 'DELETE' }),
+  },
+})`}
+        features={[
+          'Persists: sort model, filter model, column widths, column order, column visibility, pagination, scroll position',
+          'Debounced auto-save — configurable delay to prevent excessive localStorage writes',
+          'Schema versioning with migration support — safe across grid upgrades',
+          'Custom async storage adapter — store state server-side or in IndexedDB',
+          'Selective include/exclude — choose exactly which state to persist',
+        ]}
+      />
+    </>
+  );
+}
+
+function RowPinningDemo() {
+  const [topCount, setTopCount] = useState(0);
+  const [bottomCount, setBottomCount] = useState(0);
+  const apiRef = useRef<GridApi | null>(null);
+
+  const SUMMARY_ROW = { id: 'summary', name: '📊 TOTALS', department: '—', salary: 0, city: '—', status: '—' };
+  const HEADER_ROW  = { id: 'hdr', name: '👆 PINNED TOP', department: 'Click "Pin Top" to pin rows above the scroll area', salary: 0, city: '—', status: 'Pinned' };
+
+  const plugins = useMemo(() => [
+    SortingPlugin({ multiSort: true }),
+    FilteringPlugin(),
+    ColumnResizePlugin(),
+    SelectionPlugin({ mode: 'multiple' }),
+    RowPinningPlugin({
+      pinnedTopRowData: [HEADER_ROW],
+      pinnedBottomRowData: [SUMMARY_ROW],
+      maxPinnedRows: 10,
+    }),
+  ], []);
+
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 70 },
+    { field: 'name', headerName: 'Name', width: 180, sortable: true, filterable: true },
+    { field: 'department', headerName: 'Department', width: 140, sortable: true },
+    { field: 'salary', headerName: 'Salary', width: 120, sortable: true,
+      valueFormatter: (p: any) => Number(p.value) ? `$${Number(p.value).toLocaleString()}` : '—' },
+    { field: 'city', headerName: 'City', width: 130, sortable: true },
+    { field: 'status', headerName: 'Status', width: 110, sortable: true },
+  ], []);
+
+  const onGridReady = useCallback((api: GridApi) => {
+    apiRef.current = api;
+    api.addEventListener('row-pinning:changed' as any, (e: any) => {
+      setTopCount(e.pinnedTopRows?.length ?? 0);
+      setBottomCount(e.pinnedBottomRows?.length ?? 0);
+    });
+  }, []);
+
+  const pinSelected = (pos: 'top' | 'bottom') => {
+    const api = apiRef.current as any;
+    if (!api) return;
+    const selected = api.getSelectedNodes?.() ?? [];
+    selected.forEach((node: any, i: number) => {
+      api.dispatchCommand?.('row-pinning:pin', { rowId: node.id ?? `row-${i}`, position: pos, data: node.data });
+    });
+  };
+
+  const unpinAll = () => {
+    apiRef.current?.dispatchCommand?.('row-pinning:clear-all', {});
+  };
+
+  return (
+    <>
+      <p style={hintStyle}>
+        Select rows then click "Pin Top" or "Pin Bottom" to freeze them outside the scroll area.
+        Pinned top: <strong>{topCount}</strong> · Pinned bottom: <strong>{bottomCount}</strong>
+      </p>
+      <div style={{ marginBottom: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button style={{ ...chipBtn, background: '#2563eb', color: '#fff' }} onClick={() => pinSelected('top')}>📌 Pin Top</button>
+        <button style={{ ...chipBtn, background: '#7c3aed', color: '#fff' }} onClick={() => pinSelected('bottom')}>📌 Pin Bottom</button>
+        <button style={{ ...chipBtn, background: '#f1f5f9', color: '#374151', border: '1px solid #e2e8f0' }} onClick={unpinAll}>✕ Unpin All</button>
+      </div>
+      <GridStorm columns={columns} rowData={EMPLOYEES_50} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT - 45}
+        rowSelection="multiple" checkboxSelection
+        onGridReady={onGridReady} ariaLabel="Row Pinning Demo" />
+      <CodeGuide
+        install="npm install @gridstorm/plugin-row-pinning"
+        title="Row Pinning Plugin"
+        code={`import { RowPinningPlugin } from '@gridstorm/plugin-row-pinning';
+
+// Initial pinned rows (declarative):
+const plugins = [
+  RowPinningPlugin({
+    pinnedTopRowData: [{ id: 'totals', name: 'TOTALS', salary: 950000 }],
+    pinnedBottomRowData: [{ id: 'avg', name: 'AVERAGE', salary: 85000 }],
+    maxPinnedRows: 10,
+  }),
+];
+
+// Pin/unpin imperatively:
+api.dispatchCommand('row-pinning:pin', { rowId: 'row-5', position: 'top', data: rowData });
+api.dispatchCommand('row-pinning:unpin', { rowId: 'row-5' });
+api.dispatchCommand('row-pinning:clear-all', {});
+
+// React to changes:
+api.addEventListener('row-pinning:changed', (e) => {
+  console.log(e.pinnedTopRows.length, e.pinnedBottomRows.length);
+});`}
+        features={[
+          'Pin any row to top or bottom with one command — stays visible during scroll',
+          'Declarative initial pinned rows via pinnedTopRowData / pinnedBottomRowData',
+          'maxPinnedRows cap prevents accidental flooding of the pin area',
+          'row-pinning:changed event fires on every pin/unpin',
+          'Pinned rows are excluded from sort and filter operations',
+        ]}
+      />
+    </>
+  );
+}
+
+function ConditionalFormattingDemo() {
+  const [activeRules, setActiveRules] = useState<string[]>(['colorScale', 'dataBar', 'topN']);
+  const apiRef = useRef<GridApi | null>(null);
+
+  const allRules: Record<string, any> = useMemo(() => ({
+    colorScale: {
+      id: 'salary-scale', columns: ['salary'],
+      condition: { type: 'colorScale', min: 40000, max: 180000, minColor: '#fef2f2', maxColor: '#166534' },
+      style: {},
+    },
+    dataBar: {
+      id: 'rating-bar', columns: ['rating'],
+      condition: { type: 'dataBar', min: 1, max: 5, color: '#3b82f6' },
+      style: {},
+    },
+    topN: {
+      id: 'top5-salary', columns: ['salary'],
+      condition: { type: 'topN', count: 5 },
+      style: { backgroundColor: '#fef9c3', fontWeight: 'bold' },
+    },
+    aboveAvg: {
+      id: 'above-avg-salary', columns: ['salary'],
+      condition: { type: 'aboveAverage' },
+      style: { color: '#166534', fontWeight: 'bold' },
+    },
+    highSalary: {
+      id: 'high-salary', columns: ['salary'],
+      condition: { type: 'greaterThan', value: 120000 },
+      style: { backgroundColor: '#dcfce7', color: '#166534' },
+    },
+    lowRating: {
+      id: 'low-rating', columns: ['rating'],
+      condition: { type: 'lessThan', value: 2 },
+      style: { backgroundColor: '#fef2f2', color: '#991b1b' },
+    },
+    activeStatus: {
+      id: 'active-status', columns: ['status'],
+      condition: { type: 'equals', value: 'Active' },
+      style: { color: '#166534', fontWeight: 'bold' },
+    },
+  }), []);
+
+  const plugins = useMemo(() => [
+    SortingPlugin({ multiSort: true }),
+    ColumnResizePlugin(),
+    ConditionalFormattingPlugin({
+      rules: activeRules.map(k => allRules[k]).filter(Boolean),
+    }),
+  ], [activeRules]);
+
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 60 },
+    { field: 'name', headerName: 'Name', width: 170, sortable: true },
+    { field: 'department', headerName: 'Dept', width: 130, sortable: true },
+    { field: 'salary', headerName: 'Salary', width: 130, sortable: true,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+    { field: 'rating', headerName: 'Rating', width: 90, sortable: true },
+    { field: 'status', headerName: 'Status', width: 100, sortable: true },
+  ], []);
+
+  const toggleRule = (key: string) => {
+    setActiveRules(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+  };
+
+  const RULE_LABELS: Record<string, string> = {
+    colorScale: '🌈 Color Scale (salary)',
+    dataBar:    '📊 Data Bar (rating)',
+    topN:       '🏆 Top 5 (salary)',
+    aboveAvg:   '📈 Above Average (salary)',
+    highSalary: '💚 > $120K',
+    lowRating:  '🔴 Rating < 2',
+    activeStatus: '✅ Active Status',
+  };
+
+  return (
+    <>
+      <p style={hintStyle}>Toggle formatting rules on/off. Multiple rules can apply to the same cell — last rule wins unless priority is set.</p>
+      <div style={{ marginBottom: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {Object.keys(RULE_LABELS).map(key => (
+          <button key={key} onClick={() => toggleRule(key)}
+            style={{ ...chipBtn, fontSize: 11,
+              background: activeRules.includes(key) ? '#2563eb' : '#f1f5f9',
+              color: activeRules.includes(key) ? '#fff' : '#374151',
+              border: `1px solid ${activeRules.includes(key) ? '#2563eb' : '#e2e8f0'}`,
+            }}>
+            {RULE_LABELS[key]}
+          </button>
+        ))}
+      </div>
+      <GridStorm columns={columns} rowData={EMPLOYEES_50} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT - 55}
+        onGridReady={(api: any) => { apiRef.current = api; }}
+        ariaLabel="Conditional Formatting Demo" />
+      <CodeGuide
+        install="npm install @gridstorm/plugin-conditional-formatting"
+        title="Conditional Formatting Plugin"
+        code={`import { ConditionalFormattingPlugin } from '@gridstorm/plugin-conditional-formatting';
+
+const plugins = [
+  ConditionalFormattingPlugin({
+    rules: [
+      // Color scale: green gradient on salary
+      { id: 'salary-scale', columns: ['salary'],
+        condition: { type: 'colorScale', min: 40000, max: 180000,
+                     minColor: '#fef2f2', maxColor: '#166534' },
+        style: {} },
+
+      // Data bar: blue bar proportional to rating
+      { id: 'rating-bar', columns: ['rating'],
+        condition: { type: 'dataBar', min: 1, max: 5, color: '#3b82f6' },
+        style: {} },
+
+      // Top 5 highest salaries — bold yellow highlight
+      { id: 'top5', columns: ['salary'],
+        condition: { type: 'topN', count: 5 },
+        style: { backgroundColor: '#fef9c3', fontWeight: 'bold' } },
+    ],
+  }),
+];`}
+        features={[
+          '18 condition types: greaterThan, lessThan, between, equals, contains, isEmpty, colorScale, dataBar, iconSet, topN, bottomN, aboveAverage, belowAverage, duplicates, custom',
+          'colorScale: gradient background from minColor to maxColor based on numeric value',
+          'dataBar: horizontal proportional bar rendered inside the cell',
+          'iconSet: configure icon thresholds (✓ / ! / ✗) based on value ranges',
+          'Multiple rules per cell — priority controls which styles win on conflict',
+          'Rules can target specific columns or all columns at once',
+        ]}
+      />
+    </>
+  );
+}
+
+function StreamingDemo() {
+  const [running, setRunning] = useState(false);
+  const [ups, setUps] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [connected, setConnected] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const apiRef = useRef<GridApi | null>(null);
+
+  // Simulated streaming data — finance tickers
+  const tickers = useMemo(() => Array.from({ length: 20 }, (_, i) => ({
+    id: `ticker-${i}`,
+    symbol: ['AAPL','MSFT','GOOGL','AMZN','META','TSLA','NVDA','NFLX','AMD','INTC',
+             'QCOM','AVGO','TXN','MU','AMAT','LRCX','KLAC','ASML','SNPS','CDNS'][i],
+    price: +(Math.random() * 800 + 50).toFixed(2),
+    change: +(Math.random() * 10 - 5).toFixed(2),
+    changePct: +(Math.random() * 5 - 2.5).toFixed(2),
+    volume: Math.floor(Math.random() * 10_000_000) + 100_000,
+    mktCap: +(Math.random() * 2000 + 100).toFixed(1),
+  })), []);
+
+  const plugins = useMemo(() => [
+    SortingPlugin({ multiSort: true }),
+    ColumnResizePlugin(),
+    StreamingPlugin({
+      batchInterval: 80,
+      maxBatchSize: 50,
+      flashDuration: 400,
+      enableFlash: true,
+    }),
+  ], []);
+
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'symbol', headerName: 'Symbol', width: 80, sortable: true,
+      cellRenderer: (p: any) => {
+        const el = document.createElement('strong');
+        el.style.cssText = 'font-family:monospace;font-size:13px;color:#1e293b';
+        el.textContent = p.value;
+        return el;
+      }},
+    { field: 'price', headerName: 'Price ($)', width: 110, sortable: true,
+      valueFormatter: (p: any) => `$${Number(p.value).toFixed(2)}` },
+    { field: 'change', headerName: 'Change', width: 90, sortable: true,
+      cellRenderer: (p: any) => {
+        const v = Number(p.value);
+        const el = document.createElement('span');
+        el.style.cssText = `font-weight:600;color:${v >= 0 ? '#16a34a' : '#dc2626'}`;
+        el.textContent = `${v >= 0 ? '+' : ''}${v.toFixed(2)}`;
+        return el;
+      }},
+    { field: 'changePct', headerName: '% Chg', width: 90, sortable: true,
+      cellRenderer: (p: any) => {
+        const v = Number(p.value);
+        const el = document.createElement('span');
+        el.style.cssText = `font-family:monospace;font-weight:600;font-size:12px;color:${v >= 0 ? '#16a34a' : '#dc2626'}`;
+        el.textContent = `${v >= 0 ? '▲' : '▼'} ${Math.abs(v).toFixed(2)}%`;
+        return el;
+      }},
+    { field: 'volume', headerName: 'Volume', width: 110, sortable: true,
+      valueFormatter: (p: any) => (Number(p.value) / 1e6).toFixed(2) + 'M' },
+    { field: 'mktCap', headerName: 'Mkt Cap ($B)', width: 110, sortable: true,
+      valueFormatter: (p: any) => `$${p.value}B` },
+  ], []);
+
+  const onGridReady = useCallback((api: GridApi) => {
+    apiRef.current = api;
+    api.addEventListener('streaming:stats' as any, (e: any) => {
+      setUps(e.updatesPerSecond ?? 0);
+      setTotal(e.totalUpdates ?? 0);
+      setConnected(e.connected ?? false);
+    });
+  }, []);
+
+  const startStreaming = () => {
+    if (intervalRef.current) return;
+    setRunning(true);
+    intervalRef.current = setInterval(() => {
+      const updates = tickers.map(t => ({
+        id: t.id,
+        data: {
+          ...t,
+          price: +(t.price * (1 + (Math.random() - 0.499) * 0.008)).toFixed(2),
+          change: +(Math.random() * 10 - 5).toFixed(2),
+          changePct: +(Math.random() * 5 - 2.5).toFixed(2),
+          volume: Math.floor(Math.random() * 10_000_000) + 100_000,
+        },
+      }));
+      apiRef.current?.dispatchCommand?.('streaming:push-updates', { updates });
+    }, 100);
+  };
+
+  const stopStreaming = () => {
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+    setRunning(false);
+  };
+
+  useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
+
+  return (
+    <>
+      <p style={hintStyle}>
+        Simulates a live stock ticker — 20 symbols updating every 100ms. Cells flash green/red on value changes.
+        The plugin batches updates and renders at 60fps to prevent render storms.
+      </p>
+      <div style={{ marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        {!running
+          ? <button style={{ ...chipBtn, background: '#059669', color: '#fff' }} onClick={startStreaming}>▶ Start Stream</button>
+          : <button style={{ ...chipBtn, background: '#dc2626', color: '#fff' }} onClick={stopStreaming}>⏹ Stop Stream</button>
+        }
+        <span style={{ fontSize: 11, display: 'flex', gap: 14, alignItems: 'center' }}>
+          <span style={{ color: running ? '#059669' : '#9ca3af', fontWeight: 600 }}>
+            {running ? '● LIVE' : '○ STOPPED'}
+          </span>
+          {running && <>
+            <span><span style={{ color: '#6b7280' }}>Updates/sec: </span><strong style={{ color: '#2563eb' }}>{ups}</strong></span>
+            <span><span style={{ color: '#6b7280' }}>Total: </span><strong>{total.toLocaleString()}</strong></span>
+          </>}
+        </span>
+      </div>
+      <GridStorm columns={columns} rowData={tickers} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT - 48}
+        onGridReady={onGridReady} ariaLabel="Live Streaming Demo" />
+      <CodeGuide
+        install="npm install @gridstorm/plugin-streaming"
+        title="Streaming Plugin"
+        code={`import { StreamingPlugin } from '@gridstorm/plugin-streaming';
+
+const plugins = [
+  StreamingPlugin({
+    batchInterval: 100,     // collect updates every 100ms, apply in one batch
+    maxBatchSize: 1000,     // cap per batch to prevent single-frame overload
+    flashDuration: 400,     // ms for cell flash highlight
+    enableFlash: true,      // green/red cell flash on change
+  }),
+];
+
+// Push updates manually (e.g. from WebSocket):
+api.dispatchCommand('streaming:push-updates', {
+  updates: [
+    { id: 'row-1', data: { price: 182.55, change: +1.2 } },
+    { id: 'row-2', data: { price: 94.30, change: -0.8 } },
+  ],
+});
+
+// Or connect a custom adapter:
+StreamingPlugin({ adapter: myWebSocketAdapter })`}
+        features={[
+          'Batched updates — collects all changes within batchInterval then applies in one DOM pass',
+          'Cell flash animations: green for value increase, red for decrease, neutral for text changes',
+          'Change direction tracking per cell — queryable via streaming:get-changes command',
+          'configurable batchInterval and maxBatchSize prevent render storms at high update rates',
+          'Custom StreamAdapter interface — plug in any WebSocket, SSE, or polling source',
+        ]}
+      />
+    </>
+  );
+}
+
+function AiFeaturesDemo() {
+  const [query, setQuery] = useState('');
+  const [nlResult, setNlResult] = useState<{ filter?: string; sort?: string; error?: string } | null>(null);
+  const [anomalies, setAnomalies] = useState<Array<{ colId: string; rowId: string; value: number; zScore: number; severity: string }>>([]);
+  const [watchCols, setWatchCols] = useState<string[]>(['salary', 'rating']);
+  const apiRef = useRef<GridApi | null>(null);
+
+  const plugins = useMemo(() => [
+    SortingPlugin({ multiSort: true }),
+    FilteringPlugin(),
+    ColumnResizePlugin(),
+    NlQueryPlugin({ maxHistory: 20 }),
+    AnomalyPlugin({
+      columns: watchCols.map(id => ({ columnId: id, watchThreshold: 1.5, warningThreshold: 2.0, criticalThreshold: 2.5, windowSize: 50 })),
+      onAnomaly: (a: any) => setAnomalies(prev => [
+        { colId: a.columnId, rowId: a.rowId, value: a.value, zScore: +a.zScore.toFixed(2), severity: a.severity },
+        ...prev.slice(0, 9),
+      ]),
+    }),
+  ], [watchCols]);
+
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 60 },
+    { field: 'name', headerName: 'Name', width: 180, sortable: true, filterable: true },
+    { field: 'department', headerName: 'Department', width: 140, sortable: true, filterable: true },
+    { field: 'salary', headerName: 'Salary', width: 120, sortable: true, filterable: true,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+    { field: 'rating', headerName: 'Rating', width: 90, sortable: true },
+    { field: 'status', headerName: 'Status', width: 110, sortable: true, filterable: true },
+  ], []);
+
+  // Inject some anomalous rows so the demo is interesting
+  const dataWithOutliers = useMemo(() => {
+    const base = EMPLOYEES_200.slice(0, 50).map((e: any) => ({ ...e }));
+    base[5] = { ...base[5], salary: 980000, rating: 4.9 };  // outlier
+    base[15] = { ...base[15], salary: 8500, rating: 0.3 };  // outlier
+    return base;
+  }, []);
+
+  const onGridReady = useCallback((api: GridApi) => { apiRef.current = api; }, []);
+
+  const sendQuery = () => {
+    if (!query.trim()) return;
+    apiRef.current?.dispatchCommand?.('nlquery:execute', { query });
+  };
+
+  const NL_EXAMPLES = ['sort by salary desc', 'filter status equals Active', 'show engineering department', 'sort by rating asc', 'filter salary > 100000'];
+  const SEV_COLOR: Record<string, string> = { watch: '#d97706', warning: '#ea580c', critical: '#dc2626' };
+
+  return (
+    <>
+      <p style={hintStyle}>
+        Two AI features — <strong>NL Query</strong> (natural language → filter/sort) and <strong>Anomaly Detection</strong> (Z-score outliers).
+        <em> Both work 100% offline with no API key.</em>
+      </p>
+
+      {/* NL Query section */}
+      <div style={{ marginBottom: 10, padding: '10px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 }}>🤖 Natural Language Query</div>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+          <input
+            value={query} onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && sendQuery()}
+            placeholder='e.g. "sort by salary desc" or "filter status equals Active"'
+            style={{ ...inputStyle, flex: 1, fontSize: 12 }}
+          />
+          <button style={{ ...chipBtn, background: '#2563eb', color: '#fff' }} onClick={sendQuery}>Run Query</button>
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: nlResult ? 6 : 0 }}>
+          {NL_EXAMPLES.map(ex => (
+            <button key={ex} onClick={() => { setQuery(ex); apiRef.current?.dispatchCommand?.('nlquery:execute', { query: ex }); }}
+              style={{ ...chipBtn, fontSize: 10, padding: '2px 8px', background: '#dbeafe', color: '#1d4ed8' }}>{ex}</button>
+          ))}
+        </div>
+        {nlResult && (
+          <div style={{ fontSize: 11, display: 'flex', gap: 12 }}>
+            {nlResult.error && <span style={{ color: '#ef4444' }}>✗ {nlResult.error}</span>}
+            {nlResult.filter && <span style={{ color: '#059669' }}>✓ Filter applied: <code>{nlResult.filter}</code></span>}
+            {nlResult.sort && <span style={{ color: '#2563eb' }}>✓ Sort: <code>{nlResult.sort}</code></span>}
+          </div>
+        )}
+      </div>
+
+      {/* Anomaly section */}
+      {anomalies.length > 0 && (
+        <div style={{ marginBottom: 8, padding: '8px 14px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#c2410c', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>🔍 Anomaly Alerts</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {anomalies.slice(0, 5).map((a, i) => (
+              <span key={i} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: `${SEV_COLOR[a.severity]}15`, color: SEV_COLOR[a.severity], fontWeight: 600 }}>
+                {a.colId} row {a.rowId}: {a.value.toLocaleString()} (z={a.zScore}) — {a.severity.toUpperCase()}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <GridStorm columns={columns} rowData={dataWithOutliers} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT - (nlResult || anomalies.length > 0 ? 160 : 100)}
+        floatingFilter floatingFilterDebounce={300}
+        onGridReady={onGridReady} ariaLabel="AI Features Demo" />
+      <CodeGuide
+        install="npm install @gridstorm/plugin-nl-query @gridstorm/plugin-anomaly"
+        title="AI Features (NL Query + Anomaly Detection)"
+        code={`import { NlQueryPlugin } from '@gridstorm/plugin-nl-query';
+import { AnomalyPlugin } from '@gridstorm/plugin-anomaly';
+
+// Both work OFFLINE — no API key, no external LLM
+const plugins = [
+  NlQueryPlugin({ maxHistory: 20 }),
+
+  AnomalyPlugin({
+    columns: [
+      { columnId: 'salary', watchThreshold: 1.5, warningThreshold: 2.0, criticalThreshold: 2.5, windowSize: 50 },
+      { columnId: 'rating', watchThreshold: 1.5, warningThreshold: 2.0, criticalThreshold: 2.5, windowSize: 50 },
+    ],
+    onAnomaly: (a) => console.log(a.columnId, a.value, a.zScore, a.severity),
+  }),
+];
+
+// Send an NL query programmatically:
+api.dispatchCommand('nlquery:execute', { query: 'sort by salary desc' });`}
+        features={[
+          'NL Query: understands sort, filter, show/hide, and comparison operators in plain English',
+          'NL Query: works offline — regex + grammar engine, no external LLM or API key required',
+          'Anomaly Detection: rolling Z-score + IQR per column with configurable thresholds',
+          'Three severity tiers: WATCH / WARNING / CRITICAL — each with its own Z-score threshold',
+          'onAnomaly fires in real-time — works with live streaming data from the Streaming plugin',
+        ]}
+      />
+    </>
+  );
+}
+
 // ── Demo Renderer Map ──
 
 const DEMO_MAP: Record<string, () => JSX.Element> = {
@@ -2379,6 +3138,13 @@ const DEMO_MAP: Record<string, () => JSX.Element> = {
   'infinite-scroll': InfiniteScrollDemo,
   'status-badges': StatusBadgesDemo,
   'full-featured': FullFeaturedDemo,
+  // Tier 3 — new
+  'status-bar': StatusBarDemo,
+  'state-persistence': StatePersistenceDemo,
+  'row-pinning': RowPinningDemo,
+  'conditional-formatting': ConditionalFormattingDemo,
+  'streaming': StreamingDemo,
+  'ai-features': AiFeaturesDemo,
   // Horizon 1-3 next-gen demos
   'intent-engine': IntentEngineDemo,
   'cell-formula': CellFormulaDemo,
@@ -2479,7 +3245,7 @@ export function App() {
               >GridStorm</a>{' '}
               <span style={{ fontWeight: 400, color: '#666' }}>Features</span>
             </h1>
-            <p style={{ fontSize: 11, color: '#999', marginTop: 3, marginBottom: 0 }}>33 interactive demos</p>
+            <p style={{ fontSize: 11, color: '#999', marginTop: 3, marginBottom: 0 }}>39 interactive demos</p>
           </div>
           {/* Close button */}
           <button

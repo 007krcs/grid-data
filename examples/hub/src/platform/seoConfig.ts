@@ -117,6 +117,7 @@ const DOCS_SEO: SeoConfig = {
   },
 };
 
+
 const DEMOS_SEO: SeoConfig = {
   title: 'GridStorm Live Demos — See It In Action',
   description:

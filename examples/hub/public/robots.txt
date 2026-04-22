@@ -4,6 +4,10 @@ Allow: /
 # Sitemap
 Sitemap: https://gridstorm.tekivex.com/sitemap.xml
 
+# LLM-friendly documentation index (llms.txt spec)
+# https://llmstxt.org/
+LLMs: https://gridstorm.tekivex.com/llms.txt
+
 # Crawl-delay
 Crawl-delay: 1
 

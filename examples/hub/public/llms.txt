@@ -1,0 +1,146 @@
+# GridStorm
+
+> GridStorm is an open-source, headless enterprise data grid platform for the web.
+> MIT-licensed core with 28+ composable plugins, virtual scrolling (100K+ rows @ 60fps),
+> WCAG 2.1 AA accessibility, 42-function Excel formula engine, Excel-compatible copy/paste,
+> and framework adapters for React, Vue, Angular, Svelte, and Vanilla JS.
+
+GridStorm ships as a pnpm monorepo with a sub-50 KB headless core, a DOM renderer,
+framework adapters, and 28 plugins across three tiers:
+
+- **Tier 1 (MIT, free forever)**: Sorting, Filtering, Selection, Editing, Pagination,
+  Column Pinning, Column Resize, Column Reorder, Context Menu, Clipboard
+- **Tier 2 (Pro)**: Grouping, Aggregation, Pivoting, Master-Detail, Tree Data,
+  Row Reorder, Excel Export, PDF Export, Sparklines, Charts, Server-Side Row Model
+- **Tier 3 / Next-Gen (Pro)**: Status Bar, State Persistence, Row Pinning,
+  Conditional Formatting, Live Streaming, NL Query (AI/offline), Anomaly Detection (AI)
+
+Install:
+```
+npm install @gridstorm/core @gridstorm/dom-renderer @gridstorm/react
+```
+
+## Documentation
+
+- [Introduction](https://gridstorm.tekivex.com/#/docs/getting-started/introduction): What is GridStorm, architecture overview, and design goals
+- [Quick Start](https://gridstorm.tekivex.com/#/docs/getting-started/quick-start): 5-minute guide to get a grid running in React
+- [Installation](https://gridstorm.tekivex.com/#/docs/getting-started/installation): npm/pnpm install, peer deps, bundler setup
+
+### Core Concepts
+
+- [Architecture](https://gridstorm.tekivex.com/#/docs/core-concepts/architecture): Headless engine, store, command bus, event bus, and plugin lifecycle
+- [Columns](https://gridstorm.tekivex.com/#/docs/core-concepts/columns): ColumnDef, field mapping, headerName, width, valueFormatter, cellRenderer
+- [Row Data](https://gridstorm.tekivex.com/#/docs/core-concepts/row-data): RowNode model, data flow, rowId, and mutation patterns
+- [Theming](https://gridstorm.tekivex.com/#/docs/core-concepts/theming): CSS custom properties, light/dark/high-contrast themes, density modes
+- [Events & Commands](https://gridstorm.tekivex.com/#/docs/core-concepts/events-commands): Unidirectional event bus, command dispatch, plugin communication
+- [Store](https://gridstorm.tekivex.com/#/docs/core-concepts/store): Immutable state slices, selectors, batched updates
+- [DOM Renderer](https://gridstorm.tekivex.com/#/docs/core-concepts/dom-renderer): Virtual scroll, row/cell rendering, scroll sync, keyboard navigation
+- [Plugin System (Deep Dive)](https://gridstorm.tekivex.com/#/docs/core-concepts/plugin-system): Topological resolution, lifecycle hooks, writing your own plugin
+
+### Plugins — Core (Free, MIT)
+
+- [Plugin System](https://gridstorm.tekivex.com/#/docs/plugins/plugin-system): Plugin API, install/uninstall, dependency ordering
+- [Sorting](https://gridstorm.tekivex.com/#/docs/plugins/sorting): Single/multi-column sort, custom comparators, sort indicators
+- [Filtering](https://gridstorm.tekivex.com/#/docs/plugins/filtering): Column filters, quick filter, floating filters, filter models
+- [Selection](https://gridstorm.tekivex.com/#/docs/plugins/selection): Single/multi-row, checkbox column, range selection, selectAll
+- [Editing](https://gridstorm.tekivex.com/#/docs/plugins/editing): Cell editors, start/stop editing, validation hooks, full-row mode
+- [Pagination](https://gridstorm.tekivex.com/#/docs/plugins/pagination): Page size, go-to-page, total count, server-side compatible
+- [Column Pinning](https://gridstorm.tekivex.com/#/docs/plugins/column-pinning): Pin columns left/right, frozen pane rendering
+- [Column Resize](https://gridstorm.tekivex.com/#/docs/plugins/column-resize): Drag-to-resize, min/max width, auto-fit
+- [Column Reorder](https://gridstorm.tekivex.com/#/docs/plugins/column-reorder): Drag-and-drop column rearrangement, lock positions
+- [Context Menu](https://gridstorm.tekivex.com/#/docs/plugins/context-menu): Right-click menus, custom items, separator, async items
+- [Clipboard](https://gridstorm.tekivex.com/#/docs/plugins/clipboard): Copy/paste cells and ranges, CSV format, custom serializers
+
+### Plugins — Enterprise (Pro)
+
+- [Grouping](https://gridstorm.tekivex.com/#/docs/plugins/grouping): Row grouping by column, group expand/collapse, group footers
+- [Aggregation](https://gridstorm.tekivex.com/#/docs/plugins/aggregation): sum, avg, min, max, count per group, custom aggregators
+- [Pivoting](https://gridstorm.tekivex.com/#/docs/plugins/pivoting): Pivot columns, cross-tab layout, pivot value aggregation
+- [Master Detail](https://gridstorm.tekivex.com/#/docs/plugins/master-detail): Expandable row detail panels, nested grids
+- [Tree Data](https://gridstorm.tekivex.com/#/docs/plugins/tree-data): Hierarchical row data, tree expand/collapse, path-based data
+- [Row Reorder](https://gridstorm.tekivex.com/#/docs/plugins/row-reorder): Drag rows to reorder, event callbacks
+- [Excel Export](https://gridstorm.tekivex.com/#/docs/plugins/excel-export): Export to .xlsx with styles, formulas, column widths
+- [PDF Export](https://gridstorm.tekivex.com/#/docs/plugins/pdf-export): Export grid to PDF with pagination and theming
+- [Sparklines](https://gridstorm.tekivex.com/#/docs/plugins/sparklines): Inline mini-charts (line, bar, area) in cells
+- [Charts](https://gridstorm.tekivex.com/#/docs/plugins/charts): Full chart panel from selected ranges — bar, line, scatter, pie
+- [Server-Side Row Model](https://gridstorm.tekivex.com/#/docs/plugins/ssrm): Lazy-load rows from server, infinite scroll, server-side grouping
+
+### Plugins — Next-Gen (Pro)
+
+- [Status Bar](https://gridstorm.tekivex.com/#/docs/plugins/status-bar): Aggregation summary bar (sum/avg/min/max/count), selection-aware
+- [State Persistence](https://gridstorm.tekivex.com/#/docs/plugins/state-persistence): Auto-save/restore grid state to localStorage or custom storage; commands: state:save, state:restore, state:clear
+- [Row Pinning](https://gridstorm.tekivex.com/#/docs/plugins/row-pinning): Pin rows to top/bottom (floating rows), capacity limits
+- [Conditional Formatting](https://gridstorm.tekivex.com/#/docs/plugins/conditional-formatting): 18 condition types — colorScale, dataBar, iconSet, topN, aboveAverage, etc.
+- [Streaming / Live Data](https://gridstorm.tekivex.com/#/docs/plugins/streaming): Real-time updates via command streaming:push-updates, cell direction tracking, batched processing
+- [AI Integration](https://gridstorm.tekivex.com/#/docs/plugins/ai): NL Query (nlquery:execute command, offline regex engine) and Anomaly Detection (Z-score + IQR, columnId/watchThreshold/warningThreshold/criticalThreshold/windowSize config)
+
+### Plugins — Differentiators
+
+- [Formula Engine](https://gridstorm.tekivex.com/#/docs/plugins/formula): Cell formula parsing, 42 Excel-compatible functions, dependency tracking
+- [Time Travel](https://gridstorm.tekivex.com/#/docs/plugins/time-travel): Undo/redo for all grid state changes
+- [Cell Range Selection](https://gridstorm.tekivex.com/#/docs/plugins/cell-range): Excel-like range selection, fill handle, range copy
+- [Data Validation](https://gridstorm.tekivex.com/#/docs/plugins/validation): Cell-level validation rules, error display, blocking vs warning mode
+
+### Plugins — Enterprise Tier
+
+- [Accessibility (WCAG 2.1 AA)](https://gridstorm.tekivex.com/#/docs/plugins/a11y): Full keyboard navigation, ARIA roles, screen-reader announcements
+- [Formula Engine Pro](https://gridstorm.tekivex.com/#/docs/plugins/formula-engine): 42 Excel functions, cross-cell dependencies, array formulas
+- [Clipboard Pro](https://gridstorm.tekivex.com/#/docs/plugins/clipboard-pro): Excel-compatible copy/paste, rich formatting preservation
+
+### Framework Guides
+
+- [React](https://gridstorm.tekivex.com/#/docs/frameworks/react): `<GridStorm>` component, hooks (useGridState, useGridSort, useGridFilter, useGridSelection), portals, error boundary
+- [Vue](https://gridstorm.tekivex.com/#/docs/frameworks/vue): `<GridStorm>` Vue 3 component, composables
+- [Svelte](https://gridstorm.tekivex.com/#/docs/frameworks/svelte): `<GridStorm>` Svelte 4 component, stores
+- [Angular](https://gridstorm.tekivex.com/#/docs/frameworks/angular): `GridStormModule`, input bindings, event outputs
+- [Vanilla JS](https://gridstorm.tekivex.com/#/docs/frameworks/vanilla): createGrid(), DOM renderer, no framework required
+
+### Guides
+
+- [Migrate from AG Grid](https://gridstorm.tekivex.com/#/docs/guides/migration-from-ag-grid): Column defs, plugin equivalents, API mapping, breaking differences
+- [MCP Server (AI Integration)](https://gridstorm.tekivex.com/#/docs/guides/mcp-server): Expose grid state to LLMs via Model Context Protocol
+- [PDF Toolkit](https://gridstorm.tekivex.com/#/docs/guides/pdf-toolkit): WASM-based PDF rendering, text extraction, full-text search, AI redaction
+- [Integration Guide](https://gridstorm.tekivex.com/#/docs/guides/integration-guide): Adding GridStorm to existing React/Vue/Angular projects
+- [Custom Plugins](https://gridstorm.tekivex.com/#/docs/guides/custom-plugins): Writing, registering, and publishing your own GridStorm plugin
+- [Performance](https://gridstorm.tekivex.com/#/docs/guides/performance): Virtual scroll tuning, row height modes, batch update patterns
+- [Accessibility](https://gridstorm.tekivex.com/#/docs/guides/accessibility): WCAG 2.1 AA compliance checklist, keyboard navigation, ARIA
+
+### API Reference
+
+- [GridConfig](https://gridstorm.tekivex.com/#/docs/api/grid-config): All top-level props: columns, rowData, plugins, rowHeight, headerHeight, theme, etc.
+- [GridApi](https://gridstorm.tekivex.com/#/docs/api/grid-api): dispatchCommand, addEventListener, setSortModel, setFilterModel, getAllColumns, applyColumnState
+- [Column Definitions](https://gridstorm.tekivex.com/#/docs/api/column-definitions): ColumnDef type, all fields, cellRenderer, valueFormatter, sortable, filterable, editable
+- [Row Nodes](https://gridstorm.tekivex.com/#/docs/api/row-nodes): RowNode, rowId, data, children, expanded, pinned
+
+## Optional
+
+### Live Demos
+
+- [Feature Showcase](https://gridstorm.tekivex.com/feature-showcase/): Interactive gallery of 39 plugin demos with live code examples
+- [Playground](https://gridstorm.tekivex.com/playground/): Monaco-powered editor with live grid preview
+- [Financial Trading Demo](https://gridstorm.tekivex.com/financial-trading/): Real-time streaming grid with live price ticks
+- [PDF Viewer Demo](https://gridstorm.tekivex.com/pdf-viewer/): WASM PDF rendering with text search and AI redaction
+- [Analytics Explorer](https://gridstorm.tekivex.com/analytics-explorer/): Pivot tables and KPI dashboards with drag-and-drop
+- [React Demo](https://gridstorm.tekivex.com/react-demo/): Minimal React integration example
+- [Spreadsheet Demo](https://gridstorm.tekivex.com/spreadsheet/): Excel-like editing with formula engine
+
+### Blog
+
+- [Plugin-First Architecture](https://gridstorm.tekivex.com/#/docs/blog/architecture-deep-dive): Why GridStorm uses a headless plugin model instead of a monolithic grid
+- [GridStorm vs AG Grid](https://gridstorm.tekivex.com/#/docs/blog/gridstorm-vs-ag-grid): Feature-by-feature comparison, bundle size, and pricing analysis
+- [CSS Variable Theming](https://gridstorm.tekivex.com/#/docs/blog/css-variable-theming): How GridStorm uses CSS custom properties for zero-JS runtime theming
+
+### Key Technical Notes for LLMs
+
+- Plugin options use exact TypeScript types — e.g. StatePersistenceOptions has: storageKey, storage, autoSave, debounceMs, include, exclude, migrations, onRestoreError
+- State persistence commands: 'state:save', 'state:restore', 'state:clear', 'state:export', 'state:import'
+- NL Query command: 'nlquery:execute' (not 'nl-query:process'). NlQueryOptions: maxHistory, caseSensitive, columnAliases only
+- AnomalyPlugin column config: { columnId, watchThreshold, warningThreshold, criticalThreshold, windowSize }
+- StatusBarPlugin event: 'status-bar:updated' with aggregations object per configured column
+- StreamingPlugin command: 'streaming:push-updates', event: 'streaming:stats'
+- RowPinningPlugin commands: 'row-pinning:pin', 'row-pinning:clear-all'; event: 'row-pinning:changed'
+- ConditionalFormattingPlugin: 18 condition types including colorScale, dataBar, iconSet, topN, aboveAverage
+- CSS custom properties namespace: --hub-* (hub UI), --gs-* (grid theming)
+- GridEventMap does not have extensible index signature — plugins must use 'as any' for custom events
+- Framework adapters: @gridstorm/react, @gridstorm/vue, @gridstorm/angular, @gridstorm/svelte
+- GitHub: https://github.com/007krcs/grid-data

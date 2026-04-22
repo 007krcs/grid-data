@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-semantic",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "GridStorm semantic detection plugin — analyzes column values to detect data types and column relationships",
   "private": false,
   "type": "module",

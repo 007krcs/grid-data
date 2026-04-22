@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-privacy-lens",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "GridStorm privacy lens plugin — scans for PII, masks sensitive values, and generates GDPR/CCPA data maps",
   "private": false,
   "type": "module",

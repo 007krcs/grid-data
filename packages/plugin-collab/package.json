@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-collab",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "GridStorm collaboration plugin — multi-user presence tracking and optimistic cell-level locking",
   "private": false,
   "type": "module",

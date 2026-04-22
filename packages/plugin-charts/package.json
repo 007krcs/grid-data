@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-charts",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "GridStorm charts plugin — SVG-based inline charts (bar, line, pie, scatter)",
   "type": "module",
   "main": "./dist/index.cjs",

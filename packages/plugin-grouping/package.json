@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-grouping",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "GridStorm grouping plugin — row grouping with expand/collapse",
   "type": "module",
   "main": "./dist/index.cjs",

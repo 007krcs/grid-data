@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-intelligence-hub",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "GridStorm intelligence hub plugin — aggregates behavioral patterns across grid instances with differential privacy",
   "private": false,
   "type": "module",

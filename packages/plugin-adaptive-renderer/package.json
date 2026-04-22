@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-adaptive-renderer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "GridStorm adaptive renderer plugin — detects device capabilities and recommends optimal grid layout configurations",
   "private": false,
   "type": "module",

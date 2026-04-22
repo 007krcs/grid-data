@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-excel-export",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "GridStorm Excel export plugin — CSV and Excel XML export with formatting callbacks",
   "type": "module",
   "main": "./dist/index.cjs",

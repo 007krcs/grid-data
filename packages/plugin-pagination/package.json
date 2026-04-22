@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-pagination",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "GridStorm pagination plugin — client-side page navigation",
   "type": "module",
   "main": "./dist/index.cjs",

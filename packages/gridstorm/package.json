@@ -1,6 +1,6 @@
 {
   "name": "gridstorm",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "GridStorm — The complete enterprise data grid. One package, everything included: core engine, 32 plugins (incl. Formula Engine, Time Travel, Cell Range, Validation), DOM renderer, theming, i18n, and PDF toolkit.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -134,10 +134,20 @@
     "@angular/core": ">=17.0.0"
   },
   "peerDependenciesMeta": {
-    "react": { "optional": true },
-    "react-dom": { "optional": true },
-    "vue": { "optional": true },
-    "svelte": { "optional": true },
-    "@angular/core": { "optional": true }
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    },
+    "svelte": {
+      "optional": true
+    },
+    "@angular/core": {
+      "optional": true
+    }
   }
 }

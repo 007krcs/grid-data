@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-ssrm",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Server-side row model plugin for GridStorm — lazy loading with block-based caching",
   "type": "module",
   "main": "./dist/index.cjs",

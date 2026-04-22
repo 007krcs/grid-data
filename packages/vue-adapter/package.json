@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/vue",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "GridStorm Vue 3 adapter",
   "type": "module",
   "main": "./dist/index.cjs",

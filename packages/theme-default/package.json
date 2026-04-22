@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/theme-default",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "GridStorm default theme with CSS custom properties",
   "type": "module",
   "main": "./src/index.css",

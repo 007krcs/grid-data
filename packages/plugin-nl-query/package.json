@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-nl-query",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "GridStorm NL Query plugin — parse natural language queries into filter/sort/group commands",
   "private": false,
   "type": "module",

@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-anomaly",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "GridStorm anomaly detection plugin — rolling statistical baseline with z-score threshold alerts",
   "private": false,
   "type": "module",

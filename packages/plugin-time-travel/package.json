@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-time-travel",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Git-for-grids: full state history with undo/redo, snapshots, diffs, and branches",
   "type": "module",
   "main": "./dist/index.cjs",

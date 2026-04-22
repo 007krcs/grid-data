@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-sorting",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "GridStorm sorting plugin — single and multi-column sorting",
   "type": "module",
   "main": "./dist/index.cjs",

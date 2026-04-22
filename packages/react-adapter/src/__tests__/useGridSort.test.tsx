@@ -5,6 +5,7 @@ import React from 'react';
 import { GridStorm } from '../GridStorm';
 import { useGridSort } from '../hooks/useGridSort';
 import type { GridApi } from '@gridstorm/core';
+import { SortingPlugin } from '../../../plugin-sorting/src/sorting-plugin';
 
 const COLUMNS = [
   { field: 'id',   headerName: 'ID',   sortable: true },
@@ -69,7 +70,7 @@ describe('useGridSort', () => {
 
   it('toggleSort dispatches sort command and updates isSorted', async () => {
     render(
-      <GridStorm columns={COLUMNS} rowData={ROWS}>
+      <GridStorm columns={COLUMNS} rowData={ROWS} plugins={[SortingPlugin()]}>
         <SortWidget onApi={() => {}} />
       </GridStorm>,
     );

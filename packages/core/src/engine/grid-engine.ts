@@ -383,9 +383,11 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
 
     // Sorting
     setSortModel(model) {
-      store.setState((prev) => ({ ...prev, sortModel: model }));
+      // Guard: coerce null/undefined to empty array so downstream code never crashes
+      const safeModel = Array.isArray(model) ? model : [];
+      store.setState((prev) => ({ ...prev, sortModel: safeModel }));
       reprocessRows();
-      eventBus.emit('column:sort:changed', { sortModel: model });
+      eventBus.emit('column:sort:changed', { sortModel: safeModel });
     },
 
     getSortModel() {

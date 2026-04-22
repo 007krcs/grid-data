@@ -360,17 +360,18 @@ describe('CollabPlugin', () => {
     expect(presenceListener).not.toHaveBeenCalled();
   });
 
-  it('createInMemoryTransport sends messages to registered listeners', (done) => {
+  it('createInMemoryTransport sends messages to registered listeners', async () => {
+    vi.useFakeTimers();
     const transport = createInMemoryTransport();
     const received: unknown[] = [];
 
     transport.onMessage((msg) => received.push(msg));
     transport.send({ type: 'join', userId: 'alice' });
 
-    setTimeout(() => {
-      expect(received).toHaveLength(1);
-      expect((received[0] as { type: string }).type).toBe('join');
-      done();
-    }, 20);
+    await vi.runAllTimersAsync();
+    vi.useRealTimers();
+
+    expect(received).toHaveLength(1);
+    expect((received[0] as { type: string }).type).toBe('join');
   });
 });

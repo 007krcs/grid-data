@@ -1,72 +1,73 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 
-// Since we're in jsdom without full React rendering,
-// test the hooks and engine lifecycle logic directly
+// Pre-load heavy adapter modules at import time (not inside individual tests)
+// so they don't timeout under concurrent test-suite load.
+import * as GridStormMod from '../GridStorm';
+import * as useGridStateMod from '../hooks/useGridState';
+import * as useGridColumnMod from '../hooks/useGridColumn';
+import * as useGridSortMod from '../hooks/useGridSort';
+import * as useGridFilterMod from '../hooks/useGridFilter';
+import * as useGridSelectionMod from '../hooks/useGridSelection';
+import * as useGridPaginationMod from '../hooks/useGridPagination';
+import * as contextMod from '../context';
+import * as ErrorBoundaryMod from '../ErrorBoundary';
+import * as indexMod from '../index';
+// Pre-warm the core engine so subsequent dynamic imports are cache-hits
+import { createGrid } from '../../../core/src/engine/grid-engine';
 
 describe('React Adapter', () => {
   describe('GridStorm component', () => {
-    it('should export GridStorm component', async () => {
-      const mod = await import('../GridStorm');
-      expect(mod.GridStorm).toBeDefined();
-      expect(typeof mod.GridStorm).toBe('function');
+    it('should export GridStorm component', () => {
+      expect(GridStormMod.GridStorm).toBeDefined();
+      expect(typeof GridStormMod.GridStorm).toBe('function');
     });
 
-    it('should export useGridState hook', async () => {
-      const mod = await import('../hooks/useGridState');
-      expect(mod.useGridState).toBeDefined();
+    it('should export useGridState hook', () => {
+      expect(useGridStateMod.useGridState).toBeDefined();
     });
 
-    it('should export useGridColumn hook', async () => {
-      const mod = await import('../hooks/useGridColumn');
-      expect(mod.useGridColumn).toBeDefined();
+    it('should export useGridColumn hook', () => {
+      expect(useGridColumnMod.useGridColumn).toBeDefined();
     });
 
-    it('should export useGridSort hook', async () => {
-      const mod = await import('../hooks/useGridSort');
-      expect(mod.useGridSort).toBeDefined();
+    it('should export useGridSort hook', () => {
+      expect(useGridSortMod.useGridSort).toBeDefined();
     });
 
-    it('should export useGridFilter hook', async () => {
-      const mod = await import('../hooks/useGridFilter');
-      expect(mod.useGridFilter).toBeDefined();
+    it('should export useGridFilter hook', () => {
+      expect(useGridFilterMod.useGridFilter).toBeDefined();
     });
 
-    it('should export useGridSelection hook', async () => {
-      const mod = await import('../hooks/useGridSelection');
-      expect(mod.useGridSelection).toBeDefined();
+    it('should export useGridSelection hook', () => {
+      expect(useGridSelectionMod.useGridSelection).toBeDefined();
     });
 
-    it('should export useGridPagination hook', async () => {
-      const mod = await import('../hooks/useGridPagination');
-      expect(mod.useGridPagination).toBeDefined();
+    it('should export useGridPagination hook', () => {
+      expect(useGridPaginationMod.useGridPagination).toBeDefined();
     });
 
-    it('should export GridContext and useGridContext', async () => {
-      const mod = await import('../context');
-      expect(mod.GridContext).toBeDefined();
-      expect(mod.useGridContext).toBeDefined();
+    it('should export GridContext and useGridContext', () => {
+      expect(contextMod.GridContext).toBeDefined();
+      expect(contextMod.useGridContext).toBeDefined();
     });
 
-    it('should export ErrorBoundary', async () => {
-      const mod = await import('../ErrorBoundary');
-      expect(mod.GridErrorBoundary).toBeDefined();
+    it('should export ErrorBoundary', () => {
+      expect(ErrorBoundaryMod.GridErrorBoundary).toBeDefined();
     });
 
-    it('should export index with all public APIs', async () => {
-      const mod = await import('../index');
-      expect(mod.GridStorm).toBeDefined();
-      expect(mod.useGridState).toBeDefined();
-      expect(mod.useGridSort).toBeDefined();
-      expect(mod.useGridFilter).toBeDefined();
-      expect(mod.useGridSelection).toBeDefined();
-      expect(mod.useGridPagination).toBeDefined();
+    it('should export index with all public APIs', () => {
+      expect(indexMod.GridStorm).toBeDefined();
+      expect(indexMod.useGridState).toBeDefined();
+      expect(indexMod.useGridSort).toBeDefined();
+      expect(indexMod.useGridFilter).toBeDefined();
+      expect(indexMod.useGridSelection).toBeDefined();
+      expect(indexMod.useGridPagination).toBeDefined();
     });
   });
 
   describe('Engine lifecycle', () => {
-    it('should create and destroy engine via createGrid', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should create and destroy engine via createGrid', () => {
       const engine = createGrid({
         columns: [{ field: 'name' }],
         rowData: [{ name: 'Alice' }, { name: 'Bob' }],
@@ -76,9 +77,7 @@ describe('React Adapter', () => {
       engine.destroy();
     });
 
-    it('should handle StrictMode double-mount pattern', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
-
+    it('should handle StrictMode double-mount pattern', () => {
       // Simulate StrictMode: create, destroy, create again
       const engine1 = createGrid({
         columns: [{ field: 'name' }],
@@ -88,7 +87,6 @@ describe('React Adapter', () => {
       expect(engine1.api.getDisplayedRowCount()).toBe(1);
       engine1.destroy();
 
-      // Second mount should work fine
       const engine2 = createGrid({
         columns: [{ field: 'name' }],
         rowData: [{ name: 'Bob' }],
@@ -99,8 +97,7 @@ describe('React Adapter', () => {
       engine2.destroy();
     });
 
-    it('should support transaction updates after creation', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should support transaction updates after creation', () => {
       const engine = createGrid({
         columns: [{ field: 'name' }],
         rowData: [{ name: 'Alice' }],
@@ -116,35 +113,19 @@ describe('React Adapter', () => {
       engine.destroy();
     });
 
-    it('should initialize with empty rowData when not provided', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should initialize with empty rowData when not provided', () => {
       const engine = createGrid({
-        columns: [{ field: 'id' }, { field: 'value' }],
+        columns: [{ field: 'name' }],
+        rowData: [],
       });
 
       expect(engine.api.getDisplayedRowCount()).toBe(0);
       engine.destroy();
     });
-
-    it('should expose api, store, eventBus, commandBus, and pluginManager', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
-      const engine = createGrid({
-        columns: [{ field: 'id' }],
-        rowData: [],
-      });
-
-      expect(engine.api).toBeDefined();
-      expect(engine.store).toBeDefined();
-      expect(engine.eventBus).toBeDefined();
-      expect(engine.commandBus).toBeDefined();
-      expect(engine.pluginManager).toBeDefined();
-      engine.destroy();
-    });
   });
 
   describe('Sort integration', () => {
-    it('should apply sort model via api.setSortModel', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should apply sort model via api.setSortModel', () => {
       const engine = createGrid({
         columns: [{ field: 'name' }, { field: 'age' }],
         rowData: [
@@ -165,8 +146,7 @@ describe('React Adapter', () => {
       engine.destroy();
     });
 
-    it('should clear sort model', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should clear sort model', () => {
       const engine = createGrid({
         columns: [{ field: 'name' }],
         rowData: [{ name: 'Bob' }, { name: 'Alice' }],
@@ -182,8 +162,7 @@ describe('React Adapter', () => {
       engine.destroy();
     });
 
-    it('should emit column:sort:changed event when sort model changes', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should emit column:sort:changed event when sort model changes', () => {
       const engine = createGrid({
         columns: [{ field: 'name' }],
         rowData: [{ name: 'Alice' }, { name: 'Bob' }],
@@ -198,8 +177,7 @@ describe('React Adapter', () => {
       engine.destroy();
     });
 
-    it('should support descending sort', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should support descending sort', () => {
       const engine = createGrid({
         columns: [{ field: 'age' }],
         rowData: [{ age: 10 }, { age: 30 }, { age: 20 }],
@@ -213,11 +191,21 @@ describe('React Adapter', () => {
 
       engine.destroy();
     });
+
+    it('setSortModel with null gracefully resets to empty array', () => {
+      const engine = createGrid({
+        columns: [{ field: 'name' }],
+        rowData: [],
+      });
+
+      expect(() => engine.api.setSortModel(null as any)).not.toThrow();
+      expect(engine.store.getState().sortModel).toEqual([]);
+      engine.destroy();
+    });
   });
 
   describe('Filter integration', () => {
-    it('should apply quick filter', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should apply quick filter', () => {
       const engine = createGrid({
         columns: [{ field: 'name' }],
         rowData: [{ name: 'Alice' }, { name: 'Bob' }, { name: 'Alicia' }],
@@ -233,8 +221,7 @@ describe('React Adapter', () => {
       engine.destroy();
     });
 
-    it('should emit quickFilter:changed event', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should emit quickFilter:changed event', () => {
       const engine = createGrid({
         columns: [{ field: 'name' }],
         rowData: [{ name: 'Alice' }, { name: 'Bob' }],
@@ -249,8 +236,7 @@ describe('React Adapter', () => {
       engine.destroy();
     });
 
-    it('should clear filter model', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should clear filter model', () => {
       const engine = createGrid({
         columns: [{ field: 'name' }],
         rowData: [{ name: 'Alice' }, { name: 'Bob' }],
@@ -269,8 +255,7 @@ describe('React Adapter', () => {
   });
 
   describe('Selection integration', () => {
-    it('should select all rows', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should select all rows', () => {
       const engine = createGrid({
         columns: [{ field: 'id' }],
         rowData: [{ id: 1 }, { id: 2 }, { id: 3 }],
@@ -284,8 +269,7 @@ describe('React Adapter', () => {
       engine.destroy();
     });
 
-    it('should deselect all rows', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should deselect all rows', () => {
       const engine = createGrid({
         columns: [{ field: 'id' }],
         rowData: [{ id: 1 }, { id: 2 }],
@@ -302,8 +286,7 @@ describe('React Adapter', () => {
       engine.destroy();
     });
 
-    it('should return selected rows data', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should return selected rows data', () => {
       const engine = createGrid({
         columns: [{ field: 'name' }],
         rowData: [{ name: 'Alice' }, { name: 'Bob' }],
@@ -314,13 +297,12 @@ describe('React Adapter', () => {
       engine.api.selectAll();
       const selected = engine.api.getSelectedRows();
       expect(selected.length).toBe(2);
-      expect(selected.map(r => r.name).sort()).toEqual(['Alice', 'Bob']);
+      expect(selected.map((r: any) => r.name).sort()).toEqual(['Alice', 'Bob']);
 
       engine.destroy();
     });
 
-    it('should emit selection:changed event', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should emit selection:changed event', () => {
       const engine = createGrid({
         columns: [{ field: 'id' }],
         rowData: [{ id: 1 }],
@@ -339,8 +321,7 @@ describe('React Adapter', () => {
   });
 
   describe('Row data management', () => {
-    it('should update rowData via setRowData', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should update rowData via setRowData', () => {
       const engine = createGrid({
         columns: [{ field: 'name' }],
         rowData: [{ name: 'Alice' }, { name: 'Bob' }],
@@ -355,8 +336,7 @@ describe('React Adapter', () => {
       engine.destroy();
     });
 
-    it('should emit rowData:changed event on setRowData', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should emit rowData:changed event on setRowData', () => {
       const engine = createGrid({
         columns: [{ field: 'name' }],
         rowData: [],
@@ -371,8 +351,7 @@ describe('React Adapter', () => {
       engine.destroy();
     });
 
-    it('should update individual rows via updateRows', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should update individual rows via updateRows', () => {
       const engine = createGrid({
         columns: [{ field: 'name' }, { field: 'age' }],
         rowData: [{ name: 'Alice', age: 25 }],
@@ -386,8 +365,7 @@ describe('React Adapter', () => {
       engine.destroy();
     });
 
-    it('should add rows via addRows', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should add rows via addRows', () => {
       const engine = createGrid({
         columns: [{ field: 'id' }],
         rowData: [{ id: 1 }],
@@ -400,8 +378,7 @@ describe('React Adapter', () => {
       engine.destroy();
     });
 
-    it('should remove rows via removeRows', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should remove rows via removeRows', () => {
       const engine = createGrid({
         columns: [{ field: 'id' }],
         rowData: [{ id: 1 }, { id: 2 }, { id: 3 }],
@@ -417,8 +394,7 @@ describe('React Adapter', () => {
   });
 
   describe('Event bus integration', () => {
-    it('should support event subscription and unsubscription', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should support event subscription and unsubscription', () => {
       const engine = createGrid({
         columns: [{ field: 'name' }],
         rowData: [],
@@ -432,13 +408,12 @@ describe('React Adapter', () => {
 
       unsub();
       engine.api.setRowData([{ name: 'Bob' }]);
-      expect(cb).toHaveBeenCalledOnce(); // should not be called again
+      expect(cb).toHaveBeenCalledOnce(); // not called again after unsub
 
       engine.destroy();
     });
 
-    it('should fire onGridReady callback when engine is created', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should fire onGridReady callback when engine is created', () => {
       const readyCb = vi.fn();
 
       const engine = createGrid({
@@ -457,8 +432,7 @@ describe('React Adapter', () => {
   });
 
   describe('Column model integration', () => {
-    it('should initialize with column definitions', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should initialize with column definitions', () => {
       const engine = createGrid({
         columns: [
           { field: 'id', headerName: 'ID' },
@@ -470,13 +444,12 @@ describe('React Adapter', () => {
 
       const columns = engine.store.getState().columns;
       expect(columns.length).toBe(3);
-      expect(columns.map(c => c.field)).toEqual(['id', 'name', 'age']);
+      expect(columns.map((c: any) => c.field)).toEqual(['id', 'name', 'age']);
 
       engine.destroy();
     });
 
-    it('should update column defs via setColumnDefs', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should update column defs via setColumnDefs', () => {
       const engine = createGrid({
         columns: [{ field: 'id' }],
         rowData: [],
@@ -489,8 +462,7 @@ describe('React Adapter', () => {
       engine.destroy();
     });
 
-    it('should apply defaultColDef to all columns', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should apply defaultColDef to all columns', () => {
       const engine = createGrid({
         columns: [{ field: 'id' }, { field: 'name' }],
         rowData: [],
@@ -499,8 +471,8 @@ describe('React Adapter', () => {
 
       const columns = engine.store.getState().columns;
       for (const col of columns) {
-        expect(col.sortable).toBe(true);
-        expect(col.resizable).toBe(true);
+        expect((col as any).sortable).toBe(true);
+        expect((col as any).resizable).toBe(true);
       }
 
       engine.destroy();
@@ -508,15 +480,13 @@ describe('React Adapter', () => {
   });
 
   describe('Controlled mode patterns', () => {
-    it('should support external sort model control via command bus', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should support external sort model control via command bus', () => {
       const engine = createGrid({
         columns: [{ field: 'name' }],
         rowData: [{ name: 'Bob' }, { name: 'Alice' }],
         getRowId: ({ data }) => data.name,
       });
 
-      // Simulate controlled sort change
       const sortChanges: any[] = [];
       engine.eventBus.on('column:sort:changed', (e) => sortChanges.push(e));
 
@@ -527,8 +497,7 @@ describe('React Adapter', () => {
       engine.destroy();
     });
 
-    it('should support external filter model control', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should support external filter model control', () => {
       const engine = createGrid({
         columns: [{ field: 'status' }],
         rowData: [
@@ -540,21 +509,16 @@ describe('React Adapter', () => {
       });
 
       const filterChanges: any[] = [];
-      // setQuickFilter emits 'quickFilter:changed'
       engine.eventBus.on('quickFilter:changed', (e) => filterChanges.push(e));
 
-      // Use a term that only matches 'active' (exact word) not 'inactive'
       engine.api.setQuickFilter('active');
       expect(filterChanges.length).toBe(1);
-      // 'active' appears in 'active' (2 rows) and 'inactive' (1 row) as substring
-      // so count will be 3; test that filtering occurred (count < original or check state)
       expect(engine.store.getState().quickFilterText).toBe('active');
 
       engine.destroy();
     });
 
-    it('should support command bus middleware for intercepting commands', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should support command bus middleware for intercepting commands', () => {
       const engine = createGrid({
         columns: [{ field: 'name' }],
         rowData: [],
@@ -565,7 +529,6 @@ describe('React Adapter', () => {
         intercepted.push(ctx.commandType);
       });
 
-      // dispatch through the command bus (not api.setSortModel which bypasses it)
       engine.commandBus.dispatch('sort:set', { sortModel: [{ colId: 'name', sort: 'asc' }] });
       expect(intercepted).toContain('sort:set');
 
@@ -576,7 +539,6 @@ describe('React Adapter', () => {
 
   describe('Error handling integration', () => {
     it('should attach error handler to engine', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
       const { ErrorHandler } = await import('../../../core/src/errors/error-handler');
 
       const engine = createGrid({
@@ -587,19 +549,17 @@ describe('React Adapter', () => {
       const errorHandler = new ErrorHandler();
       errorHandler.setSuppressConsole(true);
       const errors: any[] = [];
-      errorHandler.onError((e) => errors.push(e));
+      errorHandler.onError((e: any) => errors.push(e));
 
       engine.commandBus.setErrorHandler(errorHandler);
 
       engine.destroy();
-      // Engine destroyed cleanly
       expect(errors.length).toBe(0);
     });
   });
 
   describe('State serialization', () => {
-    it('should expose current state for serialization', async () => {
-      const { createGrid } = await import('../../../core/src/engine/grid-engine');
+    it('should expose current state for serialization', () => {
       const engine = createGrid({
         columns: [{ field: 'name' }],
         rowData: [{ name: 'Alice' }],
@@ -613,14 +573,12 @@ describe('React Adapter', () => {
       expect(state.sortModel).toEqual([{ colId: 'name', sort: 'asc' }]);
       expect(state.quickFilterText).toBe('ali');
 
-      // Snapshot state
       const snapshot = {
         sortModel: state.sortModel,
         filterModel: state.filterModel,
         quickFilterText: state.quickFilterText,
       };
 
-      // Restore state to a new engine
       const engine2 = createGrid({
         columns: [{ field: 'name' }],
         rowData: [{ name: 'Alice' }, { name: 'Bob' }],

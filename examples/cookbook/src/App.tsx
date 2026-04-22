@@ -168,7 +168,8 @@ const CATEGORIES: ExampleCategory[] = [
     label: 'Enterprise',
     items: [
       { id: 'tree-data', title: 'Tree Data' },
-      { id: 'sparklines', title: 'Sparklines' },
+      { id: 'sparklines-basic', title: 'Sparklines Basic' },
+      { id: 'sparklines', title: 'Sparklines Advanced' },
       { id: 'charts', title: 'Charts' },
       { id: 'conditional-formatting', title: 'Conditional Formatting' },
       { id: 'streaming', title: 'Streaming Data' },
@@ -1595,6 +1596,39 @@ function TreeDataExample() {
   );
 }
 
+function SparklineBasicExample() {
+  const data = useMemo(() => [
+    { product: 'Widget A', sales: [120, 180, 150, 200, 170, 220] },
+    { product: 'Widget B', sales: [90,  110, 130, 100, 140, 160] },
+    { product: 'Widget C', sales: [200, 190, 210, 230, 180, 250] },
+    { product: 'Widget D', sales: [50,  80,  60,  90,  70, 100] },
+    { product: 'Widget E', sales: [300, 280, 320, 310, 290, 340] },
+  ], []);
+
+  const columns = useMemo(() => [
+    { field: 'product' as const, headerName: 'Product', width: 160 },
+    {
+      colId: 'trend',
+      headerName: '6-Month Sales Trend',
+      width: 220,
+      cellRenderer: 'sparkline' as const,
+      cellRendererParams: { type: 'line' },
+      valueGetter: ({ data: d }: { data: any }) => d?.sales,
+    },
+  ], []);
+
+  const plugins = useMemo<GridPlugin[]>(() => [SparklinePlugin()], []);
+
+  return (
+    <ExampleWrapper
+      title="Sparklines Basic"
+      description="The simplest sparkline setup — mount SparklinePlugin, set cellRenderer to 'sparkline', and provide an array of numbers via valueGetter. Each cell renders an inline line chart automatically."
+    >
+      <GridStorm columns={columns as any} rowData={data} plugins={plugins} height={300} />
+    </ExampleWrapper>
+  );
+}
+
 function SparklineExample() {
   const data = useMemo(() => EMPLOYEES_20.map(e => ({
     ...e,
@@ -1622,8 +1656,8 @@ function SparklineExample() {
 
   return (
     <ExampleWrapper
-      title="Sparklines"
-      description="Inline sparkline charts inside grid cells. Each row displays a 12-month revenue trend as a line sparkline."
+      title="Sparklines Advanced"
+      description="Inline sparkline charts inside grid cells. Each row displays a 12-month revenue trend as a line sparkline, combined with sorting."
     >
       <GridStorm columns={columns as any} rowData={data} plugins={plugins} height={400} />
     </ExampleWrapper>
@@ -2286,6 +2320,7 @@ const EXAMPLES: Record<string, () => JSX.Element> = {
   'vanilla-js': VanillaJsExample,
   // Enterprise
   'tree-data': TreeDataExample,
+  'sparklines-basic': SparklineBasicExample,
   'sparklines': SparklineExample,
   'charts': ChartsExample,
   'conditional-formatting': ConditionalFormattingExample,

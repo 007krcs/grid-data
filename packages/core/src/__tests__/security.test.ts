@@ -164,7 +164,8 @@ describe('Security: Data Integrity', () => {
 
     // The engine should have captured the value at createGrid time
     // (behavior depends on implementation; at minimum, engine must not crash)
-    expect(() => engine.api.getAllRows()).not.toThrow();
+    expect(() => engine.api.getDisplayedRowCount()).not.toThrow();
+    expect(engine.api.getDisplayedRowCount()).toBe(1);
     engine.destroy();
   });
 
@@ -201,7 +202,8 @@ describe('Security: Data Integrity', () => {
 
     // Should handle 10K rows in under 2 seconds
     expect(elapsed).toBeLessThan(2000);
-    expect(() => engine.api.getAllRows()).not.toThrow();
+    expect(() => engine.api.getDisplayedRowCount()).not.toThrow();
+    expect(engine.api.getDisplayedRowCount()).toBe(10_000);
     engine.destroy();
   });
 });

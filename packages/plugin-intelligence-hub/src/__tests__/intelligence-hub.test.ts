@@ -304,7 +304,7 @@ describe('IntelligenceHubPlugin', () => {
     const plugin = IntelligenceHubPlugin({ gridId: 'grid-sort', shareSortPatterns: true });
     plugin.install(mock.ctx);
 
-    mock.triggerEvent('sort:changed', { column: 'age', direction: 'asc' });
+    mock.triggerEvent('column:sort:changed', { sortModel: [{ colId: 'age', sort: 'asc' }] });
 
     expect(publishedListener).toHaveBeenCalled();
     const published = publishedListener.mock.calls[0]![0] as BehaviorSample;

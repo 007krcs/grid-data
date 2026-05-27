@@ -9,13 +9,15 @@ const PDF_NOT_CONFIGURED = '[GridStorm PDF] No PDF parser configured. ' +
 
 export function createPdfTools(): { definitions: ToolDefinition[]; handlers: Record<string, ToolHandler> } {
   const definitions: ToolDefinition[] = [
-    { name: 'pdf_load', description: 'Load a PDF document from a file path or URL', inputSchema: pdfSchemas.pdf_load },
-    { name: 'pdf_extract_text', description: 'Extract text content from PDF pages', inputSchema: pdfSchemas.pdf_extract_text },
-    { name: 'pdf_search', description: 'Search for text within the loaded PDF', inputSchema: pdfSchemas.pdf_search },
-    { name: 'pdf_annotate', description: 'Add annotations (highlight, underline, text, etc.) to a PDF page', inputSchema: pdfSchemas.pdf_annotate },
-    { name: 'pdf_redact', description: 'Redact sensitive content from a PDF region', inputSchema: pdfSchemas.pdf_redact },
-    { name: 'pdf_save', description: 'Save the current PDF document to a file', inputSchema: pdfSchemas.pdf_save },
-    { name: 'pdf_get_metadata', description: 'Get metadata (title, author, pages, etc.) from the loaded PDF', inputSchema: pdfSchemas.pdf_get_metadata },
+    // pdf_load mutates the in-memory PDF context (sets the active document).
+    { name: 'pdf_load', description: 'Load a PDF document from a file path or URL', inputSchema: pdfSchemas.pdf_load, kind: 'mutation' },
+    { name: 'pdf_extract_text', description: 'Extract text content from PDF pages', inputSchema: pdfSchemas.pdf_extract_text, kind: 'read' },
+    { name: 'pdf_search', description: 'Search for text within the loaded PDF', inputSchema: pdfSchemas.pdf_search, kind: 'read' },
+    { name: 'pdf_annotate', description: 'Add annotations (highlight, underline, text, etc.) to a PDF page', inputSchema: pdfSchemas.pdf_annotate, kind: 'mutation' },
+    { name: 'pdf_redact', description: 'Redact sensitive content from a PDF region', inputSchema: pdfSchemas.pdf_redact, kind: 'mutation' },
+    // pdf_save egresses the document bytes to the caller — treat as export.
+    { name: 'pdf_save', description: 'Save the current PDF document to a file', inputSchema: pdfSchemas.pdf_save, kind: 'export' },
+    { name: 'pdf_get_metadata', description: 'Get metadata (title, author, pages, etc.) from the loaded PDF', inputSchema: pdfSchemas.pdf_get_metadata, kind: 'read' },
   ];
 
   const handlers: Record<string, ToolHandler> = {

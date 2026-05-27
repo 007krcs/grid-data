@@ -8,10 +8,11 @@ const AI_NOT_CONFIGURED = '[GridStorm AI] AI-powered PDF analysis requires both 
 
 export function createAiTools(): { definitions: ToolDefinition[]; handlers: Record<string, ToolHandler> } {
   const definitions: ToolDefinition[] = [
-    { name: 'pdf_detect_pii', description: 'Detect personally identifiable information (PII) in PDF pages', inputSchema: aiSchemas.pdf_detect_pii },
-    { name: 'pdf_classify', description: 'Classify the PDF document type and content category', inputSchema: aiSchemas.pdf_classify },
-    { name: 'pdf_summarize', description: 'Generate a summary of the PDF document content', inputSchema: aiSchemas.pdf_summarize },
-    { name: 'pdf_extract_fields', description: 'Extract structured field values from the PDF document', inputSchema: aiSchemas.pdf_extract_fields },
+    // All AI tools are pure reads of an already-loaded document.
+    { name: 'pdf_detect_pii', description: 'Detect personally identifiable information (PII) in PDF pages', inputSchema: aiSchemas.pdf_detect_pii, kind: 'read' },
+    { name: 'pdf_classify', description: 'Classify the PDF document type and content category', inputSchema: aiSchemas.pdf_classify, kind: 'read' },
+    { name: 'pdf_summarize', description: 'Generate a summary of the PDF document content', inputSchema: aiSchemas.pdf_summarize, kind: 'read' },
+    { name: 'pdf_extract_fields', description: 'Extract structured field values from the PDF document', inputSchema: aiSchemas.pdf_extract_fields, kind: 'read' },
   ];
 
   const handlers: Record<string, ToolHandler> = {

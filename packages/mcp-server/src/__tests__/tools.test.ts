@@ -94,7 +94,15 @@ describe('MCP Server', () => {
     let registry: MCPToolRegistry;
 
     beforeEach(() => {
-      registry = createMCPServer();
+      // Mutations are off by default for safety; tests of the dispatch
+      // mechanism need them enabled. Suppress the experimental warning so
+      // test output stays clean.
+      registry = createMCPServer({
+        permissions: {
+          allowMutations: true,
+          suppressExperimentalWarning: true,
+        },
+      });
     });
 
     it('should return success for a valid grid_create call', async () => {

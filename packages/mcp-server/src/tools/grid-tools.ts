@@ -40,12 +40,12 @@ export function createGridTools(): {
   const context: GridToolsContext = { grids: new Map(), nextId: 1 };
 
   const definitions: ToolDefinition[] = [
-    { name: 'grid_create', description: 'Create a new data grid with columns and row data', inputSchema: gridSchemas.grid_create },
-    { name: 'grid_sort', description: 'Apply sorting to the grid by column', inputSchema: gridSchemas.grid_sort },
-    { name: 'grid_filter', description: 'Apply filters to the grid data', inputSchema: gridSchemas.grid_filter },
-    { name: 'grid_export_csv', description: 'Export grid data to CSV format', inputSchema: gridSchemas.grid_export_csv },
-    { name: 'grid_get_data', description: 'Get filtered and sorted grid data', inputSchema: gridSchemas.grid_get_data },
-    { name: 'grid_aggregate', description: 'Compute aggregation (sum, avg, min, max, count) on a column', inputSchema: gridSchemas.grid_aggregate },
+    { name: 'grid_create', description: 'Create a new data grid with columns and row data', inputSchema: gridSchemas.grid_create, kind: 'mutation' },
+    { name: 'grid_sort', description: 'Apply sorting to the grid by column', inputSchema: gridSchemas.grid_sort, kind: 'mutation' },
+    { name: 'grid_filter', description: 'Apply filters to the grid data', inputSchema: gridSchemas.grid_filter, kind: 'mutation' },
+    { name: 'grid_export_csv', description: 'Export grid data to CSV format', inputSchema: gridSchemas.grid_export_csv, kind: 'export' },
+    { name: 'grid_get_data', description: 'Get filtered and sorted grid data', inputSchema: gridSchemas.grid_get_data, kind: 'read' },
+    { name: 'grid_aggregate', description: 'Compute aggregation (sum, avg, min, max, count) on a column', inputSchema: gridSchemas.grid_aggregate, kind: 'read' },
   ];
 
   const handlers: Record<string, ToolHandler> = {

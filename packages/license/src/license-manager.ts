@@ -1,26 +1,87 @@
 // © 2025 GridStorm / Tekivex — All Rights Reserved
 // Unauthorized reproduction or distribution is prohibited.
+//
+// ─── License key verification ───
+//
+// License keys are signed payloads in the form:
+//
+//   GS2-<base64url(payload-json)>.<base64url(ed25519-signature)>
+//
+// The signature is Ed25519 over the UTF-8 bytes of the payload JSON, produced
+// by a private key held offline by GridStorm. The corresponding public key is
+// embedded in this module's source (PUBLIC_KEY_HEX below) and shipped to every
+// consumer. A license is valid iff:
+//
+//   1. The format parses (GS2- prefix, two base64url segments split by `.`).
+//   2. The signature verifies against PUBLIC_KEY_HEX.
+//   3. The payload is well-formed JSON matching LicenseKey.
+//   4. expiresAt has not passed.
+//
+// The previous format (GS- + plain base64 JSON, no signature) is rejected
+// explicitly with a migration error — those keys were forgeable in seconds.
+
+// Note the `.js` extension: @noble/curves v2 declares its sub-path exports
+// with explicit extensions, so bundler/node16 resolution requires it.
+import { ed25519 } from '@noble/curves/ed25519.js';
 import type { LicenseKey, LicenseInfo, LicenseValidationResult } from './types';
 
-// Module-level license state (singleton)
+// ─── Embedded public key ───
+//
+// This is a PLACEHOLDER key generated for development. Before any commercial
+// release: regenerate via `node scripts/license/keygen.cjs`, store the private
+// key in a secrets vault, and replace the hex below with the new public key.
+// All previously-issued licenses (none in production yet) will need to be
+// re-issued; that's intentional — the placeholder MUST NOT be a real
+// production key.
+const PRODUCTION_PUBLIC_KEY_HEX =
+  '0000000000000000000000000000000000000000000000000000000000000000';
+
+// Active public key. Defaults to the production key embedded above; tests can
+// override via `_setTestPublicKey()`. All verification reads through this
+// variable so the prod path and test path share a single source of truth.
+let activePublicKeyHex: string = PRODUCTION_PUBLIC_KEY_HEX;
+
+// ─── Module-level state ───
 let currentLicense: LicenseKey | null = null;
 let licenseValid = false;
+
+// ─── Public API ───
 
 /**
  * Set the GridStorm enterprise license key.
  * Call this once at application startup before creating any grids.
  *
+ * The key must be in signed `GS2-...` format. Legacy `GS-...` keys (base64
+ * JSON without a signature) are rejected.
+ *
  * @example
  * ```ts
  * import { setGridStormLicense } from '@gridstorm/license';
- * setGridStormLicense('GS-eyJvcmciOiJBY21lIENv...');
+ * setGridStormLicense('GS2-eyJvcmciOi...XYZ.abc123...');
  * ```
  */
 export function setGridStormLicense(key: string): void {
-  // Decode the license key (base64-encoded JSON, NOT actual JWT for simplicity)
-  // In production, this would use proper JWT with signature verification
+  if (typeof key !== 'string' || key.length === 0) {
+    currentLicense = null;
+    licenseValid = false;
+    console.warn('[GridStorm] License key is empty or not a string.');
+    return;
+  }
+
+  // Reject the legacy unsigned format explicitly with a migration message.
+  if (key.startsWith('GS-')) {
+    currentLicense = null;
+    licenseValid = false;
+    console.warn(
+      '[GridStorm] Legacy unsigned license format (GS-) is no longer supported. ' +
+        'Re-issue your key in the signed GS2- format. Contact support@gridstorm.dev ' +
+        'for migration assistance.',
+    );
+    return;
+  }
+
   try {
-    const decoded = decodeLicenseKey(key);
+    const decoded = decodeAndVerifyLicenseKey(key);
     currentLicense = decoded;
     licenseValid = !isExpired(decoded);
 
@@ -29,11 +90,12 @@ export function setGridStormLicense(key: string): void {
         '[GridStorm] License key has expired. Please renew at https://gridstorm.dev/pricing',
       );
     }
-  } catch {
+  } catch (err) {
     currentLicense = null;
     licenseValid = false;
+    const reason = err instanceof Error ? err.message : String(err);
     console.warn(
-      '[GridStorm] Invalid license key. Purchase at https://gridstorm.dev/pricing',
+      `[GridStorm] Invalid license key (${reason}). Purchase at https://gridstorm.dev/pricing`,
     );
   }
 }
@@ -135,15 +197,59 @@ export function getLicenseInfo(): LicenseInfo {
   };
 }
 
-/** Decode base64 license key */
-function decodeLicenseKey(key: string): LicenseKey {
-  // Strip prefix if present (e.g., "GS-")
-  const raw = key.startsWith('GS-') ? key.slice(3) : key;
-  const json = atob(raw);
-  const parsed = JSON.parse(json);
-  // Validate required fields
-  if (!parsed.org || !parsed.tier || !parsed.plugins) {
-    throw new Error('Invalid license key format');
+// ─── Internals ───
+
+/**
+ * Decode a signed license key and verify its Ed25519 signature against the
+ * embedded public key. Throws on any failure with a specific message.
+ */
+function decodeAndVerifyLicenseKey(key: string): LicenseKey {
+  // Strip the GS2- prefix.
+  if (!key.startsWith('GS2-')) {
+    throw new Error('expected GS2- prefix');
+  }
+  const body = key.slice(4);
+
+  const dot = body.indexOf('.');
+  if (dot < 0) {
+    throw new Error('missing signature separator');
+  }
+  const payloadB64 = body.slice(0, dot);
+  const signatureB64 = body.slice(dot + 1);
+  if (!payloadB64 || !signatureB64) {
+    throw new Error('empty payload or signature');
+  }
+
+  const payloadBytes = base64UrlDecode(payloadB64);
+  const signatureBytes = base64UrlDecode(signatureB64);
+  if (signatureBytes.length !== 64) {
+    throw new Error('signature is not 64 bytes');
+  }
+
+  const publicKey = hexToBytes(activePublicKeyHex);
+  let signatureValid: boolean;
+  try {
+    signatureValid = ed25519.verify(signatureBytes, payloadBytes, publicKey);
+  } catch {
+    signatureValid = false;
+  }
+  if (!signatureValid) {
+    throw new Error('signature verification failed');
+  }
+
+  // Decode payload bytes back to JSON.
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(new TextDecoder().decode(payloadBytes));
+  } catch {
+    throw new Error('payload is not valid JSON');
+  }
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('payload is not an object');
+  }
+  const p = parsed as Partial<LicenseKey>;
+  if (!p.org || !p.tier || !Array.isArray(p.plugins) || !p.expiresAt) {
+    throw new Error('payload missing required fields');
   }
   return parsed as LicenseKey;
 }
@@ -152,8 +258,21 @@ function isExpired(license: LicenseKey): boolean {
   return new Date(license.expiresAt) < new Date();
 }
 
+/**
+ * Detect a development environment. Used to suppress license requirements
+ * while developing — NOT a production exemption.
+ *
+ * Hardened relative to the previous implementation:
+ *   • Removed `.local` and `.test` TLD bypasses (those are routinely used for
+ *     real internal apps, not just local dev).
+ *   • Kept `localhost`, `127.0.0.1`, `0.0.0.0`, and `NODE_ENV=development`.
+ *   • The `[::1]` IPv6 loopback is also recognized.
+ *
+ * Customers running on internal `.local`/`.test` domains who relied on the
+ * old bypass should obtain a proper development-tier license; the previous
+ * behavior amounted to "anyone hosting on `.local` skips the license check."
+ */
 function isDev(): boolean {
-  // Check common development indicators
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const p = globalThis as any;
@@ -165,15 +284,57 @@ function isDev(): boolean {
   }
   if (typeof window !== 'undefined') {
     const host = window.location?.hostname ?? '';
-    if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
-      return true;
-    }
-    if (host.endsWith('.local') || host.endsWith('.test')) {
+    if (
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host === '0.0.0.0' ||
+      host === '[::1]' ||
+      host === '::1'
+    ) {
       return true;
     }
   }
   return false;
 }
+
+// ─── Encoding helpers ───
+//
+// Implemented inline (rather than depending on a base64url library) because
+// the license module aims for a small dependency surface. These routines
+// handle both browser (atob/btoa) and Node (Buffer) without requiring either
+// directly.
+
+function base64UrlDecode(b64url: string): Uint8Array {
+  // Convert URL-safe alphabet back to standard base64 and pad to multiple of 4.
+  let b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
+  while (b64.length % 4 !== 0) b64 += '=';
+  if (typeof atob === 'function') {
+    const bin = atob(b64);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  // Node fallback.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const NodeBuffer = (globalThis as any).Buffer;
+  if (NodeBuffer) {
+    return new Uint8Array(NodeBuffer.from(b64, 'base64'));
+  }
+  throw new Error('no base64 decoder available in this environment');
+}
+
+function hexToBytes(hex: string): Uint8Array {
+  if (hex.length % 2 !== 0) {
+    throw new Error('hex string has odd length');
+  }
+  const out = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < out.length; i++) {
+    out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  }
+  return out;
+}
+
+// ─── Test/internal helpers ───
 
 /**
  * Reset the license state. Primarily used for testing.
@@ -184,28 +345,19 @@ export function _resetLicenseState(): void {
   licenseValid = false;
 }
 
+/**
+ * Test-only. Override the active public key so tests can sign with a known
+ * test keypair. Pass `null` to restore the production key. Real applications
+ * must not call this.
+ * @internal
+ */
+export function _setTestPublicKey(hex: string | null): void {
+  activePublicKeyHex = hex ?? PRODUCTION_PUBLIC_KEY_HEX;
+}
+
 /** LicenseManager class for advanced usage */
 export class LicenseManager {
   static setLicense = setGridStormLicense;
   static validate = validateLicense;
   static getInfo = getLicenseInfo;
-
-  /** Generate a trial license key (for demos/testing) */
-  static generateTrialKey(org: string, days: number = 30): string {
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + days);
-
-    const key: LicenseKey = {
-      org,
-      tier: 'professional',
-      devCount: 1,
-      expiresAt: expiresAt.toISOString(),
-      plugins: ['*'],
-      domains: [],
-      version: 1,
-      licenseId: `trial-${Date.now()}`,
-    };
-
-    return 'GS-' + btoa(JSON.stringify(key));
-  }
 }

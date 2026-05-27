@@ -8,6 +8,10 @@ build
 .next
 out
 *.tsbuildinfo
+# Storybook static builds — regenerated via `pnpm build-storybook[:react]`
+# and deployed by .github/workflows/storybook.yml
+storybook-static
+storybook-static-react
 
 # IDE/Editor
 .vscode

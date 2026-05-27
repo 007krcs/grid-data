@@ -674,7 +674,8 @@ export function App() {
 
   const handleAddRow = useCallback(() => {
     setRowData((prev) => {
-      const maxId = prev.reduce((m, r) => Math.max(m, r.id), 0);
+      const base = prev ?? [];
+      const maxId = base.reduce((m, r) => Math.max(m, r.id), 0);
       const newRow: SpreadsheetRow = {
         id: maxId + 1,
         product: '',
@@ -692,7 +693,7 @@ export function App() {
         rating: 3,
         status: 'active',
       };
-      return [...prev, newRow];
+      return [...base, newRow];
     });
   }, []);
 
@@ -701,7 +702,9 @@ export function App() {
     const selected = apiRef.current.getSelectedNodes();
     if (selected.length === 0) return;
     const selectedIds = new Set(selected.map((n) => n.id));
-    setRowData((prev) => prev.filter((r) => !selectedIds.has(String(r.id))));
+    setRowData((prev) =>
+      prev ? prev.filter((r) => !selectedIds.has(String(r.id))) : prev,
+    );
     apiRef.current.deselectAll();
   }, []);
 
@@ -1032,7 +1035,7 @@ export function App() {
       <FormulaBar
         focusedCellInfo={focusedCellInfo}
         isEditing={isEditing}
-        rowCount={rowData.length}
+        rowCount={rowData?.length ?? 0}
         editCount={editCount}
       />
 

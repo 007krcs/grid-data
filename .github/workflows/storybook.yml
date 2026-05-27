@@ -1,0 +1,85 @@
+name: Storybook (build + deploy)
+
+# Builds both the HTML and React Storybooks on every push to main and deploys
+# the combined site to GitHub Pages. Pull requests build the same artifact
+# but don't deploy — they upload the static site as a workflow artifact so a
+# reviewer can download and inspect before the PR lands.
+#
+# Setup (one-time, by a repo admin):
+#   Repository Settings → Pages → Source: "GitHub Actions"
+# Once that's flipped, the first push to main triggers the first deploy.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: storybook-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build both Storybooks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build HTML Storybook (core engine + plugins)
+        run: pnpm build-storybook
+
+      - name: Build React Storybook (adapter)
+        run: pnpm build-storybook:react
+
+      # Combine into a single deployable site. The HTML Storybook sits at the
+      # root; the React Storybook lives under /react. A small index.html
+      # redirects between them so visitors land somewhere sensible.
+      - name: Assemble combined site
+        run: |
+          mkdir -p public
+          cp -r storybook-static/* public/
+          mkdir -p public/react
+          cp -r storybook-static-react/* public/react/
+
+      - name: Upload artifact (always)
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-site
+          path: public
+          retention-days: 14
+
+      - name: Upload Pages artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -156,8 +156,24 @@ export function StreamingPlugin(options: StreamingPluginOptions = {}): GridPlugi
 
         const batch = pendingQueue.splice(0, maxBatchSize);
         const now = Date.now();
-        const changes: CellChange[] = [];
         const state = ctx.store.getState();
+
+        // Dedupe change records by (rowId, colId) within this batch. When the
+        // same cell receives N updates in one batch, we emit ONE change record
+        // whose `oldValue` is the pre-batch original and whose `newValue` is
+        // the final value at batch end. This:
+        //   • Fires one cell-flash animation per batch (not N), matching what
+        //     the user actually sees.
+        //   • Prevents intra-batch duplicates from prematurely evicting other
+        //     cells' change records past MAX_RECENT_CHANGES.
+        //   • Drops records whose net effect is no change (e.g. 150 → 160 →
+        //     150) — the cell didn't change from the user's perspective at
+        //     this batch boundary.
+        // The `originalValues` map snapshots the pre-batch value on first
+        // sighting of each cell, so later updates within the same batch keep
+        // comparing against the original, not against intermediate values.
+        const changeByCell = new Map<string, CellChange>();
+        const originalValues = new Map<string, unknown>();
 
         // Build updates array for ctx.api.updateRows
         const rowUpdates: Array<{ id: string; data: Record<string, unknown> }> = [];
@@ -166,12 +182,16 @@ export function StreamingPlugin(options: StreamingPluginOptions = {}): GridPlugi
           const existingNode = state.rowNodes.get(update.id);
 
           if (existingNode && existingNode.data) {
-            // Track cell-level changes
+            // Track cell-level changes (deduped per (rowId, colId))
             const existingData = existingNode.data as Record<string, unknown>;
             for (const [colId, newValue] of Object.entries(update.data)) {
-              const oldValue = existingData[colId];
+              const cellKey = update.id + '' + colId;
+              if (!originalValues.has(cellKey)) {
+                originalValues.set(cellKey, existingData[colId]);
+              }
+              const oldValue = originalValues.get(cellKey);
               if (oldValue !== newValue) {
-                changes.push({
+                changeByCell.set(cellKey, {
                   rowId: update.id,
                   colId,
                   oldValue,
@@ -179,6 +199,10 @@ export function StreamingPlugin(options: StreamingPluginOptions = {}): GridPlugi
                   direction: determineDirection(oldValue, newValue),
                   timestamp: now,
                 });
+              } else {
+                // Net-zero change for this cell across the batch — drop any
+                // earlier record we may have accumulated.
+                changeByCell.delete(cellKey);
               }
             }
           }
@@ -191,6 +215,8 @@ export function StreamingPlugin(options: StreamingPluginOptions = {}): GridPlugi
             rowUpdates.push({ id: update.id, data: update.data });
           }
         }
+
+        const changes: CellChange[] = Array.from(changeByCell.values());
 
         // Apply updates via the grid API
         if (rowUpdates.length > 0) {

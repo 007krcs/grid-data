@@ -136,6 +136,72 @@ describe('StreamingPlugin', () => {
     engine.destroy();
   });
 
+  it('dedupes change records per cell within a single batch (oldValue = pre-batch original)', async () => {
+    vi.useFakeTimers();
+    const mock = createMockAdapter();
+    const engine = makeGrid({ adapter: mock.adapter });
+
+    await engine.commandBus.dispatchAsync('stream:connect', {});
+
+    // Three updates for the same cell arrive in the same batch window.
+    // AAPL.price: 150 (pre-batch) → 160 → 155 → 152
+    // Expected: exactly ONE change record with oldValue=150, newValue=152,
+    // direction='up' (since 152 > 150). The intermediate values (160, 155)
+    // are invisible to the user because they all flush in one batch.
+    engine.commandBus.dispatch('stream:push', {
+      updates: [
+        { id: 'AAPL', data: { price: 160 } },
+        { id: 'AAPL', data: { price: 155 } },
+        { id: 'AAPL', data: { price: 152 } },
+      ],
+    });
+
+    vi.advanceTimersByTime(200);
+
+    const state = getStreamingState(engine);
+    const aaplChanges = state.recentChanges.filter(
+      (c) => c.rowId === 'AAPL' && c.colId === 'price',
+    );
+    expect(aaplChanges).toHaveLength(1);
+    expect(aaplChanges[0]!.oldValue).toBe(150);
+    expect(aaplChanges[0]!.newValue).toBe(152);
+    expect(aaplChanges[0]!.direction).toBe('up');
+    engine.destroy();
+  });
+
+  it('drops change record when a cell net-cancels within one batch', async () => {
+    vi.useFakeTimers();
+    const mock = createMockAdapter();
+    const engine = makeGrid({ adapter: mock.adapter });
+
+    await engine.commandBus.dispatchAsync('stream:connect', {});
+
+    // AAPL.price: 150 → 160 → 150 (net no change at batch boundary).
+    // GOOG.price changes legitimately; it should not be evicted by AAPL's noise.
+    engine.commandBus.dispatch('stream:push', {
+      updates: [
+        { id: 'AAPL', data: { price: 160 } },
+        { id: 'GOOG', data: { price: 2810 } },
+        { id: 'AAPL', data: { price: 150 } },
+      ],
+    });
+
+    vi.advanceTimersByTime(200);
+
+    const state = getStreamingState(engine);
+    const aaplChanges = state.recentChanges.filter(
+      (c) => c.rowId === 'AAPL' && c.colId === 'price',
+    );
+    const googChanges = state.recentChanges.filter(
+      (c) => c.rowId === 'GOOG' && c.colId === 'price',
+    );
+    expect(aaplChanges).toHaveLength(0);
+    expect(googChanges).toHaveLength(1);
+    expect(googChanges[0]!.oldValue).toBe(2800);
+    expect(googChanges[0]!.newValue).toBe(2810);
+    engine.destroy();
+  });
+
   it('stream:pause stops processing', async () => {
     vi.useFakeTimers();
     const mock = createMockAdapter();

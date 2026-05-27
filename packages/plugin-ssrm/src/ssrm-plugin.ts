@@ -40,12 +40,28 @@ export function SSRMPlugin(options: SSRMPluginOptions): GridPlugin {
       let totalRowCount = 0;
       let loading = false;
 
+      // Request signature — stringified summary of (sortModel, filterModel).
+      // Tagged on each in-flight fetch so that a response arriving AFTER the
+      // user has changed sort/filter can be detected as stale and discarded.
+      // Without this, `cache.clear()` on sort/filter change is necessary but
+      // not sufficient: an in-flight fetch launched under the old sort would
+      // still write its result into the now-cleared cache, briefly showing
+      // stale rows before the new fetch's response replaces them.
+      function signatureOf(state: ReturnType<typeof ctx.store.getState>): string {
+        return JSON.stringify({
+          s: state.sortModel.map((s) => ({ c: s.colId, d: s.sort })),
+          f: state.filterModel,
+        });
+      }
+      let currentSignature = signatureOf(ctx.store.getState());
+
       // Fetch blocks from server
       async function fetchBlock(blockIndex: number): Promise<void> {
         const startRow = blockIndex * blockSize;
         const endRow = startRow + blockSize;
 
         const state = ctx.store.getState();
+        const requestSignature = signatureOf(state);
 
         const request: ServerRequest = {
           startRow,
@@ -68,6 +84,13 @@ export function SSRMPlugin(options: SSRMPluginOptions): GridPlugin {
         try {
           const result = await dataSource.getRows(request);
 
+          // Bail out if the user changed sort/filter while this request was in
+          // flight. Writing this response into the cache would briefly show
+          // rows that belong to a different query.
+          if (requestSignature !== currentSignature) {
+            return;
+          }
+
           cache.setBlock(blockIndex, {
             startRow,
             endRow,
@@ -86,6 +109,11 @@ export function SSRMPlugin(options: SSRMPluginOptions): GridPlugin {
           updateStoreWithCachedData();
           ctx.eventBus.emit('rowData:changed', { rowData: result.rowData });
         } catch (err) {
+          // Stale failures are also discarded — the in-flight request was
+          // already irrelevant by the time it failed.
+          if (requestSignature !== currentSignature) {
+            return;
+          }
           cache.setBlock(blockIndex, {
             startRow,
             endRow,
@@ -216,8 +244,11 @@ export function SSRMPlugin(options: SSRMPluginOptions): GridPlugin {
         }
       });
 
-      // When sort/filter changes, clear cache and re-fetch
+      // When sort/filter changes, clear cache and re-fetch. Bump the signature
+      // FIRST so any in-flight fetch (started under the old sort/filter)
+      // detects itself as stale and discards its response on arrival.
       const unsubSort = ctx.eventBus.on('column:sort:changed', () => {
+        currentSignature = signatureOf(ctx.store.getState());
         cache.clear();
         totalRowCount = 0;
         fetchBlock(0).catch((err) => {
@@ -226,6 +257,7 @@ export function SSRMPlugin(options: SSRMPluginOptions): GridPlugin {
       });
 
       const unsubFilter = ctx.eventBus.on('filter:changed', () => {
+        currentSignature = signatureOf(ctx.store.getState());
         cache.clear();
         totalRowCount = 0;
         fetchBlock(0).catch((err) => {
@@ -233,8 +265,10 @@ export function SSRMPlugin(options: SSRMPluginOptions): GridPlugin {
         });
       });
 
-      // Refresh command
+      // Refresh command — also bump signature so any in-flight requests from
+      // before the refresh are discarded.
       const unregRefresh = ctx.commandBus.registerHandler('ssrm:refresh', () => {
+        currentSignature = signatureOf(ctx.store.getState()) + ':refresh:' + Date.now();
         cache.clear();
         fetchBlock(0);
       });

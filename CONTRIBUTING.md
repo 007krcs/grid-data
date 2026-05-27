@@ -329,8 +329,9 @@ Every pull request runs automated checks:
 | Lint | `pnpm lint` | Code style enforcement |
 | Typecheck | `pnpm typecheck` | Type safety verification |
 | Tests | `pnpm test:run` | Unit + integration tests (Node 18/20/22) |
-| Build | `pnpm build` | Compilation of all 51 packages |
+| Build | `pnpm build` | Compilation of all 65 packages |
 | Bundle Size | Automated | Fail if core exceeds 50KB |
+| Verify Publish | `pnpm verify:publish` | Packs every package and asserts no `workspace:*` refs survive into the tarball |
 | Security | CodeQL + Dependabot | Vulnerability scanning |
 
 Benchmarks run automatically on pushes to `main` with results stored as artifacts.
@@ -351,6 +352,27 @@ GridStorm uses [Changesets](https://github.com/changesets/changesets) for versio
 4. When the PR merges to `main`, the release workflow automatically:
    - Creates a "Version Packages" PR with updated changelogs
    - Publishes to npm when the version PR is merged
+
+### Publishing constraint: always use `pnpm publish`, never raw `npm publish`
+
+Internal dependencies in this repo are declared with the `workspace:*` protocol
+(e.g. `"@gridstorm/core": "workspace:*"`). pnpm rewrites these to concrete
+versions at pack time; **`npm pack` does not**. Publishing a package via raw
+`npm publish` from its directory would ship a tarball whose dependency specs
+look like `"workspace:*"` to consumers — `npm install` then fails for everyone
+downstream.
+
+This means:
+- The release workflow (`changeset publish` → pnpm) is safe.
+- `scripts/publish-all.cjs` uses `pnpm publish` for the same reason.
+- Do **not** run `npm publish` or `npm pack` against packages in this repo.
+  The `pnpm verify:publish` CI job will catch most accidents, but the
+  invariant is "always pack with pnpm" — treat that as a hard rule.
+
+If you need to inspect a tarball locally, use `pnpm pack`. If you need to
+double-check the strict guard, run `pnpm verify:publish:both` — that simulates
+both pnpm and npm pack paths and shows you exactly which packages would break
+if anyone ever bypassed pnpm.
 
 ## Pull Request Guidelines
 

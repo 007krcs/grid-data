@@ -1541,7 +1541,12 @@ export class DomRenderer {
           rowIndex,
         });
         if (typeof result === 'string') {
-          // Auto-detect HTML strings (starts with < and ends with >), or honor explicit flag
+          // Security: only honor the explicit opt-in flag.
+          // Do NOT add auto-detection of HTML-shaped strings here — it would
+          // turn every cell whose value happens to look like a tag (e.g. "<5",
+          // "<pending>", "<unknown>") into an XSS sink. Callers that need HTML
+          // must opt in via dangerouslySetInnerHTML on the column def AND take
+          // responsibility for sanitizing the string themselves.
           if (col.originalDef?.dangerouslySetInnerHTML === true) {
             cell.innerHTML = result;
           } else {

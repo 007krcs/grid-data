@@ -2,7 +2,15 @@
 /**
  * Publish ALL Tekivex packages to npm in dependency order.
  * Covers: GridStorm, DataFlow, Analytics Studio (analytix)
- * Usage: node scripts/publish-all.cjs [--dry-run]
+ * Usage: node scripts/publish-all.cjs [--dry-run] [--otp=...]
+ *
+ * IMPORTANT: this script uses `pnpm publish`, NOT `npm publish`. Internal deps
+ * in this monorepo are declared with the `workspace:*` protocol and pnpm
+ * rewrites them to concrete versions at pack time; npm does not. Switching
+ * back to `npm publish` would ship broken tarballs (consumers' `npm install`
+ * fails because "workspace:*" is not a resolvable version spec).
+ *
+ * The `pnpm verify:publish` CI job exists to catch any regression here.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -157,9 +165,13 @@ for (const entry of PUBLISH_ORDER) {
   }
 
   const otpFlag = OTP ? ` --otp=${OTP}` : '';
+  // Use `pnpm publish` (not `npm publish`) so that `workspace:*` references in
+  // package.json are rewritten to concrete versions at pack time. `npm publish`
+  // ships them as-is and the resulting tarballs are unusable downstream — see
+  // scripts/check-no-workspace-refs.cjs which catches exactly this.
   const cmd = DRY_RUN
-    ? `npm publish --access public --no-git-checks --dry-run${otpFlag}`
-    : `npm publish --access public --no-git-checks${otpFlag}`;
+    ? `pnpm publish --access public --no-git-checks --dry-run${otpFlag}`
+    : `pnpm publish --access public --no-git-checks${otpFlag}`;
 
   let retries = 0;
   const maxRetries = 3;

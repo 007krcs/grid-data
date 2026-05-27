@@ -39,6 +39,9 @@ jobs:
       - name: Run tests
         run: pnpm test:run
 
+      - name: Verify no workspace:* refs survive into tarballs
+        run: pnpm verify:publish
+
       - name: Create Release PR or Publish
         uses: changesets/action@v1
         with:

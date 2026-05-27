@@ -8,6 +8,7 @@ export type {
   CellData,
   CellType,
 } from './types';
+export { ExportLimitExceededError } from './types';
 export { buildCsvContent, buildExcelXml, toCellData, detectCellType } from './excel-builder';
 export { buildXlsxParts } from './xlsx-builder';
 export type { XlsxParts } from './xlsx-builder';

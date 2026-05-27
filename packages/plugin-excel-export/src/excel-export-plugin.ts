@@ -7,7 +7,38 @@ import type { GridPlugin, PluginContext, ColumnState, RowNode } from '@gridstorm
 import { getValueFromData } from '@gridstorm/core';
 import { validateLicense, createWatermark } from '@gridstorm/license';
 import type { ExcelExportOptions } from './types';
+import { ExportLimitExceededError } from './types';
 import { buildCsvContent, buildExcelXml, toCellData } from './excel-builder';
+
+// Default ceilings — see ExcelExportOptions.maxRows / maxCells JSDoc for the
+// rationale. Override per call via the corresponding option.
+const DEFAULT_MAX_ROWS = 100_000;
+const DEFAULT_MAX_CELLS = 5_000_000;
+
+/**
+ * Check row + cell ceilings before serialization. Returns an
+ * {@link ExportLimitExceededError} (rather than throwing) when a limit would
+ * be exceeded, because the CommandBus swallows handler exceptions — callers
+ * never see thrown errors from a `dispatch()`. The plugin emits a structured
+ * `excel:exportFailed` event carrying the error so UIs can react.
+ */
+function checkExportLimits(
+  format: 'csv' | 'excel',
+  rowCount: number,
+  colCount: number,
+  options: ExcelExportOptions,
+): ExportLimitExceededError | null {
+  const maxRows = options.maxRows ?? DEFAULT_MAX_ROWS;
+  const maxCells = options.maxCells ?? DEFAULT_MAX_CELLS;
+  const cells = rowCount * Math.max(colCount, 1);
+  if (rowCount > maxRows) {
+    return new ExportLimitExceededError(format, 'rows', rowCount, cells, maxRows, maxCells);
+  }
+  if (cells > maxCells) {
+    return new ExportLimitExceededError(format, 'cells', rowCount, cells, maxRows, maxCells);
+  }
+  return null;
+}
 
 export function ExcelExportPlugin(
   defaultOptions: ExcelExportOptions = {},
@@ -170,7 +201,22 @@ export function ExcelExportPlugin(
       const unregExportCsv = ctx.commandBus.registerHandler(
         'excel:exportCsv',
         (payload: ExcelExportOptions) => {
-          const { headers, dataRows, options } = buildExportData(payload);
+          const { headers, dataRows, columns, options } = buildExportData(payload);
+          // Cap check BEFORE building the gigabyte-scale string.
+          const limitErr = checkExportLimits('csv', dataRows.length, columns.length, options);
+          if (limitErr) {
+            ctx.eventBus.emit('excel:exportFailed' as any, {
+              format: 'csv',
+              reason: limitErr.reason,
+              rows: limitErr.rows,
+              cells: limitErr.cells,
+              maxRows: limitErr.maxRows,
+              maxCells: limitErr.maxCells,
+              error: limitErr,
+            });
+            return;
+          }
+
           const fileName = (options.fileName || 'gridstorm-export') + '.csv';
 
           const stringRows = dataRows.map((row) =>
@@ -192,7 +238,21 @@ export function ExcelExportPlugin(
       const unregExportExcel = ctx.commandBus.registerHandler(
         'excel:exportExcel',
         (payload: ExcelExportOptions) => {
-          const { headers, dataRows, options } = buildExportData(payload);
+          const { headers, dataRows, columns, options } = buildExportData(payload);
+          const limitErr = checkExportLimits('excel', dataRows.length, columns.length, options);
+          if (limitErr) {
+            ctx.eventBus.emit('excel:exportFailed' as any, {
+              format: 'excel',
+              reason: limitErr.reason,
+              rows: limitErr.rows,
+              cells: limitErr.cells,
+              maxRows: limitErr.maxRows,
+              maxCells: limitErr.maxCells,
+              error: limitErr,
+            });
+            return;
+          }
+
           const fileName = (options.fileName || 'gridstorm-export') + '.xml';
           const sheetName = options.sheetName || 'Sheet1';
 

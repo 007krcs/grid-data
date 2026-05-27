@@ -34,6 +34,49 @@ export interface PdfExportOptions {
   processCellCallback?: (params: PdfProcessCellParams) => string;
   /** Custom header value processor for export. */
   processHeaderCallback?: (params: PdfProcessHeaderParams) => string;
+  /**
+   * Maximum rows to export. Default: 25_000.
+   *
+   * The PDF builder allocates the full document byte array in memory before
+   * triggering download. At ~100–200 bytes per cell (drawing operators plus
+   * font/positioning metadata), 25k rows is the largest "safe for any
+   * browser" value — past that, mid-range devices OOM and even when they
+   * don't, the resulting PDF is effectively unusable (thousands of pages
+   * nobody will scroll through).
+   *
+   * Set to `Infinity` to disable (not recommended).
+   */
+  maxRows?: number;
+  /**
+   * Maximum total cells (rows × resolved-column-count). Default: 1_000_000.
+   * Whichever of `maxRows` / `maxCells` is hit first wins.
+   */
+  maxCells?: number;
+}
+
+/**
+ * Thrown when a PDF export would exceed the configured `maxRows`/`maxCells`.
+ */
+export class PdfExportLimitExceededError extends Error {
+  readonly name = 'PdfExportLimitExceededError';
+  constructor(
+    readonly reason: 'rows' | 'cells',
+    readonly rows: number,
+    readonly cells: number,
+    readonly maxRows: number,
+    readonly maxCells: number,
+  ) {
+    super(
+      `[GridStorm pdf export] ${reason} limit exceeded: ` +
+        (reason === 'rows'
+          ? `would export ${rows} rows, configured maxRows is ${maxRows}.`
+          : `would export ${cells} cells (${rows} rows × cols), configured maxCells is ${maxCells}.`) +
+        ` Filter rows before export, or raise the limit via the maxRows/maxCells` +
+        ` option after measuring memory headroom on your target device. Note that` +
+        ` PDFs past ~25k rows are typically unusable for end-users regardless of` +
+        ` whether the browser can build them.`,
+    );
+  }
 }
 
 export interface PdfProcessCellParams {

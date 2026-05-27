@@ -7,8 +7,34 @@
 import type { GridPlugin, PluginContext, ColumnState, RowNode } from '@gridstorm/core';
 import { getValueFromData } from '@gridstorm/core';
 import type { PdfExportOptions } from './types';
+import { PdfExportLimitExceededError } from './types';
 import { buildPdfFromGrid } from './pdf-builder';
 import type { GridExportData } from './pdf-builder';
+
+// Default ceilings — see PdfExportOptions.maxRows / maxCells JSDoc.
+const DEFAULT_MAX_ROWS = 25_000;
+const DEFAULT_MAX_CELLS = 1_000_000;
+
+/**
+ * See excel-export-plugin's checkExportLimits comment for rationale: CommandBus
+ * swallows thrown errors, so we return the error and emit a structured event.
+ */
+function checkExportLimits(
+  rowCount: number,
+  colCount: number,
+  options: PdfExportOptions,
+): PdfExportLimitExceededError | null {
+  const maxRows = options.maxRows ?? DEFAULT_MAX_ROWS;
+  const maxCells = options.maxCells ?? DEFAULT_MAX_CELLS;
+  const cells = rowCount * Math.max(colCount, 1);
+  if (rowCount > maxRows) {
+    return new PdfExportLimitExceededError('rows', rowCount, cells, maxRows, maxCells);
+  }
+  if (cells > maxCells) {
+    return new PdfExportLimitExceededError('cells', rowCount, cells, maxRows, maxCells);
+  }
+  return null;
+}
 
 export function PdfExportPlugin(
   defaultOptions: PdfExportOptions = {},
@@ -163,6 +189,25 @@ export function PdfExportPlugin(
         'pdf:export',
         (payload: PdfExportOptions) => {
           const { gridData, options } = buildExportData(payload);
+          // Cap check BEFORE the PDF byte-array allocation, which dwarfs
+          // the row data itself.
+          const limitErr = checkExportLimits(
+            gridData.rows.length,
+            gridData.headers.length || gridData.columnWidths.length,
+            options,
+          );
+          if (limitErr) {
+            ctx.eventBus.emit('pdf:exportFailed' as any, {
+              reason: limitErr.reason,
+              rows: limitErr.rows,
+              cells: limitErr.cells,
+              maxRows: limitErr.maxRows,
+              maxCells: limitErr.maxCells,
+              error: limitErr,
+            });
+            return;
+          }
+
           const fileName = (options.fileName || 'gridstorm-export') + '.pdf';
 
           // Generate PDF bytes

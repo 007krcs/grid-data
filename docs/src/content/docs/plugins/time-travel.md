@@ -61,9 +61,17 @@ Edit grid data, then use undo/redo and branch to explore alternative states. Vie
 
 | Name | Payload | Description |
 | --- | --- | --- |
-| `timeTravel:snapshot:created` | `{ snapshotId: string; label?: string }` | Emitted when a new snapshot is captured. |
+| `timeTravel:snapshotCaptured` | `{ snapshot: StateSnapshot }` | Emitted when a new snapshot is captured (auto, manual, or checkpoint). |
 | `timeTravel:restored` | `{ snapshotId: string }` | Emitted after the grid state is restored from a snapshot. |
-| `timeTravel:branch:created` | `{ name: string; snapshotId: string }` | Emitted when a new branch is created. |
+| `timeTravel:undone` | `{ snapshotIndex: number }` | Emitted after an undo moves the cursor to an earlier snapshot. |
+| `timeTravel:redone` | `{ snapshotIndex: number }` | Emitted after a redo moves the cursor to a later snapshot. |
+| `timeTravel:diffResult` | `{ fromId: string; toId: string; diff: DiffResult }` | Emitted with the computed diff between two snapshots. |
+| `timeTravel:branchCreated` | `{ branchId: string; name: string }` | Emitted when a new branch is created and switched to. |
+| `timeTravel:branchSwitched` | `{ branchId: string }` | Emitted after switching to a different branch. |
+| `timeTravel:history` | `{ branchId: string; snapshots: […]; currentIndex: number }` | Emitted in response to `timeTravel:getHistory`. |
+| `timeTravel:error` | `{ message: string }` | Emitted when a time-travel operation fails (e.g. branch cap reached). |
+
+> Note: restore/undo/redo/branch-switch also emit a standard `rowData:changed` (`{ rowData }`) so renderers and framework adapters re-render. The events above carry time-travel-specific detail and never reuse `rowData:changed` for notifications.
 
 ## Usage Examples
 

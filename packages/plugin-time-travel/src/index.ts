@@ -2,6 +2,9 @@
 // Unauthorized reproduction or distribution is prohibited.
 // ─── @gridstorm/plugin-time-travel — Public API ───
 
+// Register custom-event typings on GridEventMap.
+import './events';
+
 export { TimeTravelPlugin } from './time-travel-plugin';
 export { computeDiff, diffSerializedStates } from './diff-engine';
 export {

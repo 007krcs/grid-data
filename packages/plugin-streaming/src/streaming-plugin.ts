@@ -254,19 +254,16 @@ export function StreamingPlugin(options: StreamingPluginOptions = {}): GridPlugi
           };
         });
 
-        // TODO(events): this re-emits the built-in `rowData:changed` event
-        // with a custom payload `{ type, batchSize, changes }`, which does
-        // not match the documented `{ rowData: TData[] }` shape. Adapters
-        // (React's useGridState, etc.) listen to `rowData:changed` to know
-        // to re-render — we abuse that here to trigger UI updates without
-        // touching the row data. Replace with a proper `streaming:updated`
-        // event consumed by the adapters, then emit a real `rowData:changed`
-        // payload separately if/when the row count actually changes.
-        ctx.eventBus.emit('rowData:changed' as any, {
-          type: 'stream:updated',
+        // Row data was already replaced via `ctx.api.updateRows` above, which
+        // emits a correctly-shaped `rowData:changed` (`{ rowData }`) that the
+        // dom-renderer and framework adapters consume to re-render. Here we
+        // emit only the streaming-specific detail (batch size + per-cell
+        // change records for flash highlighting) on a dedicated event, rather
+        // than abusing `rowData:changed` with a malformed payload.
+        ctx.eventBus.emit('streaming:updated', {
           batchSize: batch.length,
           changes,
-        } as any);
+        });
       }
 
       // ── Start batch timer ──

@@ -664,10 +664,8 @@ describe('TimeTravelPlugin', () => {
     engine.commandBus.dispatch('timeTravel:snapshot', { name: 'After' });
 
     const events: any[] = [];
-    engine.api.addEventListener('rowData:changed' as any, (e: any) => {
-      if (e.type === 'timeTravel:diffResult') {
-        events.push(e);
-      }
+    engine.api.addEventListener('timeTravel:diffResult' as any, (e: any) => {
+      events.push(e);
     });
 
     const state = getTTState(engine);
@@ -692,10 +690,8 @@ describe('TimeTravelPlugin', () => {
     engine.commandBus.dispatch('timeTravel:snapshot', { name: 'Snap 1' });
 
     const events: any[] = [];
-    engine.api.addEventListener('rowData:changed' as any, (e: any) => {
-      if (e.type === 'timeTravel:history') {
-        events.push(e);
-      }
+    engine.api.addEventListener('timeTravel:history' as any, (e: any) => {
+      events.push(e);
     });
 
     engine.commandBus.dispatch('timeTravel:getHistory', {});

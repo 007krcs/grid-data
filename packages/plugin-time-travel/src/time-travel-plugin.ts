@@ -106,6 +106,20 @@ export function TimeTravelPlugin(options: TimeTravelPluginOptions = {}): GridPlu
         return branch.snapshots[state.currentSnapshotIndex];
       }
 
+      // ── Helper: snapshot the current row data for a `rowData:changed` ──
+      // Restoring a snapshot rewrites the store's rowNodes directly (see
+      // snapshot-store.restoreSnapshot), which the dom-renderer does NOT
+      // observe on its own — it listens for the `rowData:changed` event to
+      // do a full row rebuild. So state-mutating operations emit a properly
+      // shaped `{ rowData }` payload (not the old abused `{ type, ... }`).
+      function currentRowData(): unknown[] {
+        const rowData: unknown[] = [];
+        ctx.store.getState().rowNodes.forEach((node) => {
+          if (node.data != null) rowData.push(node.data);
+        });
+        return rowData;
+      }
+
       // ── Helper: update plugin state ──
       function updateTimeTravelState(
         updater: (prev: TimeTravelState) => TimeTravelState,
@@ -203,17 +217,11 @@ export function TimeTravelPlugin(options: TimeTravelPluginOptions = {}): GridPlu
           };
         });
 
-        // TODO(events): same semantic bug as plugin-streaming — the time-
-        // travel plugin abuses the built-in `rowData:changed` event with
-        // wrong payloads (`{ type, snapshot }` here, `{ type, branch }`,
-        // etc. below) to force adapters to re-render. Should be replaced
-        // with proper plugin-owned events `timeTravel:snapshotCaptured`,
-        // `timeTravel:restored`, etc., declared in a sibling events.ts.
-        // Tracked as a follow-up to the GridEventMap-opening change.
-        ctx.eventBus.emit('rowData:changed' as any, {
-          type: 'timeTravel:snapshotCaptured',
+        // Capturing a snapshot does not change the grid's row data, so this is
+        // a notification only — no `rowData:changed`.
+        ctx.eventBus.emit('timeTravel:snapshotCaptured', {
           snapshot: newSnapshot,
-        } as any);
+        });
       }
 
       // ── Command: timeTravel:snapshot ──
@@ -243,14 +251,17 @@ export function TimeTravelPlugin(options: TimeTravelPluginOptions = {}): GridPlu
               currentSnapshotIndex: idx,
               isDirty: false,
             }));
+            // Emit the row-data change while still inside the isRestoring
+            // guard so the auto-capture listener does not snapshot our own
+            // restore (see scheduleCaptureIfNeeded).
+            ctx.eventBus.emit('rowData:changed', { rowData: currentRowData() as any });
           } finally {
             isRestoring = false;
           }
 
-          ctx.eventBus.emit('rowData:changed' as any, {
-            type: 'timeTravel:restored',
+          ctx.eventBus.emit('timeTravel:restored', {
             snapshotId: payload.snapshotId,
-          } as any);
+          });
         },
       );
 
@@ -276,14 +287,14 @@ export function TimeTravelPlugin(options: TimeTravelPluginOptions = {}): GridPlu
               currentSnapshotIndex: newIdx,
               isDirty: false,
             }));
+            ctx.eventBus.emit('rowData:changed', { rowData: currentRowData() as any });
           } finally {
             isRestoring = false;
           }
 
-          ctx.eventBus.emit('rowData:changed' as any, {
-            type: 'timeTravel:undo',
+          ctx.eventBus.emit('timeTravel:undone', {
             snapshotIndex: newIdx,
-          } as any);
+          });
         },
       );
 
@@ -310,14 +321,14 @@ export function TimeTravelPlugin(options: TimeTravelPluginOptions = {}): GridPlu
               currentSnapshotIndex: newIdx,
               isDirty: false,
             }));
+            ctx.eventBus.emit('rowData:changed', { rowData: currentRowData() as any });
           } finally {
             isRestoring = false;
           }
 
-          ctx.eventBus.emit('rowData:changed' as any, {
-            type: 'timeTravel:redo',
+          ctx.eventBus.emit('timeTravel:redone', {
             snapshotIndex: newIdx,
-          } as any);
+          });
         },
       );
 
@@ -335,12 +346,11 @@ export function TimeTravelPlugin(options: TimeTravelPluginOptions = {}): GridPlu
 
           const diff = computeDiff(fromSnap, toSnap);
 
-          ctx.eventBus.emit('rowData:changed' as any, {
-            type: 'timeTravel:diffResult',
+          ctx.eventBus.emit('timeTravel:diffResult', {
             fromId: payload.fromId,
             toId: payload.toId,
             diff,
-          } as any);
+          });
         },
       );
 
@@ -351,10 +361,9 @@ export function TimeTravelPlugin(options: TimeTravelPluginOptions = {}): GridPlu
           const ttState = ctx.getState<TimeTravelState>('timeTravel');
 
           if (ttState.branches.size >= maxBranches) {
-            ctx.eventBus.emit('rowData:changed' as any, {
-              type: 'timeTravel:error',
+            ctx.eventBus.emit('timeTravel:error', {
               message: `Maximum branches (${maxBranches}) reached`,
-            } as any);
+            });
             return;
           }
 
@@ -392,11 +401,12 @@ export function TimeTravelPlugin(options: TimeTravelPluginOptions = {}): GridPlu
             };
           });
 
-          ctx.eventBus.emit('rowData:changed' as any, {
-            type: 'timeTravel:branchCreated',
+          // Creating a branch forks history but leaves the live grid state
+          // unchanged, so this is a notification only — no `rowData:changed`.
+          ctx.eventBus.emit('timeTravel:branchCreated', {
             branchId,
             name: payload.name,
-          } as any);
+          });
         },
       );
 
@@ -425,14 +435,14 @@ export function TimeTravelPlugin(options: TimeTravelPluginOptions = {}): GridPlu
               totalSnapshots: targetBranch.snapshots.length,
               isDirty: false,
             }));
+            ctx.eventBus.emit('rowData:changed', { rowData: currentRowData() as any });
           } finally {
             isRestoring = false;
           }
 
-          ctx.eventBus.emit('rowData:changed' as any, {
-            type: 'timeTravel:branchSwitched',
+          ctx.eventBus.emit('timeTravel:branchSwitched', {
             branchId: payload.branchId,
-          } as any);
+          });
         },
       );
 
@@ -443,8 +453,7 @@ export function TimeTravelPlugin(options: TimeTravelPluginOptions = {}): GridPlu
           const ttState = ctx.getState<TimeTravelState>('timeTravel');
           const branch = getCurrentBranch();
 
-          ctx.eventBus.emit('rowData:changed' as any, {
-            type: 'timeTravel:history',
+          ctx.eventBus.emit('timeTravel:history', {
             branchId: ttState.currentBranchId,
             snapshots: branch.snapshots.map((s) => ({
               id: s.id,
@@ -456,7 +465,7 @@ export function TimeTravelPlugin(options: TimeTravelPluginOptions = {}): GridPlu
               columnCount: s.metadata.columnCount,
             })),
             currentIndex: ttState.currentSnapshotIndex,
-          } as any);
+          });
         },
       );
 
@@ -531,10 +540,11 @@ export function TimeTravelPlugin(options: TimeTravelPluginOptions = {}): GridPlu
         });
         disposers.push(unsubCellEdit);
 
-        // Also watch rowData:changed for setRowData calls
-        const unsubRowData = ctx.eventBus.on('rowData:changed', (_payload: any) => {
-          // Don't capture our own restore events
-          if (_payload?.type?.startsWith?.('timeTravel:')) return;
+        // Also watch rowData:changed for setRowData/updateRows calls. Our own
+        // restore/undo/redo/switchBranch operations emit `rowData:changed`
+        // while `isRestoring` is true, and scheduleCaptureIfNeeded bails out in
+        // that state — so we don't snapshot our own restores.
+        const unsubRowData = ctx.eventBus.on('rowData:changed', () => {
           scheduleCaptureIfNeeded();
         });
         disposers.push(unsubRowData);

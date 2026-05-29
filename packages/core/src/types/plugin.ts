@@ -7,6 +7,8 @@ import type { GridEventMap } from './events';
 import type { CommandMap } from './commands';
 import type { CellRendererFn } from './column';
 import type { CellEditorDef } from './editing';
+// Type-only import (erased at compile time → no runtime cycle with command-bus).
+import type { STOP_PROPAGATION } from '../events/command-bus';
 
 /**
  * Interface for GridStorm plugins that extend grid functionality.
@@ -477,12 +479,16 @@ export interface PluginCommandBus {
 /**
  * Function type for command handlers that process dispatched commands.
  *
+ * A handler may return {@link STOP_PROPAGATION} to prevent the remaining
+ * handlers registered for the same command from running. Returning `void`
+ * (the common case) lets propagation continue.
+ *
  * @param payload - The command payload.
  *
  * @see {@link PluginContext.registerCommand}
  * @see {@link PluginCommandBus.registerHandler}
  */
-export type CommandHandler = (payload: any) => void;
+export type CommandHandler = (payload: any) => void | typeof STOP_PROPAGATION;
 
 /**
  * Function type for async command handlers that process dispatched commands.
@@ -490,9 +496,12 @@ export type CommandHandler = (payload: any) => void;
  * Used with {@link PluginCommandBus.registerAsyncHandler} and invoked via
  * {@link PluginCommandBus.dispatchAsync}.
  *
+ * May resolve to {@link STOP_PROPAGATION} to stop the remaining async handlers
+ * for the same command from running.
+ *
  * @param payload - The command payload.
  *
  * @see {@link PluginCommandBus.registerAsyncHandler}
  * @see {@link PluginCommandBus.dispatchAsync}
  */
-export type AsyncCommandHandler = (payload: any) => Promise<void>;
+export type AsyncCommandHandler = (payload: any) => Promise<void | typeof STOP_PROPAGATION>;

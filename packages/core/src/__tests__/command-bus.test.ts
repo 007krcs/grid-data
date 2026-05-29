@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { CommandBus } from '../events/command-bus';
+import { CommandBus, STOP_PROPAGATION } from '../events/command-bus';
 
 describe('CommandBus', () => {
   it('should dispatch commands to registered handlers', () => {
@@ -96,5 +96,98 @@ describe('CommandBus', () => {
     bus.dispatch('test:command', {});
     expect(handler).not.toHaveBeenCalled();
     expect(mw).not.toHaveBeenCalled();
+  });
+
+  it('should stop the handler chain when a handler returns STOP_PROPAGATION', () => {
+    const bus = new CommandBus();
+    const order: string[] = [];
+
+    bus.registerHandler('test:command', () => {
+      order.push('first');
+    });
+    bus.registerHandler('test:command', () => {
+      order.push('second');
+      return STOP_PROPAGATION;
+    });
+    bus.registerHandler('test:command', () => {
+      order.push('third');
+    });
+
+    bus.dispatch('test:command', {});
+    expect(order).toEqual(['first', 'second']);
+  });
+
+  it('should stop the async handler chain when an async handler returns STOP_PROPAGATION', async () => {
+    const bus = new CommandBus();
+    const order: string[] = [];
+
+    bus.registerAsyncHandler('test:command', async (): Promise<typeof STOP_PROPAGATION> => {
+      order.push('a1');
+      return STOP_PROPAGATION;
+    });
+    bus.registerAsyncHandler('test:command', async () => {
+      order.push('a2');
+    });
+
+    await bus.dispatchAsync('test:command', {});
+    expect(order).toEqual(['a1']);
+  });
+
+  it('should run multiple validators as a chain (first failure wins)', () => {
+    const bus = new CommandBus();
+    const handler = vi.fn();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const v1 = vi.fn(() => null);
+    const v2 = vi.fn(() => 'v2 rejects');
+    const v3 = vi.fn(() => null);
+    bus.registerValidator('test:command', v1);
+    bus.registerValidator('test:command', v2);
+    bus.registerValidator('test:command', v3);
+    bus.registerHandler('test:command', handler);
+
+    bus.dispatch('test:command', {});
+
+    expect(v1).toHaveBeenCalled();
+    expect(v2).toHaveBeenCalled();
+    // v3 is never reached because v2 already rejected.
+    expect(v3).not.toHaveBeenCalled();
+    expect(handler).not.toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+
+  it('should not let a second validator silently overwrite the first', () => {
+    const bus = new CommandBus();
+    const handler = vi.fn();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    // First validator blocks; second always passes. Before the chain fix the
+    // second registration clobbered the first and the command went through.
+    bus.registerValidator('test:command', () => 'blocked by first');
+    bus.registerValidator('test:command', () => null);
+    bus.registerHandler('test:command', handler);
+
+    bus.dispatch('test:command', {});
+    expect(handler).not.toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+
+  it('should remove only the unsubscribed validator from the chain', () => {
+    const bus = new CommandBus();
+    const handler = vi.fn();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const unsubBlock = bus.registerValidator('test:command', () => 'blocked');
+    bus.registerValidator('test:command', () => null);
+    bus.registerHandler('test:command', handler);
+
+    bus.dispatch('test:command', {});
+    expect(handler).not.toHaveBeenCalled();
+
+    // Removing the blocking validator leaves the passing one in place.
+    unsubBlock();
+    bus.dispatch('test:command', {});
+    expect(handler).toHaveBeenCalledTimes(1);
+    consoleSpy.mockRestore();
   });
 });

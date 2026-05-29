@@ -11,7 +11,7 @@ export { Store, createSelector } from './state/store';
 
 // Events
 export { EventBus } from './events/event-bus';
-export { CommandBus } from './events/command-bus';
+export { CommandBus, STOP_PROPAGATION } from './events/command-bus';
 export type { CommandContext, CommandMiddleware, CommandValidator } from './events/command-bus';
 
 // Error Handling

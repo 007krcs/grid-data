@@ -2,7 +2,11 @@
 // Unauthorized reproduction or distribution is prohibited.
 // ─── Command Bus ───
 // Commands are the only way to mutate grid state.
-// Each command type maps to a handler. Multiple handlers per type are supported (middleware pattern).
+// Each command type maps to one or more handlers, executed in registration
+// order. A handler may return STOP_PROPAGATION to prevent the remaining
+// handlers for that command from running (per-handler cancel). Each command
+// type may also have multiple validators, all of which must pass before any
+// handler runs (validator chain).
 
 import type { CommandHandler, AsyncCommandHandler } from '../types/plugin';
 import type { CommandMap } from '../types/commands';
@@ -10,11 +14,24 @@ import type { ErrorHandler } from '../errors/error-handler';
 
 export type CommandValidator = (payload: unknown) => string | null;
 
+/**
+ * Sentinel a command handler can return to stop the bus from invoking the
+ * remaining handlers registered for the same command type. Handlers that
+ * return `void` (the common case) let propagation continue. Works for both
+ * sync (`dispatch`) and async (`dispatchAsync`) handlers.
+ */
+export const STOP_PROPAGATION: unique symbol = Symbol('gridstorm.command.stopPropagation');
+
 export class CommandBus {
   private handlers = new Map<string, CommandHandler[]>();
   private asyncHandlers = new Map<string, AsyncCommandHandler[]>();
   private middlewares: CommandMiddleware[] = [];
-  private validators = new Map<string, CommandValidator>();
+  // Multiple validators may be registered per command type (a chain). They are
+  // run in registration order and the FIRST to return a non-null message
+  // rejects the command. Using a Map<string, CommandValidator[]> instead of a
+  // single validator fixes the silent-overwrite footgun where a second
+  // registerValidator() call clobbered the first.
+  private validators = new Map<string, CommandValidator[]>();
   private errorHandler: ErrorHandler | null = null;
 
   /** Attach a structured error handler for error reporting. */
@@ -25,6 +42,11 @@ export class CommandBus {
   /**
    * Register a payload validator for a command type.
    * The validator should return null if valid, or an error message string if invalid.
+   *
+   * Multiple validators may be registered for the same command type; they form
+   * a chain run in registration order, and the first to return a non-null
+   * message rejects the command. The returned function removes only the
+   * validator it registered (not the whole chain).
    */
   registerValidator<K extends keyof CommandMap>(
     commandType: K,
@@ -32,10 +54,48 @@ export class CommandBus {
   ): () => void;
   registerValidator(commandType: string, validator: CommandValidator): () => void;
   registerValidator(commandType: string, validator: CommandValidator): () => void {
-    this.validators.set(commandType, validator);
+    let list = this.validators.get(commandType);
+    if (!list) {
+      list = [];
+      this.validators.set(commandType, list);
+    }
+    list.push(validator);
+
     return () => {
-      this.validators.delete(commandType);
+      const current = this.validators.get(commandType);
+      if (!current) return;
+      const idx = current.indexOf(validator);
+      if (idx >= 0) current.splice(idx, 1);
+      if (current.length === 0) this.validators.delete(commandType);
     };
+  }
+
+  /**
+   * Run the validator chain for a command. Returns the first error message, or
+   * null if all validators pass (or none are registered). Reports the failure
+   * through the error handler / console as a side effect.
+   */
+  private validate(commandType: string, payload: unknown): string | null {
+    const list = this.validators.get(commandType);
+    if (!list || list.length === 0) return null;
+    for (const validator of list) {
+      const message = validator(payload);
+      if (message) {
+        const err = new Error(`Command validation failed for "${commandType}": ${message}`);
+        if (this.errorHandler) {
+          this.errorHandler.report(err, {
+            source: 'validation',
+            commandType,
+            payload,
+            severity: 'error',
+          });
+        } else {
+          console.error(`[GridStorm]`, err.message);
+        }
+        return message;
+      }
+    }
+    return null;
   }
 
   /** Register a handler for a command type. Returns an unsubscribe function. */
@@ -96,25 +156,8 @@ export class CommandBus {
   dispatch<K extends keyof CommandMap>(commandType: K, payload: CommandMap[K]): void;
   dispatch(commandType: string, payload: any): void;
   dispatch(commandType: string, payload: any): void {
-    // Validate payload if a validator is registered
-    const validator = this.validators.get(commandType);
-    if (validator) {
-      const validationError = validator(payload);
-      if (validationError) {
-        const err = new Error(`Command validation failed for "${commandType}": ${validationError}`);
-        if (this.errorHandler) {
-          this.errorHandler.report(err, {
-            source: 'validation',
-            commandType,
-            payload,
-            severity: 'error',
-          });
-        } else {
-          console.error(`[GridStorm]`, err.message);
-        }
-        return;
-      }
-    }
+    // Validate payload against the validator chain (no-op if none registered)
+    if (this.validate(commandType, payload) !== null) return;
 
     // Run through middleware chain
     let cancelled = false;
@@ -142,7 +185,9 @@ export class CommandBus {
 
     for (const handler of [...list]) {
       try {
-        handler(payload);
+        const result = (handler as (p: any) => unknown)(payload);
+        // A handler may stop the rest of the chain for this command.
+        if (result === STOP_PROPAGATION) break;
       } catch (err) {
         if (this.errorHandler) {
           this.errorHandler.report(err, {
@@ -170,25 +215,8 @@ export class CommandBus {
   ): Promise<void>;
   async dispatchAsync(commandType: string, payload: any): Promise<void>;
   async dispatchAsync(commandType: string, payload: any): Promise<void> {
-    // Validate payload if a validator is registered
-    const validator = this.validators.get(commandType);
-    if (validator) {
-      const validationError = validator(payload);
-      if (validationError) {
-        const err = new Error(`Command validation failed for "${commandType}": ${validationError}`);
-        if (this.errorHandler) {
-          this.errorHandler.report(err, {
-            source: 'validation',
-            commandType,
-            payload,
-            severity: 'error',
-          });
-        } else {
-          console.error(`[GridStorm]`, err.message);
-        }
-        return;
-      }
-    }
+    // Validate payload against the validator chain (no-op if none registered)
+    if (this.validate(commandType, payload) !== null) return;
 
     // Run through middleware chain (synchronous)
     let cancelled = false;
@@ -210,7 +238,8 @@ export class CommandBus {
     if (syncList) {
       for (const handler of [...syncList]) {
         try {
-          handler(payload);
+          const result = (handler as (p: any) => unknown)(payload);
+          if (result === STOP_PROPAGATION) return;
         } catch (err) {
           if (this.errorHandler) {
             this.errorHandler.report(err, {
@@ -230,7 +259,8 @@ export class CommandBus {
     if (asyncList) {
       for (const handler of [...asyncList]) {
         try {
-          await handler(payload);
+          const result = (await (handler as (p: any) => Promise<unknown>)(payload)) as unknown;
+          if (result === STOP_PROPAGATION) return;
         } catch (err) {
           if (this.errorHandler) {
             this.errorHandler.report(err, {

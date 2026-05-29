@@ -147,12 +147,14 @@ export class DomRenderer {
     this.container = config.container;
     this.prefix = config.classPrefix ?? 'gs';
 
-    // Feature config with smart defaults (auto-detect plugins)
-    const hasPlugin = (id: string) => !!this.engine.pluginManager.getPlugin(id);
-    this.enableCellEditing = config.enableCellEditing ?? hasPlugin('editing');
-    this.enableGrouping = config.enableGrouping ?? hasPlugin('grouping');
-    this.enableMasterDetail = hasPlugin('master-detail');
-    this.enableTreeData = hasPlugin('tree-data');
+    // Feature config with smart defaults: auto-detect by capability rather than
+    // by plugin ID, so any plugin advertising the capability lights up the
+    // matching renderer behavior (see PluginManager.hasCapability).
+    const hasCapability = (cap: string) => this.engine.pluginManager.hasCapability(cap);
+    this.enableCellEditing = config.enableCellEditing ?? hasCapability('cell-editing');
+    this.enableGrouping = config.enableGrouping ?? hasCapability('row-grouping');
+    this.enableMasterDetail = hasCapability('master-detail');
+    this.enableTreeData = hasCapability('tree-data');
     this.groupIndent = config.groupIndent ?? 24;
     this.checkboxSelection = config.checkboxSelection ?? false;
     this.checkboxColumnWidth = config.checkboxColumnWidth ?? 48;
@@ -161,7 +163,7 @@ export class DomRenderer {
     // Initialize built-in extensions based on config
     const floatingFilter = config.floatingFilter ?? false;
     const floatingFilterDebounce = config.floatingFilterDebounce ?? 300;
-    const enablePagination = config.enablePagination ?? hasPlugin('pagination');
+    const enablePagination = config.enablePagination ?? hasCapability('pagination');
     const pageSizeOptions = config.pageSizeOptions ?? [25, 50, 100, 250];
     const enableColumnSidebar = config.enableColumnSidebar ?? false;
     const sidebarWidth = config.sidebarWidth ?? 220;

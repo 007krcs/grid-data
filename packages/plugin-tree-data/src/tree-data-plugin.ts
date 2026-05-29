@@ -21,6 +21,7 @@ export function TreeDataPlugin(options: TreeDataPluginOptions = {}): GridPlugin 
     id: 'tree-data',
     name: 'Tree Data',
     version: '0.1.0',
+    capabilities: ['tree-data'],
 
     install(ctx: PluginContext) {
       // ── License validation ──

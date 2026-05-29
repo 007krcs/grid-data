@@ -39,6 +39,7 @@ export function EditingPlugin(options: EditingPluginOptions = {}): GridPlugin {
     id: 'editing',
     name: 'Cell Editing',
     version: '0.1.0',
+    capabilities: ['cell-editing'],
 
     install(ctx: PluginContext) {
       // ── Edit History (undo/redo) ──

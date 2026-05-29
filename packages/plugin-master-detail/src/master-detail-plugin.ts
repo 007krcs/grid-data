@@ -34,6 +34,7 @@ export function MasterDetailPlugin(options: MasterDetailOptions): GridPlugin {
     id: 'master-detail',
     name: 'Master Detail',
     version: '0.1.0',
+    capabilities: ['master-detail'],
 
     install(ctx: PluginContext) {
       // ── License validation ──

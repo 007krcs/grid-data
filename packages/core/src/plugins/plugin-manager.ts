@@ -11,6 +11,7 @@ import type {
   PluginEventBus,
   PluginCommandBus,
   CommandHandler,
+  RenderCapability,
 } from '../types/plugin';
 import type { GridApi, GridConfig, GridState } from '../types/grid';
 import type { GridEventMap } from '../types/events';
@@ -19,6 +20,20 @@ import type { CellEditorDef } from '../types/editing';
 import type { EventBus } from '../events/event-bus';
 import type { CommandBus } from '../events/command-bus';
 import type { Store } from '../state/store';
+
+/**
+ * Fallback mapping from built-in plugin IDs to the capability they provide,
+ * for plugins that predate the {@link GridPlugin.capabilities} field. Plugins
+ * that declare `capabilities` explicitly do not rely on this map; it only keeps
+ * older/third-party plugins working without changes.
+ */
+const LEGACY_CAPABILITY_BY_PLUGIN_ID: Record<string, RenderCapability> = {
+  editing: 'cell-editing',
+  grouping: 'row-grouping',
+  'master-detail': 'master-detail',
+  'tree-data': 'tree-data',
+  pagination: 'pagination',
+};
 
 export class PluginManager<TData = any> {
   private plugins = new Map<string, GridPlugin<TData>>();
@@ -73,6 +88,22 @@ export class PluginManager<TData = any> {
   /** Get a plugin by ID. */
   getPlugin<T extends GridPlugin>(id: string): T | undefined {
     return this.plugins.get(id) as T | undefined;
+  }
+
+  /**
+   * Whether any registered plugin provides the given render capability.
+   *
+   * Checks each plugin's declared {@link GridPlugin.capabilities} first, then
+   * falls back to a built-in plugin-ID → capability map so plugins that haven't
+   * adopted the `capabilities` field still work. Lets consumers (the DOM
+   * renderer) enable behavior without hard-coding plugin IDs.
+   */
+  hasCapability(capability: RenderCapability | string): boolean {
+    for (const plugin of this.plugins.values()) {
+      if (plugin.capabilities?.includes(capability)) return true;
+      if (LEGACY_CAPABILITY_BY_PLUGIN_ID[plugin.id] === capability) return true;
+    }
+    return false;
   }
 
   /** Get a plugin's registered API. */

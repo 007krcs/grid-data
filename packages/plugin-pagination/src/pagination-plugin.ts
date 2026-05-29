@@ -29,6 +29,7 @@ export function PaginationPlugin(options: PaginationPluginOptions = {}): GridPlu
     id: 'pagination',
     name: 'Pagination',
     version: '0.1.0',
+    capabilities: ['pagination'],
 
     install(ctx: PluginContext) {
       // Set initial page size from options, but only if the engine hasn't already

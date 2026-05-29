@@ -44,6 +44,7 @@ export type {
   PluginCommandBus,
   CommandHandler,
   AsyncCommandHandler,
+  RenderCapability,
 } from './plugin';
 
 export type { CommandMap } from './commands';

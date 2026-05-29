@@ -78,6 +78,24 @@ export interface GridPlugin<TData = any> {
   dependencies?: string[];
 
   /**
+   * Render capabilities this plugin advertises.
+   *
+   * Consumers such as the DOM renderer query capabilities (via
+   * {@link PluginManager.hasCapability}) instead of hard-coding plugin IDs, so
+   * a custom plugin can light up renderer behavior by declaring the matching
+   * capability — no renderer change required.
+   *
+   * Well-known capabilities are listed in {@link RenderCapability}; arbitrary
+   * strings are also allowed for custom integrations.
+   *
+   * @example
+   * ```ts
+   * capabilities: ['cell-editing']
+   * ```
+   */
+  capabilities?: Array<RenderCapability | (string & {})>;
+
+  /**
    * Called during grid initialization to set up the plugin.
    *
    * Use the provided {@link PluginContext} to register commands, listen to
@@ -91,6 +109,24 @@ export interface GridPlugin<TData = any> {
    */
   install(context: PluginContext<TData>): void | PluginDisposer;
 }
+
+/**
+ * Well-known render capabilities a plugin can advertise via
+ * {@link GridPlugin.capabilities}. The DOM renderer queries these (rather than
+ * specific plugin IDs) to decide which behaviors to enable.
+ *
+ * - `cell-editing` — inline cell editor overlay (provided by `editing`).
+ * - `row-grouping` — group rows + group headers (provided by `grouping`).
+ * - `master-detail` — expandable detail rows (provided by `master-detail`).
+ * - `tree-data` — hierarchical tree rows (provided by `tree-data`).
+ * - `pagination` — paged row display + pager UI (provided by `pagination`).
+ */
+export type RenderCapability =
+  | 'cell-editing'
+  | 'row-grouping'
+  | 'master-detail'
+  | 'tree-data'
+  | 'pagination';
 
 /**
  * Cleanup function returned by a plugin's {@link GridPlugin.install} method.

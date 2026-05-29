@@ -20,6 +20,7 @@ export function GroupingPlugin(options: GroupingPluginOptions = {}): GridPlugin 
     id: 'grouping',
     name: 'Row Grouping',
     version: '0.1.0',
+    capabilities: ['row-grouping'],
 
     install(ctx: PluginContext) {
       // Initialize plugin state

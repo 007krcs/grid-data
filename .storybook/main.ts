@@ -61,7 +61,17 @@ const packageAliases: Record<string, string> = {
 };
 
 const config: StorybookConfig = {
-  stories: ['../packages/*/src/**/*.stories.@(ts|tsx)'],
+  // The html-vite framework can only render stories whose `render()` returns
+  // an HTML string or DOM Node. React-adapter stories return JSX and are
+  // hosted by the sibling `.storybook-react` config — exclude them here so
+  // we don't crash with "Expecting an HTML snippet or DOM node…".
+  stories: [
+    '../packages/*/src/**/*.stories.@(ts|tsx)',
+    '!../packages/react-adapter/src/**/*.stories.@(ts|tsx)',
+    '!../packages/vue-adapter/src/**/*.stories.@(ts|tsx)',
+    '!../packages/svelte-adapter/src/**/*.stories.@(ts|tsx)',
+    '!../packages/angular-adapter/src/**/*.stories.@(ts|tsx)',
+  ],
   framework: '@storybook/html-vite',
   // addon-docs gives us the Controls panel and the autodocs description blocks.
   // (We don't use MDX directly because mdx-react-shim needs React, which the

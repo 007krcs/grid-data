@@ -70,6 +70,38 @@ for (const app of APPS) {
   console.log(`Done: ${app}`);
 }
 
+// Build both Storybooks into subpaths so the hub keeps the root.
+// /storybook       → html-framework Storybook (core engine, plugins)
+// /storybook-react → React-framework Storybook (<GridStorm/>, hooks, error boundary)
+//
+// SKIP_STORYBOOK=1 lets CI / local one-off runs opt out when the
+// full storybook build is too slow (~2 min) and not under test.
+if (process.env.SKIP_STORYBOOK !== '1') {
+  console.log('\n=== Building Storybook (html framework) ===');
+  try {
+    run(
+      `npx storybook build --output-dir "${path.join(OUT_DIR, 'storybook')}"`,
+      ROOT_DIR
+    );
+    console.log('Done: storybook');
+  } catch (err) {
+    console.error('⚠ storybook build failed — continuing so other apps deploy.');
+  }
+
+  console.log('\n=== Building Storybook (React framework) ===');
+  try {
+    run(
+      `npx storybook build --config-dir .storybook-react --output-dir "${path.join(OUT_DIR, 'storybook-react')}"`,
+      ROOT_DIR
+    );
+    console.log('Done: storybook-react');
+  } catch (err) {
+    console.error('⚠ storybook-react build failed — continuing so other apps deploy.');
+  }
+} else {
+  console.log('\n⏭  Skipping Storybook builds (SKIP_STORYBOOK=1)');
+}
+
 console.log('\nAll demos built successfully!');
 console.log('Output directory:', OUT_DIR);
 const entries = fs.readdirSync(OUT_DIR);

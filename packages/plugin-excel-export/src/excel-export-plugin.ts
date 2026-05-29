@@ -205,7 +205,7 @@ export function ExcelExportPlugin(
           // Cap check BEFORE building the gigabyte-scale string.
           const limitErr = checkExportLimits('csv', dataRows.length, columns.length, options);
           if (limitErr) {
-            ctx.eventBus.emit('excel:exportFailed' as any, {
+            ctx.eventBus.emit('excel:exportFailed', {
               format: 'csv',
               reason: limitErr.reason,
               rows: limitErr.rows,
@@ -226,7 +226,7 @@ export function ExcelExportPlugin(
           const csvContent = buildCsvContent(headers, stringRows);
           triggerDownload(csvContent, fileName, 'text/csv;charset=utf-8;');
 
-          ctx.eventBus.emit('excel:exported' as any, {
+          ctx.eventBus.emit('excel:exported', {
             format: 'csv',
             fileName,
             rowCount: stringRows.length,
@@ -241,7 +241,7 @@ export function ExcelExportPlugin(
           const { headers, dataRows, columns, options } = buildExportData(payload);
           const limitErr = checkExportLimits('excel', dataRows.length, columns.length, options);
           if (limitErr) {
-            ctx.eventBus.emit('excel:exportFailed' as any, {
+            ctx.eventBus.emit('excel:exportFailed', {
               format: 'excel',
               reason: limitErr.reason,
               rows: limitErr.rows,
@@ -267,7 +267,7 @@ export function ExcelExportPlugin(
             'application/vnd.ms-excel;charset=utf-8;',
           );
 
-          ctx.eventBus.emit('excel:exported' as any, {
+          ctx.eventBus.emit('excel:exported', {
             format: 'excel',
             fileName,
             rowCount: cellDataRows.length,

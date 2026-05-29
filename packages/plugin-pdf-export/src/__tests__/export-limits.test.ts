@@ -33,9 +33,10 @@ interface FailureEvent {
 }
 
 beforeEach(() => {
-  // @ts-expect-error: assigning to readonly global on jsdom is fine for tests.
+  // jsdom previously typed URL.createObjectURL as readonly so this
+  // assignment required @ts-expect-error. Modern lib.dom no longer
+  // does, so the cast is unnecessary.
   globalThis.URL.createObjectURL = vi.fn(() => 'blob:stub');
-  // @ts-expect-error: ditto
   globalThis.URL.revokeObjectURL = vi.fn();
 });
 
@@ -43,7 +44,7 @@ describe('PDF export — row/cell ceilings', () => {
   it('emits pdf:exportFailed when rows exceed maxRows', () => {
     const engine = makeGrid(100);
     const failures: FailureEvent[] = [];
-    engine.eventBus.on('pdf:exportFailed' as any, (e: FailureEvent) =>
+    engine.eventBus.on('pdf:exportFailed',(e: FailureEvent) =>
       failures.push(e),
     );
 
@@ -58,7 +59,7 @@ describe('PDF export — row/cell ceilings', () => {
   it('emits failure when cells exceed maxCells', () => {
     const engine = makeGrid(100);
     const failures: FailureEvent[] = [];
-    engine.eventBus.on('pdf:exportFailed' as any, (e: FailureEvent) =>
+    engine.eventBus.on('pdf:exportFailed',(e: FailureEvent) =>
       failures.push(e),
     );
 
@@ -72,10 +73,10 @@ describe('PDF export — row/cell ceilings', () => {
     const engine = makeGrid(50);
     const failures: FailureEvent[] = [];
     const successes: unknown[] = [];
-    engine.eventBus.on('pdf:exportFailed' as any, (e: FailureEvent) =>
+    engine.eventBus.on('pdf:exportFailed',(e: FailureEvent) =>
       failures.push(e),
     );
-    engine.eventBus.on('pdf:exportCompleted' as any, (e) => successes.push(e));
+    engine.eventBus.on('pdf:exportCompleted',(e) => successes.push(e));
 
     engine.commandBus.dispatch('pdf:export' as any, {} as any);
 
@@ -86,8 +87,8 @@ describe('PDF export — row/cell ceilings', () => {
   it('does not emit pdf:exportCompleted when the cap trips', () => {
     const engine = makeGrid(100);
     const successes: unknown[] = [];
-    engine.eventBus.on('pdf:exportCompleted' as any, (e) => successes.push(e));
-    engine.eventBus.on('pdf:exportFailed' as any, () => {});
+    engine.eventBus.on('pdf:exportCompleted',(e) => successes.push(e));
+    engine.eventBus.on('pdf:exportFailed',() => {});
 
     engine.commandBus.dispatch('pdf:export' as any, { maxRows: 50 } as any);
 
@@ -97,7 +98,7 @@ describe('PDF export — row/cell ceilings', () => {
   it('error payload includes PDF-specific user-facing guidance', () => {
     const engine = makeGrid(100);
     const failures: FailureEvent[] = [];
-    engine.eventBus.on('pdf:exportFailed' as any, (e: FailureEvent) =>
+    engine.eventBus.on('pdf:exportFailed',(e: FailureEvent) =>
       failures.push(e),
     );
 

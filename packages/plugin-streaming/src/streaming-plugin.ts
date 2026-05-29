@@ -127,26 +127,26 @@ export function StreamingPlugin(options: StreamingPluginOptions = {}): GridPlugi
             const dropped = pendingQueue.length - queueLimit;
             pendingQueue = pendingQueue.slice(-queueLimit);
             // Emit backpressure event so adapters/consumers know data was lost
-            ctx.eventBus.emit('streaming:backpressure' as any, {
+            ctx.eventBus.emit('streaming:backpressure', {
               droppedCount: dropped,
               queueSize: pendingQueue.length,
               queueLimit,
-            } as any);
+            });
           }
         },
         onError(error: Error): void {
-          ctx.eventBus.emit('streaming:error' as any, {
+          ctx.eventBus.emit('streaming:error', {
             error,
-          } as any);
+          });
         },
         onConnectionChange(connected: boolean): void {
           ctx.setState<StreamingState>('streaming', (prev) => ({
             ...prev,
             connected,
           }));
-          ctx.eventBus.emit('streaming:connectionChange' as any, {
+          ctx.eventBus.emit('streaming:connectionChange', {
             connected,
-          } as any);
+          });
         },
       };
 
@@ -254,7 +254,14 @@ export function StreamingPlugin(options: StreamingPluginOptions = {}): GridPlugi
           };
         });
 
-        // Emit stream:updated event
+        // TODO(events): this re-emits the built-in `rowData:changed` event
+        // with a custom payload `{ type, batchSize, changes }`, which does
+        // not match the documented `{ rowData: TData[] }` shape. Adapters
+        // (React's useGridState, etc.) listen to `rowData:changed` to know
+        // to re-render — we abuse that here to trigger UI updates without
+        // touching the row data. Replace with a proper `streaming:updated`
+        // event consumed by the adapters, then emit a real `rowData:changed`
+        // payload separately if/when the row count actually changes.
         ctx.eventBus.emit('rowData:changed' as any, {
           type: 'stream:updated',
           batchSize: batch.length,

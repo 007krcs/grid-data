@@ -1,5 +1,9 @@
 // © 2025 GridStorm / Tekivex — All Rights Reserved
 // Unauthorized reproduction or distribution is prohibited.
+
+// Register custom-event typings on GridEventMap.
+import './events';
+
 export { PdfExportPlugin } from './pdf-export-plugin';
 export type {
   PdfExportOptions,

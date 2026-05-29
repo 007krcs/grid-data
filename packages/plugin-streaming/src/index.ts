@@ -2,6 +2,9 @@
 // Unauthorized reproduction or distribution is prohibited.
 // ─── @gridstorm/plugin-streaming — Public API ───
 
+// Register custom-event typings on GridEventMap.
+import './events';
+
 export { StreamingPlugin } from './streaming-plugin';
 export type {
   StreamingPluginOptions,

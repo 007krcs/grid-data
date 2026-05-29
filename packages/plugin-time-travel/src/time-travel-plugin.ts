@@ -203,7 +203,13 @@ export function TimeTravelPlugin(options: TimeTravelPluginOptions = {}): GridPlu
           };
         });
 
-        // Emit event
+        // TODO(events): same semantic bug as plugin-streaming — the time-
+        // travel plugin abuses the built-in `rowData:changed` event with
+        // wrong payloads (`{ type, snapshot }` here, `{ type, branch }`,
+        // etc. below) to force adapters to re-render. Should be replaced
+        // with proper plugin-owned events `timeTravel:snapshotCaptured`,
+        // `timeTravel:restored`, etc., declared in a sibling events.ts.
+        // Tracked as a follow-up to the GridEventMap-opening change.
         ctx.eventBus.emit('rowData:changed' as any, {
           type: 'timeTravel:snapshotCaptured',
           snapshot: newSnapshot,
@@ -520,7 +526,7 @@ export function TimeTravelPlugin(options: TimeTravelPluginOptions = {}): GridPlu
 
         // Watch cell edits — editing plugin mutates data in-place
         // so the rowNodes reference doesn't change
-        const unsubCellEdit = ctx.eventBus.on('cell:valueChanged' as any, () => {
+        const unsubCellEdit = ctx.eventBus.on('cell:valueChanged', () => {
           scheduleCaptureIfNeeded();
         });
         disposers.push(unsubCellEdit);

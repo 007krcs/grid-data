@@ -17,15 +17,38 @@ import type { CellPosition, CellRange } from './selection';
  * @typeParam TData - The type of each row data object.
  *
  * @remarks
- * Plugins may extend this interface via TypeScript declaration merging
- * to add custom events.
+ * **Plugins may extend this interface via TypeScript declaration merging**
+ * to register typed custom events. Do this once per plugin (typically in an
+ * `events.ts` file colocated with the plugin source) and import that file
+ * from the plugin's entry point so consumers automatically pick up the
+ * augmentation when they import the plugin.
  *
- * @example
+ * @example Subscribing to a built-in event
  * ```ts
  * api.addEventListener('selection:changed', (e) => {
  *   console.log('Selected rows:', e.selectedNodes.length);
  * });
  * ```
+ *
+ * @example Plugin author: declaring a custom event with proper typing
+ * ```ts
+ * // packages/plugin-streaming/src/events.ts
+ * import '@gridstorm/core';
+ *
+ * declare module '@gridstorm/core' {
+ *   interface GridEventMap<TData> {
+ *     'streaming:backpressure': {
+ *       droppedCount: number;
+ *       queueSize: number;
+ *       queueLimit: number;
+ *     };
+ *   }
+ * }
+ * ```
+ *
+ * After this, `ctx.eventBus.emit('streaming:backpressure', {...})` and
+ * `api.addEventListener('streaming:backpressure', ...)` are both fully typed
+ * — no `as any` cast required.
  *
  * @see {@link GridApi.addEventListener}
  * @see {@link GridApi.removeEventListener}

@@ -197,7 +197,7 @@ export function PdfExportPlugin(
             options,
           );
           if (limitErr) {
-            ctx.eventBus.emit('pdf:exportFailed' as any, {
+            ctx.eventBus.emit('pdf:exportFailed', {
               reason: limitErr.reason,
               rows: limitErr.rows,
               cells: limitErr.cells,
@@ -217,7 +217,7 @@ export function PdfExportPlugin(
           triggerDownload(pdfBytes, fileName);
 
           // Emit completion event
-          ctx.eventBus.emit('pdf:exportCompleted' as any, {
+          ctx.eventBus.emit('pdf:exportCompleted', {
             fileName,
             rowCount: gridData.rows.length,
             pageSize: options.pageSize ?? 'a4',

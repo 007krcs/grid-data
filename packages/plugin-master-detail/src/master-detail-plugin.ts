@@ -225,7 +225,7 @@ export function MasterDetailPlugin(options: MasterDetailOptions): GridPlugin {
             console.error(`[GridStorm] Failed to fetch detail data for row ${payload.nodeId}:`, err);
           });
 
-          ctx.eventBus.emit('detail:opened' as any, {
+          ctx.eventBus.emit('detail:opened', {
             nodeId: payload.nodeId,
             node: ctx.store.getState().rowNodes.get(payload.nodeId),
           });
@@ -254,7 +254,7 @@ export function MasterDetailPlugin(options: MasterDetailOptions): GridPlugin {
 
           applyDetailRows();
 
-          ctx.eventBus.emit('detail:closed' as any, {
+          ctx.eventBus.emit('detail:closed', {
             nodeId: payload.nodeId,
             node: ctx.store.getState().rowNodes.get(payload.nodeId),
           });

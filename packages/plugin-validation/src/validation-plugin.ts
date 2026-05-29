@@ -243,7 +243,7 @@ export function ValidationPlugin(options: ValidationPluginOptions = {}): GridPlu
       // ── Edit integration ──
       let unsubCellChanged: (() => void) | undefined;
       if (validateOnEdit) {
-        unsubCellChanged = ctx.eventBus.on('cell:valueChanged' as any, (event: any) => {
+        unsubCellChanged = ctx.eventBus.on('cell:valueChanged', (event: any) => {
           const { rowId, colId } = event;
           if (!rowId || !colId) return;
 

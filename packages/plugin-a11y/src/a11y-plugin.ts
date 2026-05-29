@@ -67,7 +67,7 @@ export function A11yPlugin(options: A11yPluginOptions = {}): GridPlugin {
         // ── Event Subscriptions ──
 
         // Sort changes
-        cleanups.push(ctx.eventBus.on('column:sort:changed' as any, (payload: any) => {
+        cleanups.push(ctx.eventBus.on('column:sort:changed', (payload: any) => {
           const model = payload?.sortModel ?? payload;
           if (Array.isArray(model) && model.length > 0) {
             const item = model[0];
@@ -80,7 +80,7 @@ export function A11yPlugin(options: A11yPluginOptions = {}): GridPlugin {
         }));
 
         // Filter changes
-        cleanups.push(ctx.eventBus.on('filter:changed' as any, (payload: any) => {
+        cleanups.push(ctx.eventBus.on('filter:changed', (payload: any) => {
           const filterModel = payload?.filterModel ?? payload;
           const keys = filterModel ? Object.keys(filterModel) : [];
           // Resolve human-readable column name from colId key
@@ -95,13 +95,13 @@ export function A11yPlugin(options: A11yPluginOptions = {}): GridPlugin {
         }));
 
         // Selection changes
-        cleanups.push(ctx.eventBus.on('selection:changed' as any, (payload: any) => {
+        cleanups.push(ctx.eventBus.on('selection:changed', (payload: any) => {
           const nodes = payload?.selectedNodes ?? [];
           doAnnounce('selection-changed', { count: nodes.length });
         }));
 
         // Cell editing started
-        cleanups.push(ctx.eventBus.on('cell:editingStarted' as any, (payload: any) => {
+        cleanups.push(ctx.eventBus.on('cell:editingStarted', (payload: any) => {
           ctx.setState<A11yState>(STATE_KEY, (prev: A11yState) => ({ ...prev, focusMode: 'edit' }));
           focusManager.setFocusMode('edit');
           const col = ctx.store.getState().columns.find(
@@ -114,7 +114,7 @@ export function A11yPlugin(options: A11yPluginOptions = {}): GridPlugin {
         }));
 
         // Cell editing stopped
-        cleanups.push(ctx.eventBus.on('cell:editingStopped' as any, (payload: any) => {
+        cleanups.push(ctx.eventBus.on('cell:editingStopped', (payload: any) => {
           ctx.setState<A11yState>(STATE_KEY, (prev: A11yState) => ({ ...prev, focusMode: 'navigate' }));
           focusManager.setFocusMode('navigate');
           const col = ctx.store.getState().columns.find(
@@ -126,7 +126,7 @@ export function A11yPlugin(options: A11yPluginOptions = {}): GridPlugin {
         }));
 
         // Row group expand/collapse
-        cleanups.push(ctx.eventBus.on('row:groupOpened' as any, (payload: any) => {
+        cleanups.push(ctx.eventBus.on('row:groupOpened', (payload: any) => {
           const node = payload?.node;
           const expanded = node?.expanded ?? payload?.expanded;
           doAnnounce(expanded ? 'row-expanded' : 'row-collapsed', {
@@ -135,7 +135,7 @@ export function A11yPlugin(options: A11yPluginOptions = {}): GridPlugin {
         }));
 
         // Pagination
-        cleanups.push(ctx.eventBus.on('pagination:changed' as any, (payload: any) => {
+        cleanups.push(ctx.eventBus.on('pagination:changed', (payload: any) => {
           doAnnounce('page-changed', {
             page: (payload?.currentPage ?? 0) + 1,
             totalPages: payload?.totalPages ?? 1,
@@ -143,13 +143,13 @@ export function A11yPlugin(options: A11yPluginOptions = {}): GridPlugin {
         }));
 
         // Data loaded
-        cleanups.push(ctx.eventBus.on('rowData:changed' as any, (payload: any) => {
+        cleanups.push(ctx.eventBus.on('rowData:changed', (payload: any) => {
           const count = payload?.rowData?.length ?? ctx.store.getState().displayedRowIds.length;
           doAnnounce('data-loaded', { rowCount: count });
         }));
 
         // Cell focused — announce to screen reader
-        cleanups.push(ctx.eventBus.on('cell:focused' as any, (payload: any) => {
+        cleanups.push(ctx.eventBus.on('cell:focused', (payload: any) => {
           const pos = payload?.position;
           if (!pos) return;
           const col = ctx.store.getState().columns.find((c) => c.colId === pos.colId);
@@ -161,7 +161,7 @@ export function A11yPlugin(options: A11yPluginOptions = {}): GridPlugin {
 
         // Enhance headers on initial render and after re-renders
         focusManager.enhanceHeaders();
-        cleanups.push(ctx.eventBus.on('dom:headerRendered' as any, () => {
+        cleanups.push(ctx.eventBus.on('dom:headerRendered', () => {
           focusManager.enhanceHeaders();
         }));
 

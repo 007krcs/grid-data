@@ -78,7 +78,7 @@ export function ChartsPlugin(): GridPlugin {
               [payload.id]: { config: payload.config, data: payload.data },
             },
           }));
-          ctx.eventBus.emit('charts:rendered' as any, { chartId: payload.id });
+          ctx.eventBus.emit('charts:rendered', { chartId: payload.id });
         },
       );
 

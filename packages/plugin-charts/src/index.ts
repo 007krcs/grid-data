@@ -2,6 +2,11 @@
 // Unauthorized reproduction or distribution is prohibited.
 // ─── @gridstorm/plugin-charts — Public API ───
 
+// Register custom-event typings on GridEventMap. Importing this side-effect
+// module is what makes `eventBus.emit('charts:rendered', ...)` type-check
+// without an `as any` cast — both inside this plugin and in consumer code.
+import './events';
+
 // Plugin factory
 export { ChartsPlugin } from './charts-plugin';
 

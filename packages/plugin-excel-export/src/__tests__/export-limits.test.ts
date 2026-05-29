@@ -48,7 +48,7 @@ describe('Excel export — row/cell ceilings', () => {
   it('CSV emits excel:exportFailed when rows exceed maxRows', () => {
     const engine = makeGrid(200);
     const failures: FailureEvent[] = [];
-    engine.eventBus.on('excel:exportFailed' as any, (e: FailureEvent) =>
+    engine.eventBus.on('excel:exportFailed',(e: FailureEvent) =>
       failures.push(e),
     );
 
@@ -65,7 +65,7 @@ describe('Excel export — row/cell ceilings', () => {
   it('CSV emits failure when cells exceed maxCells (rows × cols)', () => {
     const engine = makeGrid(100);
     const failures: FailureEvent[] = [];
-    engine.eventBus.on('excel:exportFailed' as any, (e: FailureEvent) =>
+    engine.eventBus.on('excel:exportFailed',(e: FailureEvent) =>
       failures.push(e),
     );
 
@@ -81,7 +81,7 @@ describe('Excel export — row/cell ceilings', () => {
   it('Excel XML export honors the same cap', () => {
     const engine = makeGrid(200);
     const failures: FailureEvent[] = [];
-    engine.eventBus.on('excel:exportFailed' as any, (e: FailureEvent) =>
+    engine.eventBus.on('excel:exportFailed',(e: FailureEvent) =>
       failures.push(e),
     );
 
@@ -96,10 +96,10 @@ describe('Excel export — row/cell ceilings', () => {
     const engine = makeGrid(100);
     const failures: FailureEvent[] = [];
     const successes: unknown[] = [];
-    engine.eventBus.on('excel:exportFailed' as any, (e: FailureEvent) =>
+    engine.eventBus.on('excel:exportFailed',(e: FailureEvent) =>
       failures.push(e),
     );
-    engine.eventBus.on('excel:exported' as any, (e) => successes.push(e));
+    engine.eventBus.on('excel:exported',(e) => successes.push(e));
 
     // No options override → default maxRows = 100_000, maxCells = 5_000_000.
     // 100 rows × 2 cols = 200 cells; well below both.
@@ -112,7 +112,7 @@ describe('Excel export — row/cell ceilings', () => {
   it('maxRows: Infinity effectively disables the row cap', () => {
     const engine = makeGrid(500);
     const failures: FailureEvent[] = [];
-    engine.eventBus.on('excel:exportFailed' as any, (e: FailureEvent) =>
+    engine.eventBus.on('excel:exportFailed',(e: FailureEvent) =>
       failures.push(e),
     );
 
@@ -127,8 +127,8 @@ describe('Excel export — row/cell ceilings', () => {
   it('does not emit excel:exported when the cap trips', () => {
     const engine = makeGrid(200);
     const successes: unknown[] = [];
-    engine.eventBus.on('excel:exported' as any, (e) => successes.push(e));
-    engine.eventBus.on('excel:exportFailed' as any, () => {});
+    engine.eventBus.on('excel:exported',(e) => successes.push(e));
+    engine.eventBus.on('excel:exportFailed',() => {});
 
     engine.commandBus.dispatch('excel:exportCsv' as any, { maxRows: 100 } as any);
 
@@ -138,7 +138,7 @@ describe('Excel export — row/cell ceilings', () => {
   it('error payload carries enough info to render a useful message', () => {
     const engine = makeGrid(500);
     const failures: FailureEvent[] = [];
-    engine.eventBus.on('excel:exportFailed' as any, (e: FailureEvent) =>
+    engine.eventBus.on('excel:exportFailed',(e: FailureEvent) =>
       failures.push(e),
     );
 

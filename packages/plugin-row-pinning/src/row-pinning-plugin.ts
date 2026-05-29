@@ -83,7 +83,7 @@ export function RowPinningPlugin(options: RowPinningPluginOptions = {}): GridPlu
 
       // Emit initial event if we have pre-populated pinned rows
       if (initialState.pinnedTopRows.length > 0 || initialState.pinnedBottomRows.length > 0) {
-        ctx.eventBus.emit('rowPinning:changed' as any, {
+        ctx.eventBus.emit('rowPinning:changed', {
           pinnedTopRows: initialState.pinnedTopRows,
           pinnedBottomRows: initialState.pinnedBottomRows,
         });
@@ -92,7 +92,7 @@ export function RowPinningPlugin(options: RowPinningPluginOptions = {}): GridPlu
       // ── Helper: emit change event ──
       function emitChanged(): void {
         const current = ctx.getState<RowPinningState>(STATE_KEY);
-        ctx.eventBus.emit('rowPinning:changed' as any, {
+        ctx.eventBus.emit('rowPinning:changed', {
           pinnedTopRows: current.pinnedTopRows,
           pinnedBottomRows: current.pinnedBottomRows,
         });

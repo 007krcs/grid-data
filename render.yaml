@@ -1,0 +1,93 @@
+# Render Blueprint — version-controlled config for the gridstorm.tekivex.com
+# static site. With this file in the repo, Render will read these settings on
+# every deploy instead of relying on the dashboard form values. To enable,
+# go to Render dashboard → Settings → clear the "Build Command" and "Publish
+# Directory" overrides, then Render will fall back to this file.
+#
+# Build pipeline (examples/build-all.cjs):
+#   1. Vite builds examples/hub        → dist/                  (root / marketing site)
+#   2. Vite builds each example app    → dist/<app>/            (playground, react-demo, etc.)
+#   3. storybook build (html-vite)     → dist/storybook/        (core engine, plugins)
+#   4. storybook build (react-vite)    → dist/storybook-react/  (React adapter stories)
+#
+# Set SKIP_STORYBOOK=1 as an environment variable in the Render dashboard
+# (or here under envVars) to skip steps 3 & 4 for faster deploys (~2 min saved).
+
+services:
+  - type: web
+    runtime: static
+    name: gridstorm
+    repo: https://github.com/007krcs/grid-data
+    branch: main
+    autoDeploy: true
+    pullRequestPreviewsEnabled: true
+
+    # pnpm isn't preinstalled on Render's static runtime; invoke via npx so
+    # we don't depend on a global install. --frozen-lockfile guards against
+    # silent dependency drift between local and prod builds.
+    buildCommand: >-
+      npx --yes pnpm@9.15.0 install --frozen-lockfile &&
+      npx --yes pnpm@9.15.0 run build:examples
+
+    staticPublishPath: ./dist
+
+    # SPA fallbacks. Order matters — Render uses the first match, so the
+    # catch-all `/*` → `/index.html` (the marketing hub) MUST be last.
+    routes:
+      - type: rewrite
+        source: /analytics-explorer/*
+        destination: /analytics-explorer/index.html
+      - type: rewrite
+        source: /cookbook/*
+        destination: /cookbook/index.html
+      - type: rewrite
+        source: /feature-showcase/*
+        destination: /feature-showcase/index.html
+      - type: rewrite
+        source: /financial-trading/*
+        destination: /financial-trading/index.html
+      - type: rewrite
+        source: /pdf-viewer/*
+        destination: /pdf-viewer/index.html
+      - type: rewrite
+        source: /playground/*
+        destination: /playground/index.html
+      - type: rewrite
+        source: /react-demo/*
+        destination: /react-demo/index.html
+      - type: rewrite
+        source: /spreadsheet/*
+        destination: /spreadsheet/index.html
+      - type: rewrite
+        source: /storybook/*
+        destination: /storybook/index.html
+      - type: rewrite
+        source: /storybook-react/*
+        destination: /storybook-react/index.html
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+    # Vite emits asset filenames with a content hash, so they're safe to
+    # cache for a year. The HTML entry points are NOT cached aggressively
+    # — Render defaults short cache for those, which is what we want.
+    headers:
+      - path: /hub-assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /*/assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /storybook/assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /storybook-react/assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+
+    # Basic hardening. Adjust CSP separately if/when the hub or examples
+    # need to load third-party scripts (e.g. Google AdSense / GA already
+    # in examples/hub/index.html will need script-src allowances).
+    envVars:
+      - key: NODE_VERSION
+        value: "20"

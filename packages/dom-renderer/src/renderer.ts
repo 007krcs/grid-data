@@ -16,6 +16,8 @@ import type { RendererExtension, RendererContext } from './extensions/types';
 import { FloatingFilterRenderer } from './extensions/floating-filter-renderer';
 import { PaginationRenderer } from './extensions/pagination-renderer';
 import { SidebarRenderer } from './extensions/sidebar-renderer';
+import { EditingOverlay } from './editing-overlay';
+import type { ActiveEditor, EditingOverlayHost } from './editing-overlay';
 
 export interface DomRendererConfig {
   /** Container element to mount the grid into. */
@@ -98,12 +100,10 @@ export class DomRenderer {
 
   // Feature state
   private headerCheckbox: HTMLInputElement | null = null;
-  private activeEditor: {
-    element: HTMLElement;
-    cellElement: HTMLElement;
-    rowId: string;
-    colId: string;
-  } | null = null;
+  private activeEditor: ActiveEditor | null = null;
+
+  // Inline cell-editing overlay controller (mounts editors over cells)
+  private editingOverlay: EditingOverlay;
 
   // Custom double-click detection via click events.
   // Native dblclick is unreliable because SelectionPlugin bumps node.version
@@ -185,6 +185,21 @@ export class DomRenderer {
     if (config.extensions) {
       this.extensions.push(...config.extensions);
     }
+
+    // Inline cell editing is delegated to a dedicated controller that talks to
+    // the renderer only through this narrow host surface.
+    const editingHost: EditingOverlayHost = {
+      prefix: this.prefix,
+      getState: () => this.engine.store.getState(),
+      dispatch: (command, payload) => this.engine.commandBus.dispatch(command, payload),
+      getBodyContainer: () => this.bodyContainer,
+      getActiveEditor: () => this.activeEditor,
+      setActiveEditor: (editor) => {
+        this.activeEditor = editor;
+      },
+      rerenderRow: (rowId) => this.rerenderRowAfterEdit(rowId),
+    };
+    this.editingOverlay = new EditingOverlay(editingHost);
   }
 
   /** Build a RendererContext for extensions. */
@@ -315,7 +330,7 @@ export class DomRenderer {
     this.rowPool = [];
 
     // Clean up feature state
-    this.removeEditorOverlay();
+    this.editingOverlay.removeEditorOverlay();
     this.headerCheckbox = null;
     this._lastCellClick = null;
 
@@ -1046,12 +1061,12 @@ export class DomRenderer {
     // Inline cell editing: show/hide editor overlay
     if (this.enableCellEditing) {
       const unsubEditStart = this.engine.eventBus.on('cell:editingStarted', () => {
-        this.onEditingStateChanged();
+        this.editingOverlay.onEditingStateChanged();
       });
       this.unsubscribers.push(unsubEditStart);
 
       const unsubEditStop = this.engine.eventBus.on('cell:editingStopped', () => {
-        this.onEditingStateChanged();
+        this.editingOverlay.onEditingStateChanged();
       });
       this.unsubscribers.push(unsubEditStop);
     }
@@ -1976,206 +1991,11 @@ export class DomRenderer {
   // ── Feature 3: Inline Cell Editing ──
   // ═══════════════════════════════════════════════════════════
 
-  private onEditingStateChanged(): void {
-    const state = this.engine.store.getState();
-
-    if (state.editing && !this.activeEditor) {
-      // Use microtask to ensure DOM has been updated with latest row data
-      queueMicrotask(() => this.startEditorOverlay());
-    } else if (!state.editing && this.activeEditor) {
-      this.removeEditorOverlay();
-    }
-  }
-
-  private startEditorOverlay(): void {
-    const state = this.engine.store.getState();
-    if (!state.editing) return;
-
-    const { rowId, colId, value } = state.editing;
-    const node = state.rowNodes.get(rowId);
-    if (!node) return;
-
-    const col = state.columns.find((c) => c.colId === colId);
-    if (!col) return;
-
-    // Find cell DOM element
-    const rowEl = this.bodyContainer?.querySelector(`[data-row-id="${CSS.escape(rowId)}"]`);
-    if (!rowEl) return;
-    const cellEl = rowEl.querySelector(`[data-col-id="${CSS.escape(colId)}"]`) as HTMLElement | null;
-    if (!cellEl) return;
-
-    // Clear cell content and prepare for editor
-    cellEl.textContent = '';
-    cellEl.classList.add(`${this.prefix}-cell-editing`);
-    cellEl.style.position = 'relative';
-    cellEl.style.padding = '0';
-    cellEl.style.overflow = 'visible';
-
-    // Determine editor type
-    const editorType = col.originalDef?.cellEditor ?? 'text';
-    const editorParams = col.originalDef?.cellEditorParams as Record<string, any> | undefined;
-
-    let editorEl: HTMLElement;
-
-    if (editorType === 'select' && editorParams?.values) {
-      // Select editor
-      const select = document.createElement('select');
-      select.className = `${this.prefix}-cell-editor ${this.prefix}-cell-editor-select`;
-      select.style.cssText =
-        'width:100%;height:100%;box-sizing:border-box;' +
-        'border:2px solid var(--gs-color-cell-editing-border,#3b82f6);' +
-        'outline:none;padding:0 4px;font:inherit;' +
-        'background:var(--gs-color-cell-editing-bg,#ffffff);';
-
-      for (const optVal of editorParams.values as string[]) {
-        const opt = document.createElement('option');
-        opt.value = optVal;
-        opt.textContent = optVal;
-        if (optVal === String(value)) opt.selected = true;
-        select.appendChild(opt);
-      }
-
-      select.addEventListener('change', () => {
-        this.engine.commandBus.dispatch('editing:setValue', { value: select.value });
-      });
-
-      select.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
-        else if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: true }); }
-        else if (e.key === 'Tab') { e.stopPropagation(); e.preventDefault(); this.tabToNextEditableCell(e.shiftKey); }
-      });
-
-      editorEl = select;
-    } else if (editorType === 'number') {
-      // Number editor
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.value = value != null ? String(value) : '';
-      input.className = `${this.prefix}-cell-editor ${this.prefix}-cell-editor-number`;
-      input.style.cssText =
-        'width:100%;height:100%;box-sizing:border-box;' +
-        'border:2px solid var(--gs-color-cell-editing-border,#3b82f6);' +
-        'outline:none;padding:0 8px;font:inherit;' +
-        'background:var(--gs-color-cell-editing-bg,#ffffff);';
-
-      input.addEventListener('input', () => {
-        this.engine.commandBus.dispatch('editing:setValue', { value: input.valueAsNumber });
-      });
-
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
-        else if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: true }); }
-        else if (e.key === 'Tab') { e.stopPropagation(); e.preventDefault(); this.tabToNextEditableCell(e.shiftKey); }
-      });
-
-      editorEl = input;
-    } else {
-      // Text editor (default)
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.value = value != null ? String(value) : '';
-      input.className = `${this.prefix}-cell-editor ${this.prefix}-cell-editor-text`;
-      input.style.cssText =
-        'width:100%;height:100%;box-sizing:border-box;' +
-        'border:2px solid var(--gs-color-cell-editing-border,#3b82f6);' +
-        'outline:none;padding:0 8px;font:inherit;' +
-        'background:var(--gs-color-cell-editing-bg,#ffffff);';
-
-      input.addEventListener('input', () => {
-        this.engine.commandBus.dispatch('editing:setValue', { value: input.value });
-      });
-
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: false }); }
-        else if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); this.engine.commandBus.dispatch('editing:stop', { cancel: true }); }
-        else if (e.key === 'Tab') { e.stopPropagation(); e.preventDefault(); this.tabToNextEditableCell(e.shiftKey); }
-      });
-
-      editorEl = input;
-    }
-
-    cellEl.appendChild(editorEl);
-
-    // Store reference
-    this.activeEditor = {
-      element: editorEl,
-      cellElement: cellEl,
-      rowId,
-      colId,
-    };
-
-    // Focus and select after DOM insertion
-    requestAnimationFrame(() => {
-      if (editorEl instanceof HTMLInputElement) {
-        editorEl.focus();
-        editorEl.select();
-      } else if (editorEl instanceof HTMLSelectElement) {
-        editorEl.focus();
-      }
-    });
-  }
-
-  /** Stop current editing and move to the next/previous editable cell (Tab navigation). */
-  private tabToNextEditableCell(reverse = false): void {
-    const state = this.engine.store.getState();
-    if (!state.editing) {
-      this.engine.commandBus.dispatch('editing:stop', { cancel: false });
-      return;
-    }
-
-    const { rowId, colId } = state.editing;
-    // Build a flat list of all [rowId, colId] pairs for editable cells
-    const editablePairs: Array<{ rowId: string; colId: string }> = [];
-    for (const id of state.displayedRowIds) {
-      const node = state.rowNodes.get(id);
-      if (!node || node.group || node.detail) continue;
-      for (const col of state.columns) {
-        if (col.hide) continue;
-        if (col.originalDef?.editable) {
-          editablePairs.push({ rowId: id, colId: col.colId });
-        }
-      }
-    }
-
-    // Find current position
-    const currentIndex = editablePairs.findIndex(
-      (p) => p.rowId === rowId && p.colId === colId,
-    );
-
-    // Stop editing first
-    this.engine.commandBus.dispatch('editing:stop', { cancel: false });
-
-    if (currentIndex === -1 || editablePairs.length < 2) return;
-
-    const nextIndex = reverse
-      ? (currentIndex - 1 + editablePairs.length) % editablePairs.length
-      : (currentIndex + 1) % editablePairs.length;
-
-    const next = editablePairs[nextIndex];
-    if (!next) return;
-
-    // Start editing the next cell after a microtask (allows stop to complete)
-    queueMicrotask(() => {
-      this.engine.commandBus.dispatch('editing:start', {
-        rowId: next.rowId,
-        colId: next.colId,
-      });
-    });
-  }
-
-  private removeEditorOverlay(): void {
-    if (!this.activeEditor) return;
-
-    const { cellElement, rowId } = this.activeEditor;
-
-    // Remove editing class
-    cellElement.classList.remove(`${this.prefix}-cell-editing`);
-    cellElement.style.padding = '';
-    cellElement.style.overflow = '';
-
-    this.activeEditor = null;
-
-    // Re-render the row to restore cell content
+  // The inline editor lifecycle (mount editor, keyboard handling, Tab
+  // navigation, teardown) lives in EditingOverlay (./editing-overlay.ts). The
+  // renderer only needs to restore a row's rendered cell content after an
+  // editor is removed — exposed here and wired via the EditingOverlayHost.
+  private rerenderRowAfterEdit(rowId: string): void {
     const state = this.engine.store.getState();
     const node = state.rowNodes.get(rowId);
     if (node) {

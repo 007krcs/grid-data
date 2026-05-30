@@ -6,9 +6,10 @@
 // tears the editor down again — restoring the cell's rendered content.
 //
 // Extracted from renderer.ts to keep the DOM renderer focused on row/cell
-// virtualization. The controller never touches renderer internals directly; it
-// goes through the narrow EditingOverlayHost interface, mirroring the
-// RendererContext pattern used by renderer extensions.
+// virtualization. The controller reaches the renderer only through the narrow
+// EditingOverlayHost interface (the renderer supplies the adapter that bridges
+// to its internals), mirroring the RendererContext pattern used by renderer
+// extensions.
 
 import type { GridState } from '@gridstorm/core';
 

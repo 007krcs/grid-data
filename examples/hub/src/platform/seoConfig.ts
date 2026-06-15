@@ -3,7 +3,7 @@
 // and passes the result to useSeo(). Product routes delegate to the manifest
 // seo field via seoFromManifest().
 
-import { type SeoConfig, seoFromManifest } from './useSeo';
+import { type SeoConfig, seoFromManifest, buildBreadcrumb } from './useSeo';
 import { getProduct } from './registry';
 
 const BASE_URL = 'https://gridstorm.tekivex.com';
@@ -14,7 +14,7 @@ const HOME_SEO: SeoConfig = {
   title: 'GridStorm — Open-Source Enterprise Data Grid Platform',
   description:
     'GridStorm is an open-source enterprise data grid: virtual scrolling (100K rows), ' +
-    '35 composable plugins, PDF Toolkit, Analytics Studio, and framework adapters for React, Vue, Svelte, Angular.',
+    '40+ composable plugins, PDF Toolkit, Analytics Studio, and framework adapters for React, Vue, Svelte, Angular.',
   keywords: [
     'enterprise data grid',
     'open source data grid',
@@ -28,13 +28,13 @@ const HOME_SEO: SeoConfig = {
   canonical: BASE_URL,
   ogTitle: 'GridStorm — Open-Source Enterprise Data Grid Platform',
   ogDescription:
-    'Open-source enterprise data grid with virtual scrolling, 35 plugins, PDF Toolkit, and Analytics Studio.',
-  ogImage: `${BASE_URL}/og-gridstorm.png`,
+    'Open-source enterprise data grid with virtual scrolling, 40+ plugins, PDF Toolkit, and Analytics Studio.',
+  ogImage: `${BASE_URL}/og-gridstorm.png?v=20260528`,
   ogType: 'website',
   twitterTitle: 'GridStorm — Open-Source Enterprise Data Grid Platform',
   twitterDescription:
     'High-performance data grid, WASM PDF Toolkit, Analytics Studio — open source, zero per-seat cost.',
-  twitterImage: `${BASE_URL}/og-gridstorm.png`,
+  twitterImage: `${BASE_URL}/og-gridstorm.png?v=20260528`,
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -70,13 +70,13 @@ const PRODUCTS_SEO: SeoConfig = {
   ogTitle: 'All Products — GridStorm Platform',
   ogDescription:
     'Open-source enterprise software suite: data grids, PDF processing, and analytics.',
-  ogImage: `${BASE_URL}/og-gridstorm.png`,
+  ogImage: `${BASE_URL}/og-gridstorm.png?v=20260528`,
   ogType: 'website',
   twitterTitle: 'GridStorm Product Suite',
   twitterDescription:
     'GridStorm, PDF Toolkit, Analytics Studio — enterprise tools, zero per-seat cost.',
-  twitterImage: `${BASE_URL}/og-gridstorm.png`,
-  jsonLd: null,
+  twitterImage: `${BASE_URL}/og-gridstorm.png?v=20260528`,
+  jsonLd: buildBreadcrumb([{ name: 'Products', url: '/products' }], BASE_URL),
 };
 
 const DOCS_SEO: SeoConfig = {
@@ -96,25 +96,28 @@ const DOCS_SEO: SeoConfig = {
   ogTitle: 'GridStorm Documentation',
   ogDescription:
     'Complete GridStorm docs: getting started, plugins, React/Vue/Angular/Svelte guides.',
-  ogImage: `${BASE_URL}/og-gridstorm.png`,
+  ogImage: `${BASE_URL}/og-gridstorm.png?v=20260528`,
   ogType: 'website',
   twitterTitle: 'GridStorm Documentation',
   twitterDescription: 'Full API reference, plugin guide, and framework docs for GridStorm.',
-  twitterImage: `${BASE_URL}/og-gridstorm.png`,
-  jsonLd: {
-    '@context': 'https://schema.org',
-    '@type': 'TechArticle',
-    headline: 'GridStorm Documentation',
-    description:
-      'Complete documentation for GridStorm enterprise data grid with plugin reference and framework guides.',
-    url: `${BASE_URL}/docs`,
-    author: { '@type': 'Organization', name: 'GridStorm' },
-    publisher: {
-      '@type': 'Organization',
-      name: 'GridStorm',
-      url: BASE_URL,
+  twitterImage: `${BASE_URL}/og-gridstorm.png?v=20260528`,
+  jsonLd: [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'TechArticle',
+      headline: 'GridStorm Documentation',
+      description:
+        'Complete documentation for GridStorm enterprise data grid with plugin reference and framework guides.',
+      url: `${BASE_URL}/docs`,
+      author: { '@type': 'Organization', name: 'GridStorm' },
+      publisher: {
+        '@type': 'Organization',
+        name: 'GridStorm',
+        url: BASE_URL,
+      },
     },
-  },
+    buildBreadcrumb([{ name: 'Documentation', url: '/docs' }], BASE_URL),
+  ],
 };
 
 
@@ -135,12 +138,12 @@ const DEMOS_SEO: SeoConfig = {
   ogTitle: 'GridStorm Live Demos',
   ogDescription:
     '30+ interactive demos: virtual scrolling, formulas, clipboard, accessibility, pivoting, and more.',
-  ogImage: `${BASE_URL}/og-gridstorm.png`,
+  ogImage: `${BASE_URL}/og-gridstorm.png?v=20260528`,
   ogType: 'website',
   twitterTitle: 'GridStorm Live Demos',
   twitterDescription: '30+ interactive GridStorm demos — try it in your browser right now.',
-  twitterImage: `${BASE_URL}/og-gridstorm.png`,
-  jsonLd: null,
+  twitterImage: `${BASE_URL}/og-gridstorm.png?v=20260528`,
+  jsonLd: buildBreadcrumb([{ name: 'Demos', url: '/demos' }], BASE_URL),
 };
 
 // ── Route resolver ─────────────────────────────────────────────────────────
@@ -156,12 +159,24 @@ export function getSeoForRoute(route: string): SeoConfig {
   if (route.startsWith('/docs')) return DOCS_SEO;
   if (route === '/demos') return DEMOS_SEO;
 
-  // Per-product pages — derive from manifest
+  // Per-product pages — derive from manifest and stack a BreadcrumbList
+  // (Home > Products > <Product>) on top of the SoftwareApplication block.
   if (route.startsWith('/product/')) {
     const id = route.slice('/product/'.length).split('/')[0];
     const product = id ? getProduct(id) : undefined;
+    const breadcrumb = buildBreadcrumb(
+      [
+        { name: 'Products', url: '/products' },
+        { name: product?.name ?? id ?? 'Product', url: route },
+      ],
+      BASE_URL,
+    );
     if (product?.seo) {
-      return seoFromManifest(product.seo, BASE_URL, route);
+      const base = seoFromManifest(product.seo, BASE_URL, route);
+      return {
+        ...base,
+        jsonLd: base.jsonLd ? [base.jsonLd as object, breadcrumb] : breadcrumb,
+      };
     }
     // Fallback for products without seo field
     if (product) {
@@ -172,9 +187,9 @@ export function getSeoForRoute(route: string): SeoConfig {
         canonical: `${BASE_URL}${route}`,
         ogTitle: `${product.name} — GridStorm`,
         ogDescription: product.description,
-        ogImage: `${BASE_URL}/og-gridstorm.png`,
+        ogImage: `${BASE_URL}/og-gridstorm.png?v=20260528`,
         ogType: 'website',
-        jsonLd: null,
+        jsonLd: breadcrumb,
       };
     }
   }

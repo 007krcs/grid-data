@@ -135,7 +135,7 @@
   <text x="136" y="461" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#a5b4fc">100K rows @ 60fps</text>
 
   <rect x="222" y="438" width="110" height="36" rx="18" fill="#06b6d4" fill-opacity="0.15" stroke="#06b6d4" stroke-opacity="0.4" stroke-width="1.5"/>
-  <text x="277" y="461" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#67e8f9">35 plugins</text>
+  <text x="277" y="461" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#67e8f9">40+ plugins</text>
 
   <rect x="344" y="438" width="106" height="36" rx="18" fill="#10b981" fill-opacity="0.15" stroke="#10b981" stroke-opacity="0.4" stroke-width="1.5"/>
   <text x="397" y="461" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#6ee7b7">MIT license</text>

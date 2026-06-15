@@ -33,7 +33,7 @@ export function Ecosystem() {
             <div className="platform-icon">
               <Icon name={card.icon} size={22} />
             </div>
-            <h4>{card.title}</h4>
+            <h3>{card.title}</h3>
             <p>{card.description}</p>
           </div>
         ))}

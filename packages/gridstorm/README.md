@@ -56,7 +56,7 @@ function App() {
 - **Theming** — CSS custom properties, light/dark/high-contrast, density modes
 - **i18n** — Internationalization support
 
-### 28 Plugins
+### 40+ Plugins
 
 | Category | Plugins |
 |----------|---------|

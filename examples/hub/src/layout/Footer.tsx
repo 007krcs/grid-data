@@ -99,7 +99,7 @@ export function Footer() {
       <div className="hub-footer-cols">
         {FOOTER_COLS.map((col) => (
           <div key={col.heading} className="hub-footer-col">
-            <h4 className="hub-footer-col-heading">{col.heading}</h4>
+            <h3 className="hub-footer-col-heading">{col.heading}</h3>
             <ul className="hub-footer-col-list">
               {col.links.map((link) => (
                 <li key={link.label}>

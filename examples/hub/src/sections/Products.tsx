@@ -1,7 +1,7 @@
 import { Icon } from '../icons/Icon';
 
 const gridFeatures = [
-  '35 composable plugins',
+  '40+ composable plugins',
   'Virtual scroll (100K rows @ 60fps)',
   'WCAG 2.1 AA accessibility',
   'Excel-compatible formula engine (42 fns)',
@@ -40,7 +40,7 @@ export function Products() {
       </h2>
       <p className="section-sub">
         A unified platform — one license covers the data grid, the PDF toolkit,
-        and 35 plugins. Shared event and plugin architecture throughout.
+        and 40+ plugins. Shared event and plugin architecture throughout.
       </p>
 
       {/* Plugin tier breakdown */}

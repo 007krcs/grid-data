@@ -41,7 +41,7 @@ export function AiSection() {
         {aiCards.map((card) => (
           <div key={card.title} className="ai-card">
             <div className="ai-badge">{card.badge}</div>
-            <h4>{card.title}</h4>
+            <h3>{card.title}</h3>
             <p>{card.description}</p>
           </div>
         ))}

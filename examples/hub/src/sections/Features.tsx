@@ -104,7 +104,7 @@ export function Features() {
         <span className="section-accent">$999/dev/yr for</span>
       </h2>
       <p className="section-sub">
-        35 composable plugins covering virtual scroll, WCAG 2.1 AA, Excel formulas,
+        40+ composable plugins covering virtual scroll, WCAG 2.1 AA, Excel formulas,
         Excel copy/paste, row grouping, time travel, and more — all open-source.
       </p>
       <div className="features-grid">
@@ -113,7 +113,7 @@ export function Features() {
             <div className="feature-icon">
               <Icon name={feat.icon} size={20} />
             </div>
-            <h4>{feat.title}</h4>
+            <h3>{feat.title}</h3>
             <p>{feat.description}</p>
             {(feat.docsSlug || feat.demoLink) && (
               <div className="feature-links">

@@ -62,7 +62,7 @@ export function App() {
           <div className="bg-glow" />
           <div className="hub-container">
             <TopNav route={route} />
-            {page}
+            <main id="main-content">{page}</main>
             <Footer />
           </div>
         </PlatformProvider>

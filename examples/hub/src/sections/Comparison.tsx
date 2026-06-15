@@ -14,7 +14,7 @@ const rows: CompRow[] = [
   { feature: 'Excel formula engine',     gridstorm: '42 functions',aggrid: '$999/dev/yr',     handsontable: '400+ (paid)' },
   { feature: 'Excel copy/paste',         gridstorm: true,          aggrid: '$999/dev/yr',     handsontable: '$349/dev/yr' },
   { feature: 'Headless architecture',    gridstorm: true,          aggrid: false,             handsontable: false },
-  { feature: 'Plugin system',            gridstorm: '35 plugins',  aggrid: 'Built-in only',   handsontable: 'Built-in only' },
+  { feature: 'Plugin system',            gridstorm: '40+ plugins',  aggrid: 'Built-in only',   handsontable: 'Built-in only' },
   { feature: 'State time-travel',        gridstorm: true,          aggrid: false,             handsontable: false },
   { feature: 'PDF toolkit built-in',     gridstorm: true,          aggrid: false,             handsontable: false },
   { feature: 'AI / MCP integration',     gridstorm: true,          aggrid: false,             handsontable: false },
@@ -36,7 +36,7 @@ export function Comparison() {
         How we compare to <span className="section-accent">the alternatives</span>
       </h2>
       <p className="section-sub">
-        GridStorm ships with a sub-50 KB headless core, 35 composable plugins, WCAG 2.1 AA
+        GridStorm ships with a sub-50 KB headless core, 40+ composable plugins, WCAG 2.1 AA
         accessibility, 42 Excel functions, and true Excel copy/paste — all free. No $999/dev/yr.
       </p>
 

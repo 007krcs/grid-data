@@ -1,12 +1,12 @@
 # GridStorm
 
 > GridStorm is an open-source, headless enterprise data grid platform for the web.
-> MIT-licensed core with 28+ composable plugins, virtual scrolling (100K+ rows @ 60fps),
+> MIT-licensed core with 40+ composable plugins, virtual scrolling (100K+ rows @ 60fps),
 > WCAG 2.1 AA accessibility, 42-function Excel formula engine, Excel-compatible copy/paste,
 > and framework adapters for React, Vue, Angular, Svelte, and Vanilla JS.
 
 GridStorm ships as a pnpm monorepo with a sub-50 KB headless core, a DOM renderer,
-framework adapters, and 28 plugins across three tiers:
+framework adapters, and 40+ plugins across three tiers:
 
 - **Tier 1 (MIT, free forever)**: Sorting, Filtering, Selection, Editing, Pagination,
   Column Pinning, Column Resize, Column Reorder, Context Menu, Clipboard

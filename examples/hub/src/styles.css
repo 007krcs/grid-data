@@ -563,7 +563,7 @@ body {
   margin-bottom: 12px;
 }
 
-.ai-card h4 {
+.ai-card h3 {
   font-size: 15px;
   font-weight: 700;
   margin-bottom: 6px;
@@ -769,7 +769,7 @@ body {
   gap: 6px;
 }
 
-.feature-cell h4 {
+.feature-cell h3 {
   font-size: 14px;
   font-weight: 600;
   color: var(--hub-text);
@@ -828,7 +828,7 @@ body {
   box-shadow: var(--hub-card-shadow);
 }
 
-.platform-card h4 {
+.platform-card h3 {
   font-size: 15px;
   font-weight: 700;
   color: var(--hub-text);

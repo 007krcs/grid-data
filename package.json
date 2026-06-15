@@ -10,10 +10,10 @@
   "bugs": {
     "url": "https://github.com/007krcs/grid-data/issues"
   },
-  "homepage": "https://gridstorm.dev",
+  "homepage": "https://gridstorm.tekivex.com",
   "author": {
     "name": "GridStorm",
-    "url": "https://gridstorm.dev"
+    "url": "https://gridstorm.tekivex.com"
   },
   "license": "MIT",
   "scripts": {

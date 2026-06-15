@@ -3,7 +3,7 @@ import type { ProductManifest } from '../platform/types';
 export const gridstormManifest: ProductManifest = {
   id: 'gridstorm',
   name: 'GridStorm',
-  tagline: 'Enterprise Data Grid — 35 composable plugins',
+  tagline: 'Enterprise Data Grid — 40+ composable plugins',
   description:
     'Headless data grid engine with virtual scrolling, WCAG 2.1 AA accessibility, ' +
     '42 Excel-compatible formula functions, Excel copy/paste, and a full plugin ' +
@@ -18,8 +18,8 @@ export const gridstormManifest: ProductManifest = {
   docsRoot: '/docs/',
   primaryDemoPath: '/feature-showcase/',
   stats: [
-    { value: '57',     label: 'Packages' },
-    { value: '35',     label: 'Plugins' },
+    { value: '65',     label: 'Packages' },
+    { value: '40+',    label: 'Plugins' },
     { value: '100K+',  label: 'Rows @ 60fps' },
     { value: '<50KB',  label: 'Core bundle' },
   ],
@@ -43,7 +43,7 @@ export const gridstormManifest: ProductManifest = {
     title: 'GridStorm — Enterprise React Data Grid | NexaForge',
     description:
       'Open-source enterprise data grid with virtual scrolling (100K rows @ 60fps), ' +
-      'WCAG 2.1 AA, 42 Excel formula functions, and 35 composable plugins. Free forever.',
+      'WCAG 2.1 AA, 42 Excel formula functions, and 40+ composable plugins. Free forever.',
     keywords: [
       'enterprise data grid',
       'react data grid',

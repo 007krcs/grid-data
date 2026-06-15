@@ -1,7 +1,7 @@
 // © 2025 GridStorm / Tekivex — All Rights Reserved
 // Unauthorized reproduction or distribution is prohibited.
 /**
- * GridStorm Plugins — All 35 plugins in one import
+ * GridStorm Plugins — All 40+ plugins in one import
  *
  * ```ts
  * import { SortingPlugin, FilteringPlugin, AIPlugin } from 'gridstorm/plugins';

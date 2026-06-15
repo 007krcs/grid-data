@@ -35,7 +35,7 @@ export function Hero() {
         <span className="gradient">Enterprise Data Grid</span>
       </h1>
       <p className="hero-sub">
-        35 composable plugins. WCAG 2.1 AA. Excel-compatible formulas and copy/paste.
+        40+ composable plugins. WCAG 2.1 AA. Excel-compatible formulas and copy/paste.
         <br />
         Everything AG Grid Enterprise charges $999/dev/yr for — free and open-source.
       </p>
@@ -155,7 +155,7 @@ export function Hero() {
         <div className="preview-footer">
           <span className="preview-badge green">● Live</span>
           <span className="preview-stat">5 rows · 100K row capacity · 60 fps</span>
-          <span className="preview-plugins">35 plugins · WCAG 2.1 AA · Excel copy/paste</span>
+          <span className="preview-plugins">40+ plugins · WCAG 2.1 AA · Excel copy/paste</span>
         </div>
       </div>
     </section>

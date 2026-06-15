@@ -12,6 +12,8 @@ out
 # and deployed by .github/workflows/storybook.yml
 storybook-static
 storybook-static-react
+# Astro internal build cache + content type generation
+docs/.astro
 
 # IDE/Editor
 .vscode

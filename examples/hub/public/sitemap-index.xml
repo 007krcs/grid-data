@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Root sitemap index for GridStorm.
+
+  The marketing hub's flat sitemap.xml lives next to this file (covers
+  /, /products, /demos, /playground/, /feature-showcase/, /spreadsheet/,
+  /analytics-explorer/, etc.). The docs site at /docs/ generates its own
+  sitemap-index.xml + sitemap-0.xml via @astrojs/sitemap at build time
+  (see docs/astro.config.mjs).
+
+  This index points crawlers at both, so robots.txt can reference one
+  authoritative entry point.
+-->
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>https://gridstorm.tekivex.com/sitemap.xml</loc>
+    <lastmod>2026-05-28</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://gridstorm.tekivex.com/docs/sitemap-index.xml</loc>
+    <lastmod>2026-05-28</lastmod>
+  </sitemap>
+</sitemapindex>

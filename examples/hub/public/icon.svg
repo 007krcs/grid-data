@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="GridStorm">
+  <rect width="512" height="512" rx="96" fill="#0f172a"/>
+  <g fill="none" stroke="#3b82f6" stroke-width="24" stroke-linecap="round">
+    <path d="M112 160h288"/>
+    <path d="M112 256h288"/>
+    <path d="M112 352h288"/>
+    <path d="M160 112v288"/>
+    <path d="M352 112v288"/>
+  </g>
+  <rect x="256" y="256" width="96" height="96" rx="12" fill="#3b82f6" opacity="0.9"/>
+</svg>

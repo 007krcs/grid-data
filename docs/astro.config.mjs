@@ -1,13 +1,30 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import sitemap from '@astrojs/sitemap';
 
+// Site is the public canonical for the deployed docs. Required by
+// @astrojs/sitemap (added below) and by Starlight for generating
+// canonical URLs and Open Graph URLs in <head>. The docs are deployed
+// under /docs/ on the marketing hub (see vercel.json route rule
+// added alongside this change), so `base: '/docs'` makes every
+// generated link, asset URL, and sitemap entry resolve correctly.
 export default defineConfig({
+  site: 'https://gridstorm.tekivex.com',
+  base: '/docs',
   integrations: [
+    // Generates dist/sitemap-index.xml + dist/sitemap-0.xml on `astro build`.
+    // Picks up `site` and `base` above; emitted URLs are
+    // https://gridstorm.tekivex.com/docs/<slug>/ with weekly changefreq.
+    sitemap({
+      changefreq: 'weekly',
+      priority: 0.7,
+      lastmod: new Date(),
+    }),
     starlight({
       title: 'GridStorm',
       description: 'Next-generation high-performance data grid for the web',
       social: {
-        github: 'https://github.com/gridstorm/gridstorm',
+        github: 'https://github.com/007krcs/grid-data',
       },
       sidebar: [
         {

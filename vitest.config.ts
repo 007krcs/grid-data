@@ -65,6 +65,13 @@ export default defineConfig({
       '@gridstorm/plugin-state-persistence': path.resolve(__dirname, 'packages/plugin-state-persistence/src/index.ts'),
       '@gridstorm/codemod': path.resolve(__dirname, 'packages/codemod/src/index.ts'),
       '@gridstorm/mcp-server': path.resolve(__dirname, 'packages/mcp-server/src/index.ts'),
+      // ── Pillar 1 + 2 packages (collab + AI roadmap) ──
+      '@gridstorm/ai-adapter': path.resolve(__dirname, 'packages/ai-adapter/src/index.ts'),
+      '@gridstorm/plugin-presence': path.resolve(__dirname, 'packages/plugin-presence/src/index.ts'),
+      '@gridstorm/plugin-yjs-cells': path.resolve(__dirname, 'packages/plugin-yjs-cells/src/index.ts'),
+      '@gridstorm/plugin-ai-query': path.resolve(__dirname, 'packages/plugin-ai-query/src/index.ts'),
+      '@gridstorm/plugin-comments': path.resolve(__dirname, 'packages/plugin-comments/src/index.ts'),
+      '@gridstorm/plugin-cell-autocomplete': path.resolve(__dirname, 'packages/plugin-cell-autocomplete/src/index.ts'),
       'gridstorm': path.resolve(__dirname, 'packages/gridstorm/src/index.ts'),
     },
   },

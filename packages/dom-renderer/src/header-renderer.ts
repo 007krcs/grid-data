@@ -232,6 +232,7 @@ export class HeaderRenderer {
       });
       if (typeof result === 'string') {
         if (col.originalDef?.dangerouslySetInnerHTML === true) {
+          // eslint-disable-next-line no-unsanitized/property -- header HTML is gated by the explicit dangerouslySetInnerHTML opt-in, same contract as the cell renderer
           cell.innerHTML = result;
         } else {
           cell.textContent = result;

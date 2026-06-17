@@ -64,6 +64,7 @@ export function ChartsPlugin(): GridPlugin {
         div.style.display = 'flex';
         div.style.alignItems = 'center';
         div.style.justifyContent = 'center';
+        // eslint-disable-next-line no-unsanitized/property -- renderer is one of CHART_RENDERERS (built-in SVG factories); inputs are typed numeric data + plugin config, no user-supplied strings flow through
         div.innerHTML = renderer(data, colWidth - 16, rowHeight, config);
         return div;
       });

@@ -57,6 +57,7 @@ export function SparklinePlugin(config: SparklineConfig = {}): GridPlugin {
           div.style.justifyContent = 'center';
           div.style.width = '100%';
           div.style.height = '100%';
+          // eslint-disable-next-line no-unsanitized/property -- RENDERERS is the built-in sparkline SVG factory map; type is bounded enum and value is numeric, no user strings
           div.innerHTML = RENDERERS[type](value, width - 16, height, params);
           return div;
         };

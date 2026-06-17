@@ -75,7 +75,6 @@ export class InMemoryCrdtTransport implements CrdtTransport {
       try {
         m.handlers.onUpdate(initialState);
       } catch (e) {
-        // eslint-disable-next-line no-console
         console.error('[InMemoryCrdtTransport] handler.onUpdate threw:', e);
       }
     }
@@ -90,7 +89,6 @@ export class InMemoryCrdtTransport implements CrdtTransport {
       try {
         m.handlers.onUpdate(update);
       } catch (e) {
-        // eslint-disable-next-line no-console
         console.error('[InMemoryCrdtTransport] handler.onUpdate threw:', e);
       }
     }

@@ -1269,6 +1269,7 @@ export class DomRenderer {
           // must opt in via dangerouslySetInnerHTML on the column def AND take
           // responsibility for sanitizing the string themselves.
           if (col.originalDef?.dangerouslySetInnerHTML === true) {
+            // eslint-disable-next-line no-unsanitized/property -- gated by explicit opt-in flag; sanitization is consumer's responsibility (see comment above)
             cell.innerHTML = result;
           } else {
             cell.textContent = result;

@@ -98,6 +98,7 @@ const meta: Meta = {
   },
   render: () => {
     const wrapper = document.createElement('div');
+    // eslint-disable-next-line no-unsanitized/property -- INTRO_HTML is a hard-coded constant in this file; no dynamic input
     wrapper.innerHTML = INTRO_HTML;
     return wrapper;
   },

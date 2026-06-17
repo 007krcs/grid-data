@@ -3538,7 +3538,10 @@ function CellCommentsDemo() {
       setComments(new Map(e.byAnchor ?? new Map()));
     }) as any);
     api.addEventListener?.('cell:focused' as any, ((e: any) => {
-      if (e.rowId && e.colId) setSelectedAnchor(`${e.rowId}:${e.colId}`);
+      const pos = e?.position;
+      if (pos && typeof pos.rowIndex === 'number' && pos.colId) {
+        setSelectedAnchor(`r${pos.rowIndex}:${pos.colId}`);
+      }
     }) as any);
   }, []);
 

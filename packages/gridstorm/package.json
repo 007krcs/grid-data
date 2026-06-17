@@ -1,7 +1,7 @@
 {
   "name": "gridstorm",
-  "version": "0.2.3",
-  "description": "GridStorm — The complete enterprise data grid. One package, everything included: core engine, 32 plugins (incl. Formula Engine, Time Travel, Cell Range, Validation), DOM renderer, theming, i18n, and PDF toolkit.",
+  "version": "0.3.0",
+  "description": "GridStorm — The complete enterprise data grid in one npm install. Core engine + 45+ plugins (sorting, filtering, grouping, pivoting, formulas, time-travel, CRDT collab, LLM-backed NL query, anomaly detection, more) + React/Vue/Svelte/Angular adapters + theming + i18n + signed license layer + AI adapter + PDF toolkit.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

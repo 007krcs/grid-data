@@ -16,6 +16,7 @@
   ],
   "exclude": [
     "src/__tests__",
+    "src/__stories__",
     "../dom-renderer/src/__tests__",
     "../core/src/__tests__",
     "../core/src/__stories__"

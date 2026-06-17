@@ -59,7 +59,7 @@ export function PresencePlugin(options: PresencePluginOptions): GridPlugin {
         displayName: options.displayName,
         color: options.color ?? colorForUserId(options.userId),
         avatarUrl: options.avatarUrl,
-        lastSeen: typeof performance !== 'undefined' && performance.now ? Date.now() : 0,
+        lastSeen: Date.now(),
       };
 
       ctx.registerState<PresenceState>(STATE_KEY, {

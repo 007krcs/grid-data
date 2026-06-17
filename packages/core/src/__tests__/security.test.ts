@@ -1,10 +1,13 @@
 // ─── Security Tests: Prototype Pollution & ReDoS ─────────────────────────────
 // Tests that the core grid engine is hardened against injection attacks.
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createGrid } from '../index';
+import type { ColumnDef } from '../types/column';
 
-const COLUMNS = [
+interface Row { id: number; value: string; }
+
+const COLUMNS: ColumnDef<Row>[] = [
   { field: 'id',    headerName: 'ID'    },
   { field: 'value', headerName: 'Value' },
 ];
@@ -64,8 +67,8 @@ describe('Security: Prototype Pollution', () => {
     const engine = createGrid({ columns: COLUMNS, rowData: [] });
 
     engine.api.setRowData([
-      { id: 1, __proto__: { polluted: 'yes' } } as any,
-      { id: 2, __proto__: { polluted: 'also' } } as any,
+      { id: 1, __proto__: { polluted: 'yes' } } as unknown as Row,
+      { id: 2, __proto__: { polluted: 'also' } } as unknown as Row,
     ]);
 
     expect((({} as any).polluted)).toBeUndefined();
@@ -156,11 +159,11 @@ describe('Security: ReDoS Prevention', () => {
 
 describe('Security: Data Integrity', () => {
   it('getRowData returns copies, not direct references to internal row nodes', () => {
-    const rowData = [{ id: 1, value: 'original' }];
+    const rowData: Row[] = [{ id: 1, value: 'original' }];
     const engine = createGrid({ columns: COLUMNS, rowData });
 
     // Mutating the original rowData after createGrid must not affect engine state
-    rowData[0].value = 'mutated';
+    rowData[0]!.value = 'mutated';
 
     // The engine should have captured the value at createGrid time
     // (behavior depends on implementation; at minimum, engine must not crash)

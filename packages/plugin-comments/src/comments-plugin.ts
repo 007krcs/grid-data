@@ -271,14 +271,14 @@ export function CommentsPlugin(options: CommentsPluginOptions): GridPlugin {
 
       // ── Transport wiring ────────────────────────────────────────────────
       const transportHandlers: CrdtTransportHandlers = {
-        onUpdate(update) {
+        onUpdate(update: Uint8Array) {
           try {
             Y.applyUpdate(doc, update, 'remote');
           } catch (e) {
             handleError(e);
           }
         },
-        onError(err) {
+        onError(err: Error) {
           handleError(err);
         },
       };

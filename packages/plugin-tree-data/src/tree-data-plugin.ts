@@ -4,7 +4,7 @@
 // Provides hierarchical parent-child row display with expand/collapse.
 
 import type { GridPlugin, PluginContext, RowNode } from '@gridstorm/core';
-import { validateLicense, createWatermark } from '@gridstorm/license';
+import { enforceLicense, createWatermark } from '@gridstorm/license';
 import type { TreeDataPluginOptions, TreeNodeState } from './types';
 import { buildTree, flattenTree } from './tree-builder';
 
@@ -25,7 +25,7 @@ export function TreeDataPlugin(options: TreeDataPluginOptions = {}): GridPlugin 
 
     install(ctx: PluginContext) {
       // ── License validation ──
-      const licenseResult = validateLicense('tree-data');
+      const licenseResult = enforceLicense('tree-data');
       let unsubLicenseWatermark: (() => void) | undefined;
       if (!licenseResult.valid && !licenseResult.isDevelopment) {
         console.warn(licenseResult.message);

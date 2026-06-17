@@ -10,7 +10,7 @@ import type { RowNode } from '../types/row';
 import type { SortModelItem } from '../types/column';
 import type { FilterModel } from '../types/filter';
 
-import { Store } from '../state/store';
+import { Store, INTERNAL_SETSTATE } from '../state/store';
 import { EventBus } from '../events/event-bus';
 import { CommandBus } from '../events/command-bus';
 import { PluginManager } from '../plugins/plugin-manager';
@@ -136,7 +136,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
         ...prev.pagination,
         totalRows: allIds.length,
       },
-    }));
+    }), INTERNAL_SETSTATE);
   }
 
   // ── Build API ──
@@ -161,7 +161,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
             selectedRowIds: new Set(),
             rangeSelections: [],
           },
-        }));
+        }), INTERNAL_SETSTATE);
         reprocessRows();
       });
 
@@ -183,7 +183,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
           const insertAt = index != null ? Math.min(index, updatedIds.length) : updatedIds.length;
           updatedIds.splice(insertAt, 0, ...newIds);
           return { ...prev, rowNodes: updatedMap, displayedRowIds: updatedIds };
-        });
+        }, INTERNAL_SETSTATE);
         reprocessRows();
       });
 
@@ -212,7 +212,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
             rowNodes: updatedMap,
             selection: { ...prev.selection, selectedRowIds: updatedSelection },
           };
-        });
+        }, INTERNAL_SETSTATE);
         reprocessRows();
       });
 
@@ -249,7 +249,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
         store.setState((prev) => ({
           ...prev,
           rowNodes: new Map(prev.rowNodes),
-        }));
+        }), INTERNAL_SETSTATE);
         reprocessRows();
       });
 
@@ -292,7 +292,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
         columns: newColumns,
         columnGroups: newGroups,
         columnGroupDepth: newDepth,
-      }));
+      }), INTERNAL_SETSTATE);
       eventBus.emit('columns:changed', { columns: newColumns });
     },
 
@@ -312,7 +312,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
       store.setState((prev) => ({
         ...prev,
         columns: updateColumn(prev.columns, colId, { hide: !visible }),
-      }));
+      }), INTERNAL_SETSTATE);
       const col = findColumn(store.getState().columns, colId);
       if (col) eventBus.emit('column:visible', { column: col, visible });
     },
@@ -321,7 +321,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
       store.setState((prev) => ({
         ...prev,
         columns: updateColumn(prev.columns, colId, { pinned }),
-      }));
+      }), INTERNAL_SETSTATE);
       const col = findColumn(store.getState().columns, colId);
       if (col) eventBus.emit('column:pinned', { column: col, pinned });
     },
@@ -334,7 +334,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
       store.setState((prev) => ({
         ...prev,
         columns: updateColumn(prev.columns, colId, { width: clamped }),
-      }));
+      }), INTERNAL_SETSTATE);
       const updatedCol = findColumn(store.getState().columns, colId)!;
       eventBus.emit('column:resized', { column: updatedCol, oldWidth, newWidth: clamped, finished: true });
     },
@@ -351,7 +351,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
         const [col] = cols.splice(fi, 1);
         cols.splice(toIndex, 0, col!);
         return { ...prev, columns: cols };
-      });
+      }, INTERNAL_SETSTATE);
 
       const movedCol = findColumn(store.getState().columns, colId);
       if (movedCol) {
@@ -379,7 +379,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
           columns = updateColumn(columns, update.colId, update);
         }
         return { ...prev, columns };
-      });
+      }, INTERNAL_SETSTATE);
       eventBus.emit('columns:changed', { columns: store.getState().columns });
     },
 
@@ -387,7 +387,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
     setSortModel(model) {
       // Guard: coerce null/undefined to empty array so downstream code never crashes
       const safeModel = Array.isArray(model) ? model : [];
-      store.setState((prev) => ({ ...prev, sortModel: safeModel }));
+      store.setState((prev) => ({ ...prev, sortModel: safeModel }), INTERNAL_SETSTATE);
       reprocessRows();
       eventBus.emit('column:sort:changed', { sortModel: safeModel });
     },
@@ -398,7 +398,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
 
     // Filtering
     setFilterModel(model) {
-      store.setState((prev) => ({ ...prev, filterModel: model }));
+      store.setState((prev) => ({ ...prev, filterModel: model }), INTERNAL_SETSTATE);
       reprocessRows();
       eventBus.emit('filter:changed', { filterModel: model });
     },
@@ -408,7 +408,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
     },
 
     setQuickFilter(text) {
-      store.setState((prev) => ({ ...prev, quickFilterText: text }));
+      store.setState((prev) => ({ ...prev, quickFilterText: text }), INTERNAL_SETSTATE);
       reprocessRows();
       eventBus.emit('quickFilter:changed', { text });
     },
@@ -425,7 +425,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
       store.setState((prev) => ({
         ...prev,
         selection: { ...prev.selection, selectedRowIds: allIds },
-      }));
+      }), INTERNAL_SETSTATE);
       eventBus.emit('selection:changed', {
         selectedNodes: api.getSelectedNodes(),
         source: 'selectAll',
@@ -436,7 +436,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
       store.setState((prev) => ({
         ...prev,
         selection: { ...prev.selection, selectedRowIds: new Set() },
-      }));
+      }), INTERNAL_SETSTATE);
       eventBus.emit('selection:changed', { selectedNodes: [], source: 'api' });
     },
 
@@ -488,7 +488,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
           originalValue: value,
           rowEditMode: false,
         },
-      }));
+      }), INTERNAL_SETSTATE);
 
       eventBus.emit('cell:editingStarted', { node, colId: params.colId, value });
     },
@@ -500,7 +500,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
       const node = state.rowNodes.get(state.editing.rowId);
       const { colId, value, originalValue } = state.editing;
 
-      store.setState((prev) => ({ ...prev, editing: null }));
+      store.setState((prev) => ({ ...prev, editing: null }), INTERNAL_SETSTATE);
 
       if (node) {
         let finalValue = value;
@@ -582,7 +582,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
       store.setState((prev) => ({
         ...prev,
         rowNodes: new Map(prev.rowNodes),
-      }));
+      }), INTERNAL_SETSTATE);
       reprocessRows();
     },
 
@@ -597,7 +597,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
       store.setState((prev) => ({
         ...prev,
         rowNodes: new Map(prev.rowNodes),
-      }));
+      }), INTERNAL_SETSTATE);
       reprocessRows();
     },
 
@@ -607,7 +607,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
       store.setState((prev) => ({
         ...prev,
         rowNodes: new Map(prev.rowNodes),
-      }));
+      }), INTERNAL_SETSTATE);
       reprocessRows();
       eventBus.emit('row:groupOpened', { node, expanded });
     },
@@ -631,7 +631,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
       store.setState((prev) => ({
         ...prev,
         pagination: { ...prev.pagination, currentPage: clamped },
-      }));
+      }), INTERNAL_SETSTATE);
       // Re-slice displayedRowIds for the new page
       reprocessRows();
       eventBus.emit('pagination:changed', {
@@ -669,7 +669,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
         store.setState((prev) => ({
           ...prev,
           rowNodes: new Map(prev.rowNodes),
-        }));
+        }), INTERNAL_SETSTATE);
         eventBus.emit('viewport:changed', { firstRow: 0, lastRow: api.getDisplayedRowCount() - 1 });
       } else if (key === 'headerHeight') {
         eventBus.emit('viewport:changed', { firstRow: 0, lastRow: api.getDisplayedRowCount() - 1 });
@@ -678,7 +678,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
         store.setState((prev) => ({
           ...prev,
           pagination: { ...prev.pagination, pageSize: newPageSize, currentPage: 0 },
-        }));
+        }), INTERNAL_SETSTATE);
         reprocessRows();
       }
     },

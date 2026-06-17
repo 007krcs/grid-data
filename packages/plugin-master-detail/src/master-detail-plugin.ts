@@ -5,7 +5,7 @@
 // caching, and full display integration.
 
 import type { GridPlugin, PluginContext, RowNode } from '@gridstorm/core';
-import { validateLicense, createWatermark } from '@gridstorm/license';
+import { enforceLicense, createWatermark } from '@gridstorm/license';
 import type { MasterDetailOptions, DetailState } from './types';
 
 /** Prefix for detail row IDs to distinguish them from master rows. */
@@ -38,7 +38,7 @@ export function MasterDetailPlugin(options: MasterDetailOptions): GridPlugin {
 
     install(ctx: PluginContext) {
       // ── License validation ──
-      const licenseResult = validateLicense('master-detail');
+      const licenseResult = enforceLicense('master-detail');
       let unsubLicenseWatermark: (() => void) | undefined;
       if (!licenseResult.valid && !licenseResult.isDevelopment) {
         console.warn(licenseResult.message);

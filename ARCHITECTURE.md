@@ -1841,3 +1841,117 @@ Section 15 reflects the repository as it actually exists on 2026-05-27.
 Future updates: amend Section 15 in place; do not silently rewrite Sections
 1–14 — they document design intent, which is valuable independently of
 current implementation state.*
+
+---
+
+# SECTION 16 — Hardening Pass Addendum (2026-06-17)
+
+Section 15 catalogued open gaps. This section records the hardening pass
+that closed several of them. **Where §15 and §16 disagree on a given gap,
+§16 wins.**
+
+## 16.1 — License subsystem
+
+- **Signed JWT licenses are now the only accepted format.** `GS2-` prefix +
+  Ed25519 signature (`@noble/curves`). Legacy `GS-` base64 JSON keys are
+  rejected with a migration message. Verification reads through a single
+  `activePublicKeyHex` so production and tests share one source of truth.
+- **Strict mode (`setLicenseStrictMode(true)`).** When enabled, premium
+  plugins throw `LicenseRequiredError` during install instead of falling
+  back to a `console.warn` + watermark. Recommended for production
+  bundles. The default (off) preserves the prior watermark behavior.
+- **Clock-skew detection.** Each `validateLicense` call persists the
+  highest observed `Date.now()` to localStorage. If a subsequent call
+  observes a clock that has regressed by more than 7 days, the license is
+  refused. This blocks the trivial "roll the system clock back" bypass.
+  It does not stop a sophisticated attacker who also wipes the storage
+  entry; it makes the bypass non-trivial.
+- **`isDev()` bypass tightened.** `.local` and `.test` TLDs no longer skip
+  the license check (those are routinely used for real internal apps).
+  Still honored: `localhost`, `127.0.0.1`, `0.0.0.0`, `[::1]`, and
+  `NODE_ENV=development`.
+- **Watermark re-attach.** `createWatermark` now installs a
+  `MutationObserver` on the host container. If the overlay is removed
+  (DevTools delete, hostile script), it's re-added on the next microtask.
+  `removeWatermark` is the only sanctioned teardown path — it disconnects
+  the observer.
+
+Still unresolved: the embedded `PRODUCTION_PUBLIC_KEY_HEX` in
+`license-manager.ts` is a placeholder zero-byte key. Before any commercial
+release, regenerate via `scripts/license/keygen.cjs`, store the private
+key in a vault, and replace the hex constant.
+
+## 16.2 — Store / mutation invariant
+
+- **Re-entrant `setState` drain now throws on overflow.** The 100-iteration
+  cap is preserved as a runaway-loop backstop, but `pendingUpdates` are no
+  longer discarded silently — the store throws an `Error` describing the
+  cycle. Production no longer loses state writes without a signal.
+- **`INTERNAL_SETSTATE` marker.** `Store.setState(updater, marker)` accepts
+  an optional symbol parameter that trusted call sites (`grid-engine`,
+  plugin context) pass. External callers omitting the marker get a
+  one-time dev-mode warning pointing to `dispatchCommand`. The marker
+  approach was chosen over making `setState` non-public because plugin
+  authors must still mutate slices they own; the marker preserves their
+  access without normalizing arbitrary external mutation.
+
+The "commands are the only way to mutate state" invariant is still a
+convention, not a boundary. The marker makes violations *visible* in
+development but does not block them at runtime.
+
+## 16.3 — Plugin / runtime hygiene
+
+- **`plugin-clipboard-pro` ReDoS guard.** `coerceValue` short-circuits on
+  inputs > 200 chars before any regex eval, neutralizing the highest-risk
+  attack path in `SECURITY_AUDIT.md` (clipboard pastes are
+  attacker-controlled).
+- **`plugin-ai` deprecation.** The legacy regex-based NL parser is now
+  marked `@deprecated` and emits a one-time install-time warning pointing
+  to `@gridstorm/plugin-ai-query` (LLM-backed, schema-enforced). The
+  package still ships for backwards compatibility.
+- **`feature-showcase` integration.** Five new demos exercise the Pillar
+  1 + 2 plugins (AI Query, Cell Autocomplete, Live Cursors, Co-Editing,
+  Cell Comments). Cross-tab demos use a same-origin
+  `BroadcastChannelCrdtTransport` shipped from `@gridstorm/plugin-yjs-cells`.
+
+## 16.4 — i18n / framework adapters
+
+- **i18n: message interpolation primitive.** `I18nManager.tWith(key, params)`
+  substitutes `{name}` placeholders. Missing values fall through as the
+  literal token (visible feedback to translators) rather than silent empty
+  strings. Numeric params are formatted via the current locale's number
+  formatter.
+- **React adapter: auto `dir="rtl"`.** The container's `dir` is set
+  automatically for RTL locales (`ar`, `he`, `fa`, `ur`, `ps`, `sd`,
+  `yi` — including subtag variants). The RTL list is inlined inside the
+  adapter to avoid pulling `@gridstorm/i18n` into the 20 KB bundle cap.
+- **Vue adapter: `GridErrorBoundary`.** Vue 3 analogue of the React
+  error boundary, using `onErrorCaptured`. Catches render/lifecycle
+  errors from descendants and renders a fallback with retry. Same
+  caveats as React: async errors in non-Vue callbacks are not captured.
+
+Angular and Svelte adapter parity remain open. Marketing material should
+not position them as peers of React/Vue until they close further.
+
+## 16.5 — Excel/PDF export ceilings (carried over from prior pass)
+
+Both plugins enforce row and cell caps now (`DEFAULT_MAX_ROWS`,
+`DEFAULT_MAX_CELLS`), surfaced as `ExportLimitExceededError` /
+`PdfExportLimitExceededError` via the `*:exportFailed` event because the
+CommandBus swallows handler exceptions. The full document is still built
+in memory; true streaming export is a Phase 3 deliverable.
+
+## 16.6 — What §15 still flags as open
+
+- `plugin-grouping` reaching into core internals (`filterRowNodes`,
+  `sortRowNodes`).
+- `GridEventMap` index-signature gap forcing `as any` on custom events.
+- `dispatchCommand` payload typing stops at the bus boundary.
+- Direct row-data mutation in editing path (`(node.data as any)[field]`).
+- MCP server trust boundary (authorization model, prompt injection through
+  cell data). The MCP server should still be considered experimental.
+- E2E coverage thinness (3 Playwright specs vs ~65 packages).
+- No CI-tracked benchmark regression trend.
+
+These remain Section 15's responsibility until a follow-up pass addresses
+them.

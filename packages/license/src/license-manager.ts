@@ -44,6 +44,39 @@ let activePublicKeyHex: string = PRODUCTION_PUBLIC_KEY_HEX;
 // ─── Module-level state ───
 let currentLicense: LicenseKey | null = null;
 let licenseValid = false;
+let strictMode = false;
+
+// Storage key for the monotonic last-seen timestamp used to detect a
+// rolled-back system clock. We persist the highest Date.now() we have
+// observed in any validate() call and refuse to honor a license if the
+// current clock is meaningfully earlier than the last seen value (default
+// allowance: 7 days, to tolerate timezone fixes and DST oddities).
+const CLOCK_SKEW_STORAGE_KEY = '__gridstorm_clock_skew_v1';
+const CLOCK_SKEW_ALLOWANCE_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Enable strict license enforcement. When strict mode is on, premium
+ * plugins **throw** during install if no valid license is set — instead of
+ * the default behavior, which only emits a `console.warn` and continues.
+ *
+ * Recommended for production builds where the support cost of "the plugin
+ * silently kept working without a license" outweighs the friction of an
+ * up-front failure.
+ *
+ * @example
+ * ```ts
+ * import { setLicenseStrictMode } from '@gridstorm/license';
+ * if (import.meta.env.PROD) setLicenseStrictMode(true);
+ * ```
+ */
+export function setLicenseStrictMode(enabled: boolean): void {
+  strictMode = enabled === true;
+}
+
+/** @internal — used by enterprise plugins' install() to decide whether to throw. */
+export function isLicenseStrictMode(): boolean {
+  return strictMode;
+}
 
 // ─── Public API ───
 
@@ -106,6 +139,27 @@ export function setGridStormLicense(key: string): void {
  */
 export function validateLicense(pluginId: string): LicenseValidationResult {
   const isDevelopment = isDev();
+
+  // Clock-skew check: if the system clock has rolled backwards by more than
+  // the allowance vs the highest timestamp we have previously observed,
+  // refuse to honor the license even if expiresAt would otherwise pass.
+  // This blocks the trivial "set the clock to 2023 to extend the trial"
+  // bypass — it does not stop a sophisticated attacker who also wipes the
+  // localStorage entry, but it makes the bypass non-trivial.
+  if (!isDevelopment && hasClockRegressed()) {
+    return {
+      valid: false,
+      expired: true,
+      tier: currentLicense?.tier ?? 'community',
+      message:
+        '[GridStorm] System clock has regressed significantly since the last ' +
+        'session. License check refused. If you believe this is in error, ' +
+        'verify the device clock.',
+      pluginLicensed: false,
+      isDevelopment,
+    };
+  }
+  recordCurrentTime();
 
   // No license set
   if (!currentLicense) {
@@ -174,6 +228,42 @@ export function validateLicense(pluginId: string): LicenseValidationResult {
     pluginLicensed: true,
     isDevelopment,
   };
+}
+
+/**
+ * Strict-mode wrapper around {@link validateLicense}. Throws
+ * {@link LicenseRequiredError} when no valid license covers `pluginId`
+ * AND {@link setLicenseStrictMode | strict mode} is enabled. Otherwise
+ * returns the validation result.
+ *
+ * Plugins call this in `install()` to fail loudly during production
+ * startup rather than render watermarked output forever. In development
+ * (no strict mode, or `isDev()` true) this is a no-op that returns the
+ * result for the existing watermark fallback path.
+ */
+export function enforceLicense(pluginId: string): LicenseValidationResult {
+  const result = validateLicense(pluginId);
+  if (
+    strictMode &&
+    !result.isDevelopment &&
+    (!result.valid || !result.pluginLicensed)
+  ) {
+    throw new LicenseRequiredError(pluginId, result.message);
+  }
+  return result;
+}
+
+/**
+ * Thrown by {@link enforceLicense} when strict mode is on and the
+ * required license is missing, expired, or doesn't cover the plugin.
+ */
+export class LicenseRequiredError extends Error {
+  public readonly pluginId: string;
+  constructor(pluginId: string, message: string) {
+    super(message || `[GridStorm] Plugin "${pluginId}" requires a valid license.`);
+    this.name = 'LicenseRequiredError';
+    this.pluginId = pluginId;
+  }
 }
 
 /** Get public license info */
@@ -256,6 +346,43 @@ function decodeAndVerifyLicenseKey(key: string): LicenseKey {
 
 function isExpired(license: LicenseKey): boolean {
   return new Date(license.expiresAt) < new Date();
+}
+
+function safeStorage(): Storage | null {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage;
+    }
+  } catch {
+    // localStorage may throw in sandboxed iframes / strict modes.
+  }
+  return null;
+}
+
+function hasClockRegressed(): boolean {
+  const storage = safeStorage();
+  if (!storage) return false;
+  const raw = storage.getItem(CLOCK_SKEW_STORAGE_KEY);
+  if (!raw) return false;
+  const lastSeen = Number.parseInt(raw, 10);
+  if (!Number.isFinite(lastSeen)) return false;
+  const now = Date.now();
+  return now < lastSeen - CLOCK_SKEW_ALLOWANCE_MS;
+}
+
+function recordCurrentTime(): void {
+  const storage = safeStorage();
+  if (!storage) return;
+  try {
+    const raw = storage.getItem(CLOCK_SKEW_STORAGE_KEY);
+    const lastSeen = raw ? Number.parseInt(raw, 10) : 0;
+    const now = Date.now();
+    if (!Number.isFinite(lastSeen) || now > lastSeen) {
+      storage.setItem(CLOCK_SKEW_STORAGE_KEY, String(now));
+    }
+  } catch {
+    // Quota exhausted or storage disabled — best-effort only.
+  }
 }
 
 /**

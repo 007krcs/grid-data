@@ -58,7 +58,13 @@ export function detectSemanticType(
     .slice(0, sampleSize)
     .map((v) => String(v));
 
-  const total = sample.length;
+  // Cap inputs before any pattern test — semantic detection runs on cell
+  // content that may be attacker-controlled. Legitimate semantic tokens
+  // (emails, UUIDs, currencies, dates) all fit well under 256 chars.
+  const MAX_INPUT_LEN = 256;
+  const safeSample = sample.filter((v) => typeof v === 'string' && v.length <= MAX_INPUT_LEN);
+
+  const total = safeSample.length;
   if (total === 0) return [{ type: 'unknown', confidence: 1, sampleMatches: 0, sampleTotal: 0 }];
 
   const results: SemanticDetectionResult[] = [];
@@ -66,7 +72,7 @@ export function detectSemanticType(
   for (const type of TYPE_PRIORITY) {
     if (type === 'unknown') continue;
     const pattern = PATTERNS[type];
-    const matches = sample.filter((v) => pattern.test(v)).length;
+    const matches = safeSample.filter((v) => pattern.test(v)).length;
     const confidence = matches / total;
     if (confidence >= minConfidence) {
       results.push({ type, confidence, sampleMatches: matches, sampleTotal: total });

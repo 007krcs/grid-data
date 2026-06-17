@@ -24,6 +24,13 @@ import { PortalManager } from './portals/PortalManager';
 import type { GridStormProps, ReactColumnDef } from './types';
 import { GridErrorBoundary } from './ErrorBoundary';
 
+// Inlined to avoid a @gridstorm/i18n runtime dep (would bloat the
+// 20KB-capped adapter bundle). Mirrors RTL_LOCALES from @gridstorm/i18n.
+const RTL_LANGUAGE_TAGS = new Set(['ar', 'he', 'fa', 'ur', 'ps', 'sd', 'yi']);
+function isRTL(locale: string): boolean {
+  return RTL_LANGUAGE_TAGS.has(locale.toLowerCase().split('-')[0] ?? '');
+}
+
 // ── useGridEngine hook (internal) ──
 // Uses useState + useEffect so that StrictMode's cleanup → remount cycle
 // creates a fresh engine each time instead of leaving a null ref.
@@ -407,6 +414,13 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
     ...containerStyle,
   };
 
+  // ── Auto-apply dir=rtl for RTL locales ──
+  // Without this, RTL languages (Arabic, Hebrew, Persian, Urdu) silently
+  // render LTR — the engine has no DOM access to set direction itself.
+  // Consumers can still override by passing their own `dir` via
+  // containerStyle's parent or wrapping the grid.
+  const autoDir = locale && isRTL(locale) ? 'rtl' : undefined;
+
   // ── Context value (stable reference) ──
   const contextValue = useMemo<GridContextValue<TData> | null>(
     () => (engine ? { engine, api: engine.api, rootElement } : null),
@@ -421,6 +435,7 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
           ref={containerRef}
           className={`gs-container ${containerClass ?? ''}`.trim()}
           style={style}
+          dir={autoDir}
         />
       </GridErrorBoundary>
     );
@@ -434,6 +449,7 @@ export function GridStorm<TData = any>(props: GridStormProps<TData>) {
           ref={containerRef}
           className={`gs-container ${containerClass ?? ''}`.trim()}
           style={style}
+          dir={autoDir}
         />
         <PortalManager
           engine={engine}

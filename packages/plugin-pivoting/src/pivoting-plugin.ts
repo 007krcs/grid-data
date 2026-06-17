@@ -5,7 +5,7 @@
 // Generates secondary columns based on distinct values in pivot columns.
 
 import type { GridPlugin, PluginContext, ColumnState } from '@gridstorm/core';
-import { validateLicense, createWatermark } from '@gridstorm/license';
+import { enforceLicense, createWatermark } from '@gridstorm/license';
 import type { PivotPluginOptions, PivotState } from './types';
 import { generatePivotColumns, computePivotValues } from './pivot-columns';
 
@@ -24,7 +24,7 @@ export function PivotPlugin(options: PivotPluginOptions = {}): GridPlugin {
 
     install(ctx: PluginContext) {
       // ── License validation ──
-      const licenseResult = validateLicense('pivoting');
+      const licenseResult = enforceLicense('pivoting');
       let unsubLicenseWatermark: (() => void) | undefined;
       if (!licenseResult.valid && !licenseResult.isDevelopment) {
         console.warn(licenseResult.message);

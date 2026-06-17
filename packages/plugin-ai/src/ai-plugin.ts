@@ -275,8 +275,25 @@ function buildGridContext(ctx: PluginContext): GridContext {
  * // Get smart suggestions
  * grid.dispatchCommand('ai:getSuggestions', {});
  * ```
+ *
+ * @deprecated Use {@link @gridstorm/plugin-ai-query | `@gridstorm/plugin-ai-query`}
+ * for natural-language queries — it routes through `@gridstorm/ai-adapter`
+ * (vendor-neutral LLM bring-your-own-adapter) and uses structured-output
+ * schema enforcement instead of regex pattern matching on user input.
+ * The regex parser here has several ReDoS-suspect patterns documented in
+ * `SECURITY_AUDIT.md`. This plugin remains shipped for backwards
+ * compatibility but will not receive new features.
  */
+let _deprecationWarned = false;
 export function AIPlugin(options: AIPluginOptions = {}): GridPlugin {
+  if (!_deprecationWarned) {
+    _deprecationWarned = true;
+    console.warn(
+      '[GridStorm] @gridstorm/plugin-ai is deprecated. ' +
+        'Migrate to @gridstorm/plugin-ai-query for vendor-neutral LLM-backed NL queries. ' +
+        'The regex-based parser in this plugin will not receive further updates.',
+    );
+  }
   const {
     nlParser: nlConfig = {},
     anomalyDetection: anomalyConfig = {},

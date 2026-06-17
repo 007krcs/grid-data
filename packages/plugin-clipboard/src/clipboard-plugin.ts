@@ -4,7 +4,7 @@
 // Provides copy, cut, paste operations with keyboard shortcuts.
 
 import type { GridPlugin, PluginContext, ColumnState } from '@gridstorm/core';
-import { validateLicense, createWatermark } from '@gridstorm/license';
+import { enforceLicense, createWatermark } from '@gridstorm/license';
 import type { ClipboardPluginOptions } from './types';
 import { serializeToTSV, parseTSV } from './formatters';
 
@@ -26,7 +26,7 @@ export function ClipboardPlugin(options: ClipboardPluginOptions = {}): GridPlugi
 
     install(ctx: PluginContext) {
       // ── License validation ──
-      const licenseResult = validateLicense('clipboard');
+      const licenseResult = enforceLicense('clipboard');
       let unsubLicenseWatermark: (() => void) | undefined;
       if (!licenseResult.valid && !licenseResult.isDevelopment) {
         console.warn(licenseResult.message);

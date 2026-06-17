@@ -1,14 +1,31 @@
 // © 2025 GridStorm / Tekivex — All Rights Reserved
 // Unauthorized reproduction or distribution is prohibited.
+
+// Cap inputs before running coercion regexes. Clipboard pastes are
+// attacker-controlled and several regexes below (currency, scientific
+// notation, etc.) carry ReDoS-suspect nested quantifiers. Any cell value
+// that legitimately needs coercion fits in 200 chars; anything larger is
+// treated as a raw string.
+const COERCE_MAX_LEN = 200;
+
 /**
  * Coerce a raw string value to its likely JavaScript type.
  * Returns the coerced value.
+ *
+ * Inputs longer than {@link COERCE_MAX_LEN} characters bypass regex-based
+ * type detection and are returned as the trimmed string — preventing
+ * catastrophic backtracking on attacker-controlled paste content.
  */
 export function coerceValue(raw: string): unknown {
   // Empty → null
   if (raw === '' || raw === null || raw === undefined) return null;
 
   const trimmed = raw.trim();
+
+  // ReDoS guard: skip type-detection regexes for oversized strings.
+  if (trimmed.length > COERCE_MAX_LEN) {
+    return trimmed;
+  }
 
   // Boolean
   if (trimmed.toLowerCase() === 'true') return true;

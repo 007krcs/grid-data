@@ -21,6 +21,32 @@ export class I18nManager {
     return this.strings[key];
   }
 
+  /**
+   * Get a translated string with `{name}` placeholder interpolation.
+   *
+   * Placeholders use the form `{key}` and are replaced with the matching
+   * value from `params`. Missing values fall through as the literal token,
+   * so a translator who forgot a placeholder gets `{count}` visibly in the
+   * UI rather than a silent empty string. Numbers are formatted via the
+   * current locale's number formatter.
+   *
+   * @example
+   * ```ts
+   * // locale string: 'rowsSelected': '{count} rows selected'
+   * i18n.tWith('rowsSelected', { count: 3 });
+   * // → '3 rows selected'  (or '3' formatted per locale: '3'/'٣'/etc.)
+   * ```
+   */
+  tWith(key: keyof LocaleStrings, params: Record<string, string | number>): string {
+    const template = this.strings[key];
+    return template.replace(/\{(\w+)\}/g, (raw, name: string) => {
+      if (!Object.prototype.hasOwnProperty.call(params, name)) return raw;
+      const value = params[name];
+      if (typeof value === 'number') return this.formatters.formatNumber(value);
+      return String(value);
+    });
+  }
+
   /** Get current locale */
   getLocale(): string {
     return this.locale;

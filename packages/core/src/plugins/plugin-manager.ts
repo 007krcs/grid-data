@@ -20,6 +20,7 @@ import type { CellEditorDef } from '../types/editing';
 import type { EventBus } from '../events/event-bus';
 import type { CommandBus } from '../events/command-bus';
 import type { Store } from '../state/store';
+import { INTERNAL_SETSTATE } from '../state/store';
 
 /**
  * Fallback mapping from built-in plugin IDs to the capability they provide,
@@ -165,7 +166,7 @@ export class PluginManager<TData = any> {
 
     const storeAccess: PluginStoreAccess<TData> = {
       getState: () => self.store.getState(),
-      setState: (updater) => self.store.setState(updater),
+      setState: (updater) => self.store.setState(updater, INTERNAL_SETSTATE),
       subscribe: (listener) => self.store.subscribe(listener),
       batch: (fn) => self.store.batch(fn),
       select: (selector: any, listener: any) => self.store.select(selector, listener),
@@ -235,7 +236,7 @@ export class PluginManager<TData = any> {
             ...prev.pluginState,
             [key]: initialState,
           },
-        }));
+        }), INTERNAL_SETSTATE);
       },
 
       getState: <S>(key: string): S => {
@@ -249,7 +250,7 @@ export class PluginManager<TData = any> {
             ...prev.pluginState,
             [key]: updater(prev.pluginState[key] as S),
           },
-        }));
+        }), INTERNAL_SETSTATE);
       },
 
       registerCellRenderer: (name: string, renderer: CellRendererFn) => {

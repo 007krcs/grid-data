@@ -4,6 +4,32 @@
 // Custom store optimized for grid state patterns.
 // Supports batched updates and selector-based subscriptions.
 
+/**
+ * Marker passed by trusted internal call sites (CommandBus handlers, plugin
+ * setState, lifecycle hooks) when invoking {@link Store.setState}. External
+ * callers cannot reasonably construct this symbol, which lets the store
+ * emit a dev-mode warning when arbitrary code mutates state without going
+ * through the CommandBus.
+ *
+ * The "commands are the only way to mutate state" invariant remains
+ * advisory at runtime — we don't break working code that bypasses it —
+ * but the warning surfaces violations during development so they can be
+ * routed through a proper command.
+ */
+export const INTERNAL_SETSTATE = Symbol.for('@gridstorm/core/internal-setstate');
+
+const isDevEnv = ((): boolean => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const env = (globalThis as any).process?.env?.NODE_ENV;
+    return env !== 'production';
+  } catch {
+    return true;
+  }
+})();
+
+let _externalSetStateWarned = false;
+
 export type StoreListener = () => void;
 export type Selector<TState, TResult> = (state: TState) => TResult;
 
@@ -30,8 +56,28 @@ export class Store<TState> {
     return this.version;
   }
 
-  /** Update state using an updater function. Notifies listeners unless batched. */
-  setState(updater: (prev: TState) => TState): void {
+  /**
+   * Update state using an updater function. Notifies listeners unless batched.
+   *
+   * @param updater - Function returning the next state given the current one.
+   * @param marker - Pass {@link INTERNAL_SETSTATE} from trusted internal
+   *   call sites (CommandBus handlers, plugin context). When the marker is
+   *   omitted in development, the store logs a one-time warning pointing
+   *   to the recommended `dispatchCommand` flow. In production the warning
+   *   is suppressed entirely to avoid overhead.
+   */
+  setState(updater: (prev: TState) => TState, marker?: symbol): void {
+    if (isDevEnv && marker !== INTERNAL_SETSTATE && !_externalSetStateWarned) {
+      _externalSetStateWarned = true;
+      console.warn(
+        '[GridStorm] Store.setState() was called without the INTERNAL_SETSTATE marker. ' +
+          'The "commands are the only way to mutate state" invariant is intended to be ' +
+          'upheld by routing through GridApi.dispatchCommand. If you are inside a plugin, ' +
+          'use ctx.setState (already passes the marker). External direct mutation works ' +
+          'but is unsupported and will fight with command-based undo/time-travel. ' +
+          'This warning is logged once per session and only in development.',
+      );
+    }
     // Re-entrancy guard: if we're in the middle of notifying listeners,
     // queue the update to be applied after the current notification cycle.
     if (this.notifying) {
@@ -135,14 +181,25 @@ export class Store<TState> {
       this.notifying = false;
     }
 
-    // Drain any updates that were queued during notification
+    // Drain any updates that were queued during notification.
+    // A cap of 100 iterations protects against runaway feedback loops, but
+    // silently dropping state on overflow (previous behavior) hid real bugs
+    // in production — store mutations vanished without any signal. We now
+    // throw so the bug surfaces; callers that are intentionally cyclic must
+    // break the loop themselves rather than relying on the store to swallow
+    // it.
     let drainIterations = 0;
     while (this.pendingUpdates.length > 0) {
       drainIterations++;
       if (drainIterations > 100) {
-        console.error('[GridStorm] Possible infinite state update cycle detected — breaking after 100 iterations.');
+        const droppedCount = this.pendingUpdates.length;
         this.pendingUpdates = [];
-        break;
+        throw new Error(
+          `[GridStorm] Possible infinite state update cycle detected: ` +
+            `${droppedCount} pending update(s) discarded after 100 drain iterations. ` +
+            `A listener is dispatching setState in a way that re-enters itself. ` +
+            `Inspect your subscribers for a loop.`,
+        );
       }
       const queued = this.pendingUpdates;
       this.pendingUpdates = [];

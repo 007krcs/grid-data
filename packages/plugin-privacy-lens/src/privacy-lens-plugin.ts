@@ -51,15 +51,26 @@ export function getMaskedValue(value: unknown, config: PrivacyColumnConfig): str
 
 // ─── Scan a list of string values for PII categories ───
 
+// Real PII tokens (emails, phones, SSNs, credit cards, IBANs, etc.) all
+// fit comfortably under 256 chars. Capping defends against ReDoS on
+// attacker-controlled cell strings before any of the PII_PATTERNS regexes
+// see the input.
+const MAX_INPUT_LEN = 256;
+
+function isShortEnough(v: string): boolean {
+  return typeof v === 'string' && v.length <= MAX_INPUT_LEN;
+}
+
 function detectPiiCategories(values: string[]): { categories: PiiCategory[]; confidence: number } {
   const matched = new Set<PiiCategory>();
-  const total = values.length;
+  const safeValues = values.filter(isShortEnough);
+  const total = safeValues.length;
   if (total === 0) return { categories: [], confidence: 0 };
 
   let totalMatches = 0;
 
   for (const [category, pattern] of Object.entries(PII_PATTERNS) as [PiiCategory, RegExp][]) {
-    const count = values.filter((v) => pattern.test(v)).length;
+    const count = safeValues.filter((v) => pattern.test(v)).length;
     if (count / total >= 0.3) {
       matched.add(category);
       totalMatches += count;

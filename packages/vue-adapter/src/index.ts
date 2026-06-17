@@ -5,6 +5,9 @@
 // Main component
 export { GridStorm } from './GridStorm';
 
+// Error boundary
+export { GridErrorBoundary, type GridErrorFallbackInfo } from './GridErrorBoundary';
+
 // Composables
 export {
   GRID_CONTEXT_KEY,

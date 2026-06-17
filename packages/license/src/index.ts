@@ -4,7 +4,11 @@ export {
   LicenseManager,
   setGridStormLicense,
   validateLicense,
+  enforceLicense,
+  LicenseRequiredError,
   getLicenseInfo,
+  setLicenseStrictMode,
+  isLicenseStrictMode,
 } from './license-manager';
 export type {
   LicenseKey,

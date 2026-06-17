@@ -4,7 +4,7 @@
 // Provides lazy loading of rows from a server data source with block-based caching.
 
 import type { GridPlugin, PluginContext, RowNode } from '@gridstorm/core';
-import { validateLicense, createWatermark } from '@gridstorm/license';
+import { enforceLicense, createWatermark } from '@gridstorm/license';
 import type { SSRMPluginOptions, ServerRequest } from './types';
 import { BlockCache } from './block-cache';
 
@@ -23,7 +23,7 @@ export function SSRMPlugin(options: SSRMPluginOptions): GridPlugin {
 
     install(ctx: PluginContext) {
       // ── License validation ──
-      const licenseResult = validateLicense('ssrm');
+      const licenseResult = enforceLicense('ssrm');
       let unsubLicenseWatermark: (() => void) | undefined;
       if (!licenseResult.valid && !licenseResult.isDevelopment) {
         console.warn(licenseResult.message);

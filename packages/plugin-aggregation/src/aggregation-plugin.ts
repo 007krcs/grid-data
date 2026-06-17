@@ -6,7 +6,7 @@
 
 import type { GridPlugin, PluginContext, ColumnState, RowNode } from '@gridstorm/core';
 import { getValueFromData } from '@gridstorm/core';
-import { validateLicense, createWatermark } from '@gridstorm/license';
+import { enforceLicense, createWatermark } from '@gridstorm/license';
 import type { AggregationPluginOptions, AggFunc } from './types';
 import { builtInAggFuncs } from './agg-functions';
 
@@ -27,7 +27,7 @@ export function AggregationPlugin(options: AggregationPluginOptions = {}): GridP
 
     install(ctx: PluginContext) {
       // ── License validation ──
-      const licenseResult = validateLicense('aggregation');
+      const licenseResult = enforceLicense('aggregation');
       let unsubLicenseWatermark: (() => void) | undefined;
       if (!licenseResult.valid && !licenseResult.isDevelopment) {
         console.warn(licenseResult.message);

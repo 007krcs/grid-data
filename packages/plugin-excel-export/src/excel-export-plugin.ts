@@ -5,7 +5,7 @@
 
 import type { GridPlugin, PluginContext, ColumnState, RowNode } from '@gridstorm/core';
 import { getValueFromData } from '@gridstorm/core';
-import { validateLicense, createWatermark } from '@gridstorm/license';
+import { enforceLicense, createWatermark } from '@gridstorm/license';
 import type { ExcelExportOptions } from './types';
 import { ExportLimitExceededError } from './types';
 import { buildCsvContent, buildExcelXml, toCellData } from './excel-builder';
@@ -50,7 +50,7 @@ export function ExcelExportPlugin(
 
     install(ctx: PluginContext) {
       // ── License validation ──
-      const licenseResult = validateLicense('excel-export');
+      const licenseResult = enforceLicense('excel-export');
       let unsubLicenseWatermark: (() => void) | undefined;
       if (!licenseResult.valid && !licenseResult.isDevelopment) {
         console.warn(licenseResult.message);

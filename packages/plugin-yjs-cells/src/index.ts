@@ -14,3 +14,6 @@ export type {
 
 export { InMemoryCrdtTransport, _resetInMemoryCrdtSessions } from './adapters/in-memory';
 export type { InMemoryCrdtTransportOptions } from './adapters/in-memory';
+
+export { BroadcastChannelCrdtTransport } from './adapters/broadcast-channel';
+export type { BroadcastChannelCrdtTransportOptions } from './adapters/broadcast-channel';

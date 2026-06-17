@@ -44,6 +44,12 @@
     "@gridstorm/plugin-row-pinning": "workspace:*",
     "@gridstorm/plugin-conditional-formatting": "workspace:*",
     "@gridstorm/plugin-streaming": "workspace:*",
+    "@gridstorm/ai-adapter": "workspace:*",
+    "@gridstorm/plugin-presence": "workspace:*",
+    "@gridstorm/plugin-yjs-cells": "workspace:*",
+    "@gridstorm/plugin-ai-query": "workspace:*",
+    "@gridstorm/plugin-comments": "workspace:*",
+    "@gridstorm/plugin-cell-autocomplete": "workspace:*",
     "@gridstorm/theme-default": "workspace:*",
     "react": "^18.3.0",
     "react-dom": "^18.3.0"

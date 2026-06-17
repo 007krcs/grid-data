@@ -317,6 +317,9 @@ importers:
 
   examples/feature-showcase:
     dependencies:
+      '@gridstorm/ai-adapter':
+        specifier: workspace:*
+        version: link:../../packages/ai-adapter
       '@gridstorm/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -332,9 +335,15 @@ importers:
       '@gridstorm/plugin-aggregation':
         specifier: workspace:*
         version: link:../../packages/plugin-aggregation
+      '@gridstorm/plugin-ai-query':
+        specifier: workspace:*
+        version: link:../../packages/plugin-ai-query
       '@gridstorm/plugin-anomaly':
         specifier: workspace:*
         version: link:../../packages/plugin-anomaly
+      '@gridstorm/plugin-cell-autocomplete':
+        specifier: workspace:*
+        version: link:../../packages/plugin-cell-autocomplete
       '@gridstorm/plugin-cell-formula':
         specifier: workspace:*
         version: link:../../packages/plugin-cell-formula
@@ -356,6 +365,9 @@ importers:
       '@gridstorm/plugin-column-resize':
         specifier: workspace:*
         version: link:../../packages/plugin-column-resize
+      '@gridstorm/plugin-comments':
+        specifier: workspace:*
+        version: link:../../packages/plugin-comments
       '@gridstorm/plugin-conditional-formatting':
         specifier: workspace:*
         version: link:../../packages/plugin-conditional-formatting
@@ -389,6 +401,9 @@ importers:
       '@gridstorm/plugin-pagination':
         specifier: workspace:*
         version: link:../../packages/plugin-pagination
+      '@gridstorm/plugin-presence':
+        specifier: workspace:*
+        version: link:../../packages/plugin-presence
       '@gridstorm/plugin-privacy-lens':
         specifier: workspace:*
         version: link:../../packages/plugin-privacy-lens
@@ -419,6 +434,9 @@ importers:
       '@gridstorm/plugin-temporal':
         specifier: workspace:*
         version: link:../../packages/plugin-temporal
+      '@gridstorm/plugin-yjs-cells':
+        specifier: workspace:*
+        version: link:../../packages/plugin-yjs-cells
       '@gridstorm/react':
         specifier: workspace:*
         version: link:../../packages/react-adapter

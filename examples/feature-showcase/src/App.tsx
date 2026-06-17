@@ -39,6 +39,22 @@ import { StatePersistencePlugin } from '@gridstorm/plugin-state-persistence';
 import { RowPinningPlugin } from '@gridstorm/plugin-row-pinning';
 import { ConditionalFormattingPlugin } from '@gridstorm/plugin-conditional-formatting';
 import { StreamingPlugin } from '@gridstorm/plugin-streaming';
+// Pillar 1 + 2 — collaboration + AI (added 2026-06-17 so users can actually
+// touch the work that's in the ROADMAP plan). Each demo below mounts one of
+// these plugins with a working transport / adapter so the cards in the
+// sidebar lead to something interactive instead of a marketing slide.
+import { EchoAdapter } from '@gridstorm/ai-adapter';
+import {
+  PresencePlugin,
+  BroadcastChannelPresenceAdapter,
+} from '@gridstorm/plugin-presence';
+import {
+  YjsCellsPlugin,
+  BroadcastChannelCrdtTransport,
+} from '@gridstorm/plugin-yjs-cells';
+import { AiQueryPlugin } from '@gridstorm/plugin-ai-query';
+import { CommentsPlugin } from '@gridstorm/plugin-comments';
+import { CellAutocompletePlugin } from '@gridstorm/plugin-cell-autocomplete';
 // Types from data generators used by demos
 
 // ── Feature Demos ──
@@ -73,6 +89,14 @@ const FEATURES: FeatureDemo[] = [
   { id: 'conditional-formatting', title: 'Conditional Formatting', description: '18 condition types: color scales, data bars, icon sets, top-N, above/below average, and more', category: 'enterprise' },
   { id: 'streaming', title: 'Live Streaming Data', description: 'Real-time cell updates at 60fps with flash animations and change-direction arrows', category: 'data' },
   { id: 'ai-features', title: 'AI Features', description: 'NL Query + Anomaly Detection — both work completely offline with no API key required', category: 'enterprise' },
+  // ── Pillar 1 (Collaboration) + Pillar 2 (Native AI) — new in 2026-06 ──
+  // Each demo wires the real plugin with a real transport / adapter, so
+  // the cards lead to something you can actually use, not a marketing slide.
+  { id: 'ai-query-llm', title: 'AI Query (LLM)', description: 'LLM-backed natural language → sort / filter / clear via @gridstorm/plugin-ai-query. Uses an Echo adapter so it works offline; swap in OpenAIAdapter or AnthropicAdapter for production.', category: 'enterprise' },
+  { id: 'cell-autocomplete', title: 'Cell Autocomplete (Copilot)', description: 'Copilot-style cell suggestions via @gridstorm/plugin-cell-autocomplete. Click a cell, watch a suggestion appear, press Accept (or Esc to dismiss).', category: 'enterprise' },
+  { id: 'live-cursors', title: 'Live Cursors (Presence)', description: 'Open this tab in two windows — you will see the other user\'s name + selected cell update in real time via the BroadcastChannel presence adapter. No server.', category: 'enterprise' },
+  { id: 'co-editing', title: 'Co-Editing (CRDT)', description: 'Conflict-free concurrent cell editing via Yjs. Open in two tabs, edit the same cell from both — they converge deterministically. Real-world transport is y-websocket; this demo uses BroadcastChannel for in-browser sync.', category: 'enterprise' },
+  { id: 'cell-comments', title: 'Cell Comments (CRDT)', description: 'CRDT-backed comment threads anchored to cells. Two tabs see each other\'s threads instantly.', category: 'enterprise' },
   { id: 'sorting', title: 'Sorting', description: 'Single & multi-column sorting with custom sort cycles', category: 'core' },
   { id: 'filtering', title: 'Filtering', description: 'Quick-filter search across all columns', category: 'core' },
   { id: 'selection', title: 'Row Selection', description: 'Click rows to select with multi-select support', category: 'core' },
@@ -3111,6 +3135,470 @@ api.dispatchCommand('nlquery:execute', { query: 'sort by salary desc' });`}
   );
 }
 
+// ─── Pillar 1 (Collaboration) + Pillar 2 (Native AI) demos ─────────────────
+// These were the "library shipped but invisible" gap. Five new demos that
+// wire the actual plugins to real (in-browser) transports so a user can
+// click and use them. See ROADMAP.md.
+
+// Shared fixture for cross-tab demos. Stable user identity in each tab
+// (random id, color) so the BroadcastChannel demos work out of the box.
+function useTabIdentity(): { userId: string; displayName: string; color: string } {
+  return useMemo(() => {
+    const id = Math.random().toString(36).slice(2, 8);
+    const colors = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'];
+    return {
+      userId: `tab-${id}`,
+      displayName: `Tab ${id.toUpperCase()}`,
+      color: colors[Math.floor(Math.random() * colors.length)]!,
+    };
+  }, []);
+}
+
+// ── AI Query (LLM-backed) ──
+// Uses the Echo adapter so it works offline. In production you'd pass
+// OpenAIAdapter or AnthropicAdapter with an API key.
+function AiQueryLlmDemo() {
+  const apiRef = useRef<GridApi | null>(null);
+  const [text, setText] = useState('');
+  const [log, setLog] = useState<string[]>([]);
+
+  // Canned echo responses keyed by the user's query so the demo behaves
+  // predictably without a real LLM. Real adapters do their own structured
+  // output; the Echo adapter walks the JSON schema and returns a default,
+  // which would never be useful here — so we use a custom respond that
+  // returns a JSON action string the validator accepts.
+  const adapter = useMemo(() => {
+    return new EchoAdapter({
+      respond: (messages) => {
+        const userText = (messages.find((m) => m.role === 'user')?.content ?? '').toLowerCase();
+        let action;
+        if (/sort.*salary.*desc|salary.*desc/.test(userText)) {
+          action = { type: 'sort', sortModel: [{ colId: 'salary', direction: 'desc' }] };
+        } else if (/sort.*name.*asc|name.*asc/.test(userText)) {
+          action = { type: 'sort', sortModel: [{ colId: 'name', direction: 'asc' }] };
+        } else if (/filter.*active/.test(userText)) {
+          action = {
+            type: 'filter',
+            filterModel: { status: { filterType: 'text', operator: 'equals', value: 'Active' } },
+          };
+        } else if (/clear|reset/.test(userText)) {
+          action = { type: 'clear', target: 'all' };
+        } else if (/\w/.test(userText)) {
+          // Default: quickFilter the whole input.
+          action = { type: 'quickFilter', text: userText.slice(0, 60) };
+        } else {
+          action = { type: 'clear', target: 'all' };
+        }
+        return JSON.stringify(action);
+      },
+    });
+  }, []);
+
+  // Wire the structured-output path: EchoAdapter's completeStructured does
+  // not honor the respond function (it walks the schema). For the demo we
+  // hand-roll a tiny adapter that uses Echo's text completion + JSON.parse
+  // so a user-typed query routes through the same action plumbing as a
+  // real LLM would.
+  const llmAdapter = useMemo(() => ({
+    name: 'echo-canned',
+    complete: adapter.complete.bind(adapter),
+    completeStructured: async <T,>(messages: any, options: any) => {
+      const text = await adapter.complete(messages, {});
+      const parsed = JSON.parse(text.text);
+      const data = options.validate ? options.validate(parsed) : (parsed as T);
+      return { data, finishReason: 'stop' as const };
+    },
+  }), [adapter]);
+
+  const plugins = useMemo(() => [
+    SortingPlugin({ multiSort: true }),
+    FilteringPlugin(),
+    ColumnResizePlugin(),
+    AiQueryPlugin({
+      adapter: llmAdapter as any,
+      columns: {
+        id: 'employee identifier',
+        name: 'full name',
+        department: 'team / department',
+        salary: 'annual salary',
+        status: 'active or inactive employment status',
+        city: 'office city',
+      },
+      autoApply: true,
+    }),
+  ], [llmAdapter]);
+
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 70 },
+    { field: 'name', headerName: 'Name', width: 180, sortable: true, filterable: true },
+    { field: 'department', headerName: 'Department', width: 140, sortable: true, filterable: true },
+    { field: 'salary', headerName: 'Salary', width: 120, sortable: true,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+    { field: 'status', headerName: 'Status', width: 110, filterable: true },
+    { field: 'city', headerName: 'City', width: 130, sortable: true },
+  ], []);
+
+  const EXAMPLES = ['sort by salary desc', 'filter status equals Active', 'sort by name asc', 'reset everything', 'engineering'];
+
+  const ask = useCallback((q: string) => {
+    if (!q.trim()) return;
+    apiRef.current?.dispatchCommand?.('aiQuery:ask', { text: q });
+    setLog((prev) => [`→ ${q}`, ...prev].slice(0, 8));
+  }, []);
+
+  return (
+    <>
+      <p style={hintStyle}>
+        Type a query. Routes through @gridstorm/plugin-ai-query → @gridstorm/ai-adapter →
+        Echo (offline). Swap Echo for OpenAIAdapter/AnthropicAdapter to use a real LLM.
+      </p>
+      <div style={{ marginBottom: 8 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+          <input type="text" placeholder='e.g. "sort by salary desc"' value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') ask(text); }}
+            style={{ ...inputStyle, flex: 1 }} />
+          <button style={chipBtn} onClick={() => ask(text)}>Ask LLM</button>
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {EXAMPLES.map(ex => (
+            <button key={ex} style={{ ...chipBtn, fontSize: 11 }} onClick={() => { setText(ex); ask(ex); }}>
+              {ex}
+            </button>
+          ))}
+        </div>
+      </div>
+      {log.length > 0 && (
+        <div style={{ fontSize: 11, color: '#475569', marginBottom: 6, fontFamily: 'ui-monospace, monospace' }}>
+          {log.map((l, i) => <div key={i}>{l}</div>)}
+        </div>
+      )}
+      <GridStorm columns={columns} rowData={EMPLOYEES_200} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+        onGridReady={(api: any) => { apiRef.current = api; }}
+        ariaLabel="AI Query (LLM-backed) Demo" />
+    </>
+  );
+}
+
+// ── Cell Autocomplete (Copilot) ──
+function CellAutocompleteDemo() {
+  const apiRef = useRef<GridApi | null>(null);
+  const [suggestion, setSuggestion] = useState<{ rowId: string; colId: string; text: string } | null>(null);
+  const [requested, setRequested] = useState<{ rowId: string; colId: string } | null>(null);
+
+  const adapter = useMemo(() => new EchoAdapter({
+    // Echo's default "[echo] <user content>" is fine — what matters is
+    // that the plugin emits suggestions and the demo lets the user accept.
+    respond: (messages) => {
+      const last = messages[messages.length - 1]?.content ?? '';
+      const m = /Editing column:\s+(\w+)/.exec(last);
+      const col = m ? m[1] : 'value';
+      return `auto-${col}-${Math.random().toString(36).slice(2, 6)}`;
+    },
+    latencyMs: 250, // realistic-ish "thinking" latency
+  }), []);
+
+  const plugins = useMemo(() => [
+    SortingPlugin(),
+    ColumnResizePlugin(),
+    EditingPlugin({ editType: 'doubleClick' as any }),
+    CellAutocompletePlugin({
+      adapter,
+      columns: {
+        id: 'employee identifier',
+        name: 'full name',
+        department: 'team',
+        salary: 'annual salary',
+        status: 'active or inactive',
+        city: 'office city',
+      },
+      excludeColumns: ['id'],
+      debounceMs: 200,
+    }),
+  ], [adapter]);
+
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 70 },
+    { field: 'name', headerName: 'Name', width: 180, editable: true },
+    { field: 'department', headerName: 'Department', width: 140, editable: true },
+    { field: 'salary', headerName: 'Salary', width: 120, editable: true,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+    { field: 'status', headerName: 'Status', width: 110, editable: true },
+    { field: 'city', headerName: 'City', width: 130, editable: true },
+  ], []);
+
+  const onGridReady = useCallback((api: GridApi) => {
+    apiRef.current = api;
+    api.addEventListener?.('autocomplete:suggested' as any, ((e: any) => {
+      setSuggestion(e.suggestion);
+      setRequested(null);
+    }) as any);
+    api.addEventListener?.('autocomplete:dismissed' as any, () => setSuggestion(null));
+    api.addEventListener?.('autocomplete:accepted' as any, () => setSuggestion(null));
+    api.addEventListener?.('cell:editingStarted' as any, ((e: any) => {
+      setRequested({ rowId: e.node.id, colId: e.colId });
+      setSuggestion(null);
+    }) as any);
+  }, []);
+
+  return (
+    <>
+      <p style={hintStyle}>
+        Double-click any editable cell to start editing. The Echo adapter "thinks"
+        for ~250ms then proposes a value. Click <strong>Accept</strong> to apply
+        or <strong>Dismiss</strong> to skip. Renderer integration (ghost text in
+        the cell) is the consumer's responsibility — this sidebar exposes the
+        events the plugin emits.
+      </p>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <span style={{ fontSize: 11, color: '#475569' }}>
+          {requested ? `🤔 Asking LLM for ${requested.colId} on row ${requested.rowId}…` :
+            suggestion ? `💡 Suggestion for ${suggestion.colId} on row ${suggestion.rowId}: ` :
+            'No active suggestion. Edit a cell to trigger one.'}
+        </span>
+        {suggestion && (
+          <>
+            <code style={{ background: '#fef3c7', padding: '2px 8px', borderRadius: 4, fontSize: 12 }}>
+              {suggestion.text}
+            </code>
+            <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('autocomplete:accept', {})}>
+              Accept
+            </button>
+            <button style={chipBtn} onClick={() => apiRef.current?.dispatchCommand?.('autocomplete:dismiss', {})}>
+              Dismiss
+            </button>
+          </>
+        )}
+      </div>
+      <GridStorm columns={columns} rowData={EMPLOYEES_50} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+        onGridReady={onGridReady}
+        ariaLabel="Cell Autocomplete Demo" />
+    </>
+  );
+}
+
+// ── Live Cursors (Presence, cross-tab) ──
+function LiveCursorsDemo() {
+  const identity = useTabIdentity();
+  const apiRef = useRef<GridApi | null>(null);
+  const [peers, setPeers] = useState<Array<{ userId: string; displayName: string; color: string; focusedCell?: { rowId: string; colId: string } | null }>>([]);
+
+  const plugins = useMemo(() => [
+    SortingPlugin(),
+    SelectionPlugin({ mode: 'single' }),
+    ColumnResizePlugin(),
+    PresencePlugin({
+      userId: identity.userId,
+      displayName: identity.displayName,
+      color: identity.color,
+      adapter: new BroadcastChannelPresenceAdapter({ channelName: 'gridstorm-showcase-presence' }),
+      broadcastSelection: true,
+      throttleMs: 100,
+    }),
+  ], [identity]);
+
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 70 },
+    { field: 'name', headerName: 'Name', width: 180 },
+    { field: 'department', headerName: 'Department', width: 140 },
+    { field: 'salary', headerName: 'Salary', width: 120,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+    { field: 'status', headerName: 'Status', width: 110 },
+    { field: 'city', headerName: 'City', width: 130 },
+  ], []);
+
+  const onGridReady = useCallback((api: GridApi) => {
+    apiRef.current = api;
+    api.addEventListener?.('presence:peers-changed' as any, ((e: any) => {
+      setPeers(e.peers ?? []);
+    }) as any);
+  }, []);
+
+  return (
+    <>
+      <p style={hintStyle}>
+        Open this page in a <strong>second browser tab</strong> (or window). Both
+        tabs use the same BroadcastChannel; each tab gets a random color and ID.
+        Click any cell — the other tab sees you. No server.
+      </p>
+      <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 11, color: '#475569' }}>You are:</span>
+        <span style={{ background: identity.color, color: 'white', padding: '4px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600 }}>
+          {identity.displayName}
+        </span>
+        <span style={{ fontSize: 11, color: '#475569' }}>Other tabs ({peers.length}):</span>
+        {peers.length === 0 && <span style={{ fontSize: 11, color: '#94a3b8' }}>none — open a second tab</span>}
+        {peers.map((p) => (
+          <span key={p.userId} style={{ background: p.color, color: 'white', padding: '4px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600 }}
+            title={p.focusedCell ? `${p.displayName} is on row ${p.focusedCell.rowId} / ${p.focusedCell.colId}` : `${p.displayName} is here`}>
+            {p.displayName}{p.focusedCell ? ` · ${p.focusedCell.colId}` : ''}
+          </span>
+        ))}
+      </div>
+      <GridStorm columns={columns} rowData={EMPLOYEES_50} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+        getRowId={({ data }: any) => String(data.id)}
+        onGridReady={onGridReady}
+        ariaLabel="Live Cursors Demo" />
+    </>
+  );
+}
+
+// ── Co-Editing (CRDT, cross-tab) ──
+function CoEditingDemo() {
+  const identity = useTabIdentity();
+  const apiRef = useRef<GridApi | null>(null);
+  const [remoteCount, setRemoteCount] = useState(0);
+  // Stable per-mount row data so two tabs of this demo start with the same
+  // baseline and diverge only via edits propagated by Yjs.
+  const rowData = useMemo(() => EMPLOYEES_50.map((r) => ({ ...r })), []);
+
+  const plugins = useMemo(() => [
+    SortingPlugin(),
+    ColumnResizePlugin(),
+    EditingPlugin({ editType: 'doubleClick' as any }),
+    YjsCellsPlugin({
+      docId: 'gridstorm-showcase-coediting',
+      transport: new BroadcastChannelCrdtTransport({ docId: 'gridstorm-showcase-coediting' }),
+      syncedColumns: ['name', 'department', 'salary', 'status', 'city'],
+    }),
+  ], []);
+
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 70 },
+    { field: 'name', headerName: 'Name', width: 180, editable: true, sortable: true },
+    { field: 'department', headerName: 'Department', width: 140, editable: true },
+    { field: 'salary', headerName: 'Salary', width: 120, editable: true,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+    { field: 'status', headerName: 'Status', width: 110, editable: true },
+    { field: 'city', headerName: 'City', width: 130, editable: true },
+  ], []);
+
+  const onGridReady = useCallback((api: GridApi) => {
+    apiRef.current = api;
+    api.addEventListener?.('yjsCells:remoteChange' as any, () => {
+      setRemoteCount((n) => n + 1);
+    });
+  }, []);
+
+  return (
+    <>
+      <p style={hintStyle}>
+        Open this page in a <strong>second tab</strong>, then double-click any
+        cell in either tab and type. Yjs reconciles concurrent edits to the same
+        cell deterministically — no locking, no last-writer-wins. Real
+        production setups use y-websocket / y-webrtc; this uses BroadcastChannel
+        so two tabs of the same browser sync without a server.
+      </p>
+      <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12, fontSize: 11, color: '#475569' }}>
+        <span>You are: <strong style={{ color: identity.color }}>{identity.displayName}</strong></span>
+        <span>· Edits received from other tabs: <strong>{remoteCount}</strong></span>
+      </div>
+      <GridStorm columns={columns} rowData={rowData} plugins={plugins}
+        rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+        getRowId={({ data }: any) => String(data.id)}
+        onGridReady={onGridReady}
+        ariaLabel="Co-Editing Demo" />
+    </>
+  );
+}
+
+// ── Cell Comments (CRDT, cross-tab) ──
+function CellCommentsDemo() {
+  const identity = useTabIdentity();
+  const apiRef = useRef<GridApi | null>(null);
+  const [selectedAnchor, setSelectedAnchor] = useState<string | null>(null);
+  const [comments, setComments] = useState<Map<string, Array<{ id: string; body: string; author: { displayName: string; color: string } }>>>(new Map());
+  const [draft, setDraft] = useState('');
+
+  const plugins = useMemo(() => [
+    SortingPlugin(),
+    SelectionPlugin({ mode: 'single' }),
+    ColumnResizePlugin(),
+    CommentsPlugin({
+      docId: 'gridstorm-showcase-comments',
+      author: { userId: identity.userId, displayName: identity.displayName, color: identity.color },
+      transport: new BroadcastChannelCrdtTransport({ docId: 'gridstorm-showcase-comments' }),
+    }),
+  ], [identity]);
+
+  const columns: ColumnDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 70 },
+    { field: 'name', headerName: 'Name', width: 180 },
+    { field: 'department', headerName: 'Department', width: 140 },
+    { field: 'salary', headerName: 'Salary', width: 120,
+      valueFormatter: (p: any) => `$${Number(p.value).toLocaleString()}` },
+  ], []);
+
+  const onGridReady = useCallback((api: GridApi) => {
+    apiRef.current = api;
+    api.addEventListener?.('comments:state-changed' as any, ((e: any) => {
+      setComments(new Map(e.byAnchor ?? new Map()));
+    }) as any);
+    api.addEventListener?.('cell:focused' as any, ((e: any) => {
+      if (e.rowId && e.colId) setSelectedAnchor(`${e.rowId}:${e.colId}`);
+    }) as any);
+  }, []);
+
+  const addComment = useCallback(() => {
+    if (!selectedAnchor || !draft.trim()) return;
+    apiRef.current?.dispatchCommand?.('comments:add', { anchor: selectedAnchor, body: draft });
+    setDraft('');
+  }, [selectedAnchor, draft]);
+
+  const currentThread = selectedAnchor ? comments.get(selectedAnchor) ?? [] : [];
+
+  return (
+    <>
+      <p style={hintStyle}>
+        Click a cell, type a comment in the sidebar, press <strong>Post</strong>.
+        Open in two tabs — both see the thread. Comments are signed by tab; each
+        tab gets a random name and color.
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 12 }}>
+        <GridStorm columns={columns} rowData={EMPLOYEES_50} plugins={plugins}
+          rowHeight={40} headerHeight={44} height={GRID_HEIGHT}
+          getRowId={({ data }: any) => String(data.id)}
+          onGridReady={onGridReady}
+          ariaLabel="Cell Comments Demo" />
+        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, padding: 10, fontSize: 12 }}>
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>
+            You: <span style={{ color: identity.color }}>{identity.displayName}</span>
+          </div>
+          {!selectedAnchor && <div style={{ color: '#94a3b8', fontSize: 11 }}>Click a cell to start a thread.</div>}
+          {selectedAnchor && (
+            <>
+              <div style={{ fontSize: 11, color: '#475569', marginBottom: 6 }}>
+                Thread for <code>{selectedAnchor}</code> · {currentThread.length} comment{currentThread.length === 1 ? '' : 's'}
+              </div>
+              <div style={{ maxHeight: 200, overflowY: 'auto', marginBottom: 8 }}>
+                {currentThread.length === 0 && <div style={{ color: '#94a3b8', fontSize: 11 }}>No comments yet.</div>}
+                {currentThread.map((c) => (
+                  <div key={c.id} style={{ marginBottom: 6, paddingBottom: 6, borderBottom: '1px dashed #e2e8f0' }}>
+                    <div style={{ color: (c.author as any)?.color ?? '#1e293b', fontWeight: 600, fontSize: 11 }}>
+                      {c.author?.displayName ?? 'unknown'}
+                    </div>
+                    <div style={{ fontSize: 12 }}>{c.body}</div>
+                  </div>
+                ))}
+              </div>
+              <textarea value={draft} onChange={(e) => setDraft(e.target.value)}
+                placeholder="Write a comment…"
+                style={{ width: '100%', minHeight: 50, padding: 6, border: '1px solid #cbd5e1', borderRadius: 4, fontSize: 12, fontFamily: 'inherit' }} />
+              <button onClick={addComment} disabled={!draft.trim()}
+                style={{ ...chipBtn, marginTop: 6, width: '100%' }}>
+                Post
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ── Demo Renderer Map ──
 
 const DEMO_MAP: Record<string, () => JSX.Element> = {
@@ -3156,6 +3644,12 @@ const DEMO_MAP: Record<string, () => JSX.Element> = {
   'privacy-lens': PrivacyLensDemo,
   'adaptive-renderer': AdaptiveRendererDemo,
   'intelligence-hub': IntelligenceHubDemo,
+  // ── Pillar 1 + 2 (new 2026-06) ──
+  'ai-query-llm': AiQueryLlmDemo,
+  'cell-autocomplete': CellAutocompleteDemo,
+  'live-cursors': LiveCursorsDemo,
+  'co-editing': CoEditingDemo,
+  'cell-comments': CellCommentsDemo,
 };
 
 const CATEGORIES: Record<string, string> = {

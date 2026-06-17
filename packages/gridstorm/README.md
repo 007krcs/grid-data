@@ -1,6 +1,6 @@
 # gridstorm
 
-> **One package. Everything included.** The complete enterprise data grid — core engine, 45+ plugins, framework adapters, theming, i18n, license layer, AI adapter, and the PDF toolkit — all in a single npm install.
+> **One package. Everything included. 100% free.** The complete data grid platform — core engine, 45+ plugins, framework adapters, theming, i18n, AI adapter, and the PDF toolkit — all in a single npm install, all MIT-licensed.
 
 [![npm](https://img.shields.io/npm/v/gridstorm)](https://www.npmjs.com/package/gridstorm)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -118,7 +118,6 @@ import { GridStormComponent } from 'gridstorm/angular';
 - **DOM renderer** — virtual scrolling, keyboard navigation, full ARIA contract, focus management
 - **Theme** — CSS custom properties; runtime light / dark / high-contrast / compact switching
 - **i18n** — 20 built-in locales, `{placeholder}` interpolation via `tWith()`, RTL auto-apply on the React adapter
-- **License layer** — Ed25519-signed enterprise keys, strict-mode enforcement, clock-skew detection, re-attaching watermarks
 
 ### Plugins (45+)
 
@@ -205,20 +204,11 @@ grid.api.dispatchCommand('ai-query:ask', { query: 'sort by revenue descending, g
 
 ---
 
-## Licensing
+## Licensing — fully free
 
-Tier 1 plugins are open-source under MIT. Tier 2 + Tier 3 plugins emit a development-mode `console.warn` until you set a license key:
+**Every plugin is free, MIT-licensed, no key required.** There are no enterprise tiers, no premium plugins, no watermarks, no `console.warn` for unlicensed plugins, no domain restrictions. Use any plugin in production without contacting anyone or paying anything.
 
-```ts
-import { setGridStormLicense, setLicenseStrictMode } from 'gridstorm';
-
-setGridStormLicense('GS2-...your-signed-key...');
-if (import.meta.env.PROD) setLicenseStrictMode(true); // throws on missing license at install
-```
-
-Premium plugins still install without a key — only the warning fires (or, in strict mode, a `LicenseRequiredError` is thrown). License keys are Ed25519-signed; legacy `GS-` keys are rejected.
-
-Buy or evaluate at <https://gridstorm.tekivex.com>.
+The legacy `setGridStormLicense()`, `validateLicense()`, and `enforceLicense()` exports are kept as permissive no-ops so older code keeps compiling — you can safely delete every call to them.
 
 ---
 
@@ -231,4 +221,4 @@ Buy or evaluate at <https://gridstorm.tekivex.com>.
 
 ## License
 
-MIT for the open-source core. Premium plugins require an enterprise license — see [LICENSE.md](./LICENSE.md).
+[MIT](./LICENSE.md). Everything — every plugin, every adapter, the AI bridge, the PDF toolkit — is MIT.

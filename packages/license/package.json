@@ -1,7 +1,7 @@
 {
   "name": "@gridstorm/license",
-  "version": "0.1.4",
-  "description": "License key validation for GridStorm enterprise plugins",
+  "version": "0.2.0",
+  "description": "Deprecated. License gating was removed from GridStorm — every plugin is free and MIT-licensed. This package now ships permissive no-op stubs so existing callers keep compiling.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -60,7 +60,5 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "dependencies": {
-    "@noble/curves": "^2.2.0"
-  }
+  "dependencies": {}
 }

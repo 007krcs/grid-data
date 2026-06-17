@@ -1,72 +1,35 @@
+// © 2026 GridStorm Contributors — MIT License
+//
+// Watermarks were removed when the commercial layer was dropped. These
+// tests confirm the stubs are no-ops: nothing gets injected into the DOM
+// and removal is harmless.
+
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createWatermark, removeWatermark } from '../watermark';
 
-describe('Watermark', () => {
+describe('Watermark (no-op stubs)', () => {
   let container: HTMLElement;
-
   beforeEach(() => {
     container = document.createElement('div');
     document.body.appendChild(container);
   });
 
-  describe('createWatermark', () => {
-    it('should create a watermark overlay in the container', () => {
-      createWatermark(container);
-
-      const overlay = container.querySelector('#__gridstorm_watermark__');
-      expect(overlay).not.toBeNull();
-      expect(overlay!.getAttribute('aria-hidden')).toBe('true');
-    });
-
-    it('should not create duplicate watermarks', () => {
-      createWatermark(container);
-      createWatermark(container);
-
-      const overlays = container.querySelectorAll('#__gridstorm_watermark__');
-      expect(overlays.length).toBe(1);
-    });
-
-    it('should set container to relative positioning if static', () => {
-      container.style.position = 'static';
-      createWatermark(container);
-
-      expect(container.style.position).toBe('relative');
-    });
-
-    it('should not change container positioning if already non-static', () => {
-      container.style.position = 'absolute';
-      createWatermark(container);
-
-      expect(container.style.position).toBe('absolute');
-    });
-
-    it('should contain watermark text', () => {
-      createWatermark(container);
-
-      const overlay = container.querySelector('#__gridstorm_watermark__');
-      expect(overlay!.textContent).toContain('GRIDSTORM UNLICENSED');
-    });
-
-    it('should have pointer-events none so grid is still usable', () => {
-      createWatermark(container);
-
-      const overlay = container.querySelector('#__gridstorm_watermark__') as HTMLElement;
-      expect(overlay.style.pointerEvents).toBe('none');
-    });
+  it('createWatermark injects nothing', () => {
+    createWatermark(container);
+    expect(container.children.length).toBe(0);
+    expect(container.querySelector('#__gridstorm_watermark__')).toBeNull();
   });
 
-  describe('removeWatermark', () => {
-    it('should remove an existing watermark', () => {
-      createWatermark(container);
-      expect(container.querySelector('#__gridstorm_watermark__')).not.toBeNull();
+  it('removeWatermark is safe when no watermark exists', () => {
+    expect(() => removeWatermark(container)).not.toThrow();
+    expect(container.children.length).toBe(0);
+  });
 
-      removeWatermark(container);
-      expect(container.querySelector('#__gridstorm_watermark__')).toBeNull();
-    });
-
-    it('should do nothing if no watermark exists', () => {
-      // Should not throw
-      expect(() => removeWatermark(container)).not.toThrow();
-    });
+  it('repeated calls remain inert', () => {
+    createWatermark(container);
+    createWatermark(container);
+    removeWatermark(container);
+    removeWatermark(container);
+    expect(container.children.length).toBe(0);
   });
 });

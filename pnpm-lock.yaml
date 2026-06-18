@@ -929,10 +929,6 @@ importers:
         version: 5.9.3
 
   packages/license:
-    dependencies:
-      '@noble/curves':
-        specifier: ^2.2.0
-        version: 2.2.0
     devDependencies:
       tsup:
         specifier: ^8.5.0

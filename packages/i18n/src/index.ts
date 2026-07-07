@@ -1,7 +1,13 @@
 // © 2025 GridStorm / Tekivex — All Rights Reserved
 // Unauthorized reproduction or distribution is prohibited.
 export { I18nManager, createI18n } from './i18n-manager';
-export type { I18nConfig, LocaleStrings, LocaleFormatters } from './types';
+export type {
+  I18nConfig,
+  LocaleStrings,
+  LocaleFormatters,
+  PluralCategory,
+  PluralForms,
+} from './types';
 export { defaultStrings } from './locales/en';
 export { deStrings } from './locales/de';
 export { frStrings } from './locales/fr';

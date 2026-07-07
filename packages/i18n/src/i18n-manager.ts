@@ -1,6 +1,12 @@
 // © 2025 GridStorm / Tekivex — All Rights Reserved
 // Unauthorized reproduction or distribution is prohibited.
-import type { I18nConfig, LocaleStrings, LocaleFormatters } from './types';
+import type {
+  I18nConfig,
+  LocaleStrings,
+  LocaleFormatters,
+  PluralCategory,
+  PluralForms,
+} from './types';
 import { defaultStrings } from './locales/en';
 import { isRTL } from './rtl';
 import { createFormatters } from './formatters';
@@ -9,11 +15,13 @@ export class I18nManager {
   private locale: string;
   private strings: LocaleStrings;
   private formatters: LocaleFormatters;
+  private pluralRules: Intl.PluralRules;
 
   constructor(config: I18nConfig = {}) {
     this.locale = config.locale ?? 'en-US';
     this.strings = { ...defaultStrings, ...config.strings };
     this.formatters = createFormatters(this.locale, config.currency);
+    this.pluralRules = new Intl.PluralRules(this.locale);
   }
 
   /** Get a translated string by key */
@@ -38,7 +46,54 @@ export class I18nManager {
    * ```
    */
   tWith(key: keyof LocaleStrings, params: Record<string, string | number>): string {
-    const template = this.strings[key];
+    return this.interpolate(this.strings[key], params);
+  }
+
+  /**
+   * Select the CLDR plural category for `count` in the current locale.
+   *
+   * English returns `'one'` for 1 and `'other'` otherwise; Polish distinguishes
+   * `'one'`/`'few'`/`'many'`/`'other'`; CJK locales always return `'other'`.
+   * Backed by `Intl.PluralRules`, so the rules stay correct across every locale.
+   */
+  selectPlural(count: number): PluralCategory {
+    return this.pluralRules.select(count) as PluralCategory;
+  }
+
+  /**
+   * Resolve a plural message for `count`, choosing the grammatically-correct
+   * form for the current locale, then interpolating placeholders.
+   *
+   * The form is picked by {@link selectPlural}; if the selected category has no
+   * entry in `forms`, `forms.other` is used (so `{ other }` alone always works).
+   * `{count}` is available in every form — locale-formatted — alongside any
+   * extra `params`. Explicit `params` win over the automatic `count` binding.
+   *
+   * @example
+   * ```ts
+   * const rows = { one: '{count} row selected', other: '{count} rows selected' };
+   * i18n.tPlural(1, rows);   // → '1 row selected'
+   * i18n.tPlural(5, rows);   // → '5 rows selected'
+   * // pl-PL: tPlural(2, {...}) selects 'few'; tPlural(5, {...}) selects 'many'
+   * ```
+   */
+  tPlural(
+    count: number,
+    forms: PluralForms,
+    params?: Record<string, string | number>,
+  ): string {
+    const category = this.selectPlural(count);
+    const template = forms[category] ?? forms.other;
+    return this.interpolate(template, { count, ...params });
+  }
+
+  /**
+   * Replace `{name}` placeholders in `template` with values from `params`.
+   * Missing values fall through as the literal `{name}` token so an
+   * untranslated placeholder is visible in the UI rather than silently empty.
+   * Numbers are formatted with the current locale's number formatter.
+   */
+  private interpolate(template: string, params: Record<string, string | number>): string {
     return template.replace(/\{(\w+)\}/g, (raw, name: string) => {
       if (!Object.prototype.hasOwnProperty.call(params, name)) return raw;
       const value = params[name];
@@ -93,6 +148,7 @@ export class I18nManager {
     // Load locale-specific strings, merge with defaults and overrides
     this.strings = { ...defaultStrings, ...strings };
     this.formatters = createFormatters(locale);
+    this.pluralRules = new Intl.PluralRules(locale);
   }
 
   /** Get all strings */

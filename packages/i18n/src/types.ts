@@ -71,6 +71,30 @@ export interface LocaleStrings {
   ariaColumnMenu: string;
 }
 
+/**
+ * A CLDR plural category. Which categories a locale actually uses is decided by
+ * `Intl.PluralRules` — English uses `one`/`other`; Polish uses
+ * `one`/`few`/`many`/`other`; Arabic uses all six; CJK languages use only
+ * `other`.
+ */
+export type PluralCategory = 'zero' | 'one' | 'two' | 'few' | 'many' | 'other';
+
+/**
+ * A set of message forms keyed by plural category. `other` is required and is
+ * used as the fallback whenever the selected category has no explicit form, so
+ * a single `{ other }` entry is always safe. Each form may contain `{count}`
+ * (and any additional `{name}` placeholders), interpolated per locale.
+ *
+ * @example
+ * ```ts
+ * const rows: PluralForms = {
+ *   one: '{count} row selected',
+ *   other: '{count} rows selected',
+ * };
+ * ```
+ */
+export type PluralForms = { other: string } & Partial<Record<PluralCategory, string>>;
+
 export interface LocaleFormatters {
   /** Format a number according to locale rules */
   formatNumber(value: number, options?: Intl.NumberFormatOptions): string;

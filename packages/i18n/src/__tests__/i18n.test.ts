@@ -410,3 +410,104 @@ describe('I18nManager constructor', () => {
     expect(i18n.t('copy')).toBe('Copier');
   });
 });
+
+describe('tWith interpolation', () => {
+  it('substitutes {name} placeholders', () => {
+    const i18n = createI18n({ strings: { loading: 'Loaded {name} in {ms}ms' } });
+    expect(i18n.tWith('loading', { name: 'grid', ms: 12 })).toBe('Loaded grid in 12ms');
+  });
+
+  it('formats numeric values with the locale number formatter', () => {
+    const en = createI18n({ locale: 'en-US', strings: { loading: '{n} rows' } });
+    expect(en.tWith('loading', { n: 1234567 })).toBe('1,234,567 rows');
+    const de = createI18n({ locale: 'de-DE', strings: { loading: '{n} rows' } });
+    expect(de.tWith('loading', { n: 1234567 })).toBe('1.234.567 rows');
+  });
+
+  it('leaves an unmatched placeholder visible rather than blank', () => {
+    const i18n = createI18n({ strings: { loading: 'Hello {missing}' } });
+    expect(i18n.tWith('loading', { other: 'x' })).toBe('Hello {missing}');
+  });
+});
+
+describe('Pluralization', () => {
+  const rows = {
+    one: '{count} row selected',
+    other: '{count} rows selected',
+  };
+
+  it('selectPlural returns English one/other categories', () => {
+    const i18n = createI18n({ locale: 'en-US' });
+    expect(i18n.selectPlural(0)).toBe('other');
+    expect(i18n.selectPlural(1)).toBe('one');
+    expect(i18n.selectPlural(2)).toBe('other');
+    expect(i18n.selectPlural(100)).toBe('other');
+  });
+
+  it('tPlural picks the grammatically correct English form and binds {count}', () => {
+    const i18n = createI18n({ locale: 'en-US' });
+    expect(i18n.tPlural(1, rows)).toBe('1 row selected');
+    expect(i18n.tPlural(5, rows)).toBe('5 rows selected');
+    expect(i18n.tPlural(0, rows)).toBe('0 rows selected');
+  });
+
+  it('formats {count} using the locale number formatter', () => {
+    const de = createI18n({ locale: 'de-DE' });
+    expect(de.tPlural(1234, rows)).toBe('1.234 rows selected');
+  });
+
+  it('applies Polish one/few/many/other rules', () => {
+    const pl = createI18n({ locale: 'pl-PL' });
+    // Polish: 1 -> one, 2-4 -> few, 5+ -> many
+    expect(pl.selectPlural(1)).toBe('one');
+    expect(pl.selectPlural(2)).toBe('few');
+    expect(pl.selectPlural(5)).toBe('many');
+    const plForms = {
+      one: '{count} wiersz',
+      few: '{count} wiersze',
+      many: '{count} wierszy',
+      other: '{count} wiersza',
+    };
+    expect(pl.tPlural(1, plForms)).toBe('1 wiersz');
+    expect(pl.tPlural(3, plForms)).toBe('3 wiersze');
+    expect(pl.tPlural(8, plForms)).toBe('8 wierszy');
+  });
+
+  it('applies Arabic zero/one/two/few/many/other rules', () => {
+    const ar = createI18n({ locale: 'ar' });
+    expect(ar.selectPlural(0)).toBe('zero');
+    expect(ar.selectPlural(1)).toBe('one');
+    expect(ar.selectPlural(2)).toBe('two');
+    expect(ar.selectPlural(3)).toBe('few');
+    expect(ar.selectPlural(11)).toBe('many');
+  });
+
+  it('treats CJK locales as plural-invariant (always other)', () => {
+    const ja = createI18n({ locale: 'ja-JP' });
+    expect(ja.selectPlural(0)).toBe('other');
+    expect(ja.selectPlural(1)).toBe('other');
+    expect(ja.selectPlural(99)).toBe('other');
+    expect(ja.tPlural(1, { other: '{count}件' })).toBe('1件');
+  });
+
+  it('falls back to other when the selected category form is missing', () => {
+    const i18n = createI18n({ locale: 'en-US' });
+    // No 'one' form provided — must fall back to 'other'
+    expect(i18n.tPlural(1, { other: '{count} items' })).toBe('1 items');
+  });
+
+  it('merges extra params and lets explicit params override count', () => {
+    const i18n = createI18n({ locale: 'en-US' });
+    const form = { one: '{count} {label}', other: '{count} {label}s' };
+    expect(i18n.tPlural(2, form, { label: 'file' })).toBe('2 files');
+    // Explicit count param wins over the automatic binding
+    expect(i18n.tPlural(2, { other: '{count}' }, { count: 'many' })).toBe('many');
+  });
+
+  it('updates plural rules after setLocale', () => {
+    const i18n = createI18n({ locale: 'en-US' });
+    expect(i18n.selectPlural(2)).toBe('other');
+    i18n.setLocale('pl-PL');
+    expect(i18n.selectPlural(2)).toBe('few');
+  });
+});

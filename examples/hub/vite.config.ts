@@ -13,5 +13,7 @@ export default defineConfig({
   },
   build: {
     assetsDir: 'hub-assets',
+    // Ship source maps so production JS is debuggable (Lighthouse: valid-source-maps)
+    sourcemap: true,
   },
 });

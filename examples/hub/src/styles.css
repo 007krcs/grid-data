@@ -52,16 +52,18 @@
   --hub-border-subtle: #f1f5f9;
   --hub-text: #0f172a;
   --hub-text-secondary: #475569;
-  --hub-text-muted: #94a3b8;
-  --hub-accent: #3b82f6;
-  --hub-accent-light: #2563eb;
+  /* WCAG AA: >=4.9:1 on --hub-bg, --hub-surface and --hub-surface-2 */
+  --hub-text-muted: #5d6b81;
+  /* WCAG AA: white on accent >=5.1:1; accent text on surfaces >=4.5:1 */
+  --hub-accent: #2563eb;
+  --hub-accent-light: #1d4ed8;
   --hub-accent-glow: rgba(59, 130, 246, 0.08);
-  --hub-green: #16a34a;
+  --hub-green: #15803d;
   --hub-purple: #9333ea;
   --hub-orange: #ea580c;
   --hub-pink: #db2777;
   --hub-cyan: #0891b2;
-  --hub-red: #dc2626;
+  --hub-red: #b91c1c;
   --hub-radius: 12px;
   --hub-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   --hub-card-shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.1);
@@ -80,7 +82,8 @@
   --hub-border-subtle: #1e1e22;
   --hub-text: #fafafa;
   --hub-text-secondary: #a1a1aa;
-  --hub-text-muted: #71717a;
+  /* WCAG AA: >=5:1 on --hub-bg and --hub-surface */
+  --hub-text-muted: #82828c;
   --hub-accent: #3b82f6;
   --hub-accent-light: #60a5fa;
   --hub-accent-glow: rgba(59, 130, 246, 0.15);
@@ -376,7 +379,6 @@ body {
 .stat-sub {
   font-size: 11px;
   color: var(--hub-text-muted);
-  opacity: 0.7;
   margin-top: 1px;
 }
 
@@ -1756,7 +1758,7 @@ body {
 }
 
 .preview-th-sorted {
-  color: var(--hub-accent);
+  color: var(--hub-accent-light);
 }
 
 .preview-row {
@@ -1964,7 +1966,7 @@ body {
   font-size: 12.5px;
   font-weight: 500;
   font-family: inherit;
-  color: #6c7086;
+  color: #9399b2; /* WCAG AA on #171720 */
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
   white-space: nowrap;
@@ -1982,7 +1984,7 @@ body {
 .qs-file-badge {
   font-size: 11px;
   font-family: 'SF Mono', 'Fira Code', Menlo, monospace;
-  color: #6c7086;
+  color: #9399b2; /* WCAG AA on #202029 */
   padding: 2px 8px;
   background: rgba(255,255,255,0.04);
   border-radius: 4px;
@@ -2012,7 +2014,7 @@ body {
   display: inline-block;
   width: 36px;
   padding-right: 12px;
-  color: #45475a;
+  color: #868ca8; /* WCAG AA on #1e1e2e */
   text-align: right;
   user-select: none;
   font-size: 11.5px;
@@ -2061,7 +2063,8 @@ body {
   border-radius: 10px;
   border: 1px solid var(--hub-border);
   background: var(--hub-surface);
-  opacity: 0.6;
+  /* Keep >=0.85 so the label still clears WCAG AA contrast when dimmed */
+  opacity: 0.85;
   transition: opacity 0.2s, border-color 0.2s;
   cursor: default;
 }
@@ -2515,7 +2518,8 @@ body {
   font-size: 10px;
   font-weight: 600;
   background: var(--hub-accent-glow);
-  color: var(--hub-accent);
+  /* accent-light clears WCAG AA on the tinted glow background */
+  color: var(--hub-accent-light);
   border: 1px solid rgba(59, 130, 246, 0.2);
   letter-spacing: 0.04em;
 }
@@ -2550,7 +2554,7 @@ body {
 
 .preview-toolbar-btn-active {
   background: var(--hub-accent-glow);
-  color: var(--hub-accent);
+  color: var(--hub-accent-light);
   border-color: rgba(59, 130, 246, 0.25);
 }
 

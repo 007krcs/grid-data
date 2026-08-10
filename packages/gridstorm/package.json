@@ -1,6 +1,6 @@
 {
   "name": "gridstorm",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "GridStorm — The complete data grid platform in one npm install. 100% free, MIT-licensed. Core engine + 45+ plugins (sorting, filtering, grouping, pivoting, formulas, time-travel, CRDT collab, LLM-backed NL query, anomaly detection, more) + React/Vue/Svelte/Angular adapters + theming + i18n + AI adapter + PDF toolkit. No license keys, no enterprise tier, no watermarks.",
   "type": "module",
   "main": "./dist/index.cjs",

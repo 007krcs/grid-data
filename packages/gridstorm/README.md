@@ -26,12 +26,12 @@ Framework runtimes (`react`, `react-dom`, `vue`, `svelte`, `@angular/core`) are 
 ## Vanilla TS / JS
 
 ```ts
-import { createGrid, SortingPlugin, FilteringPlugin, SelectionPlugin } from 'gridstorm';
+import { createGrid, DomRenderer, SortingPlugin, FilteringPlugin, SelectionPlugin } from 'gridstorm';
 import 'gridstorm/theme';
 
-const grid = createGrid({
-  container: document.getElementById('grid')!,
-  columnDefs: [
+// 1. Create the headless engine (note: the key is `columns`, not `columnDefs`)
+const engine = createGrid({
+  columns: [
     { field: 'name',   headerName: 'Name'   },
     { field: 'age',    headerName: 'Age'    },
     { field: 'email',  headerName: 'Email'  },
@@ -46,6 +46,16 @@ const grid = createGrid({
     SelectionPlugin({ mode: 'multiple' }),
   ],
 });
+
+// 2. Attach the DOM renderer to your container element
+const renderer = new DomRenderer({
+  engine,
+  container: document.getElementById('grid')!,
+});
+renderer.mount();
+
+// engine.api gives you the full grid API (sort, filter, selection, export, ...)
+// Cleanup: renderer.destroy(); engine.destroy();
 ```
 
 ## React
@@ -58,7 +68,7 @@ import 'gridstorm/theme';
 export function MyGrid() {
   return (
     <GridStorm
-      columnDefs={[{ field: 'name' }, { field: 'age' }, { field: 'email' }]}
+      columns={[{ field: 'name' }, { field: 'age' }, { field: 'email' }]}
       rowData={rows}
       plugins={[SortingPlugin(), FilteringPlugin()]}
     />
@@ -77,7 +87,7 @@ import 'gridstorm/theme';
 
 <template>
   <GridStorm
-    :columnDefs="[{ field: 'name' }, { field: 'age' }]"
+    :columns="[{ field: 'name' }, { field: 'age' }]"
     :rowData="rows"
     :plugins="[SortingPlugin(), FilteringPlugin()]"
   />
@@ -161,9 +171,8 @@ import {
   BroadcastChannelPresenceAdapter,
 } from 'gridstorm';
 
-const grid = createGrid({
-  container,
-  columnDefs,
+const engine = createGrid({
+  columns,
   rowData,
   plugins: [
     SortingPlugin(),
@@ -177,6 +186,8 @@ const grid = createGrid({
     }),
   ],
 });
+// Attach a DomRenderer as in Quick Start, or pass the plugins to the
+// React/Vue <GridStorm> component instead.
 ```
 
 For real cross-device sync, swap the BroadcastChannel transport for a server-backed one (e.g. y-websocket, Liveblocks).
@@ -188,9 +199,8 @@ For real cross-device sync, swap the BroadcastChannel transport for a server-bac
 ```ts
 import { createGrid, AiQueryPlugin, OpenAIAdapter } from 'gridstorm';
 
-const grid = createGrid({
-  container,
-  columnDefs,
+const engine = createGrid({
+  columns,
   rowData,
   plugins: [
     AiQueryPlugin({
@@ -199,7 +209,7 @@ const grid = createGrid({
   ],
 });
 
-grid.api.dispatchCommand('ai-query:ask', { query: 'sort by revenue descending, group by region' });
+engine.api.dispatchCommand('ai-query:ask', { query: 'sort by revenue descending, group by region' });
 ```
 
 ---

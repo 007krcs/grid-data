@@ -39,6 +39,7 @@ export {
   EchoAdapter,
   synthesizeFromSchema,
   OpenAIAdapter,
+  AnthropicAdapter,
   isAIError,
   supportsEmbedding,
   supportsStreaming,
@@ -108,11 +109,13 @@ export {
   PresencePlugin,
   InMemoryPresenceAdapter,
   BroadcastChannelPresenceAdapter,
+  WebSocketPresenceAdapter,
 } from '../../plugin-presence/src/index';
 export {
   YjsCellsPlugin,
   InMemoryCrdtTransport,
   BroadcastChannelCrdtTransport,
+  WebSocketCrdtTransport,
 } from '../../plugin-yjs-cells/src/index';
 export { CommentsPlugin } from '../../plugin-comments/src/index';
 

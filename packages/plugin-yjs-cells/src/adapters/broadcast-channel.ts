@@ -29,6 +29,33 @@ type WireMessage =
 
 export interface BroadcastChannelCrdtTransportOptions {
   docId: string;
+  /**
+   * Persist the CRDT document to localStorage so state survives closing
+   * every tab. On connect, previously stored state is loaded and merged;
+   * afterwards each local or remote update schedules a debounced save.
+   *
+   * Storage key: `gridstorm-yjs-persist:<docId>`. Note localStorage caps
+   * at ~5MB per origin — suitable for comments/cell edits, not huge docs.
+   * Default: false (previous behavior — state dissolves with the last tab).
+   */
+  persist?: boolean;
+  /** Debounce for persisted writes, ms. Default 500. */
+  persistDebounceMs?: number;
+}
+
+const PERSIST_PREFIX = 'gridstorm-yjs-persist:';
+
+function b64FromBytes(bytes: Uint8Array): string {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]!);
+  return btoa(bin);
+}
+
+function bytesFromB64(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
 }
 
 function randomId(): string {
@@ -41,6 +68,7 @@ export class BroadcastChannelCrdtTransport implements CrdtTransport {
   /** Local accumulator so we can respond to sync-requests from late joiners. */
   private mirror: Y.Doc | null = null;
   private readonly selfId = randomId();
+  private persistTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private options: BroadcastChannelCrdtTransportOptions) {}
 
@@ -56,6 +84,20 @@ export class BroadcastChannelCrdtTransport implements CrdtTransport {
     this.mirror = new Y.Doc();
     Y.applyUpdate(this.mirror, initialState);
 
+    // Load persisted state (if enabled) BEFORE talking to peers, so a fresh
+    // session that is the only open tab still restores prior comments/edits.
+    if (this.options.persist) {
+      const stored = this.loadPersisted();
+      if (stored) {
+        try {
+          Y.applyUpdate(this.mirror, stored);
+          handlers.onUpdate(stored);
+        } catch (e) {
+          handlers.onError(e instanceof Error ? e : new Error(String(e)));
+        }
+      }
+    }
+
     this.channel.onmessage = (ev: MessageEvent<WireMessage>) => {
       this.handleMessage(ev.data);
     };
@@ -69,9 +111,16 @@ export class BroadcastChannelCrdtTransport implements CrdtTransport {
     if (!this.channel || !this.mirror) return;
     Y.applyUpdate(this.mirror, update);
     this.send({ kind: 'update', bytes: Array.from(update), from: this.selfId });
+    this.schedulePersist();
   }
 
   disconnect(): void {
+    // Flush any pending persist so the very last edit isn't lost on close.
+    if (this.persistTimer) {
+      clearTimeout(this.persistTimer);
+      this.persistTimer = null;
+      this.persistNow();
+    }
     this.channel?.close();
     this.channel = null;
     this.mirror?.destroy();
@@ -88,6 +137,7 @@ export class BroadcastChannelCrdtTransport implements CrdtTransport {
         const update = new Uint8Array(msg.bytes);
         Y.applyUpdate(this.mirror, update);
         this.handlers.onUpdate(update);
+        this.schedulePersist();
         return;
       }
       case 'hello': {
@@ -113,6 +163,7 @@ export class BroadcastChannelCrdtTransport implements CrdtTransport {
         const update = new Uint8Array(msg.bytes);
         Y.applyUpdate(this.mirror, update);
         this.handlers.onUpdate(update);
+        this.schedulePersist();
         return;
       }
     }
@@ -120,5 +171,40 @@ export class BroadcastChannelCrdtTransport implements CrdtTransport {
 
   private send(msg: WireMessage): void {
     this.channel?.postMessage(msg);
+  }
+
+  // ── Persistence (opt-in via options.persist) ─────────────────────────────
+
+  private storageKey(): string {
+    return `${PERSIST_PREFIX}${this.options.docId}`;
+  }
+
+  private loadPersisted(): Uint8Array | null {
+    try {
+      const raw = globalThis.localStorage?.getItem(this.storageKey());
+      return raw ? bytesFromB64(raw) : null;
+    } catch {
+      return null; // storage unavailable (sandboxed iframe, SSR) — fail soft
+    }
+  }
+
+  private schedulePersist(): void {
+    if (!this.options.persist) return;
+    if (this.persistTimer) clearTimeout(this.persistTimer);
+    this.persistTimer = setTimeout(() => {
+      this.persistTimer = null;
+      this.persistNow();
+    }, this.options.persistDebounceMs ?? 500);
+  }
+
+  private persistNow(): void {
+    if (!this.options.persist || !this.mirror) return;
+    try {
+      const state = Y.encodeStateAsUpdate(this.mirror);
+      globalThis.localStorage?.setItem(this.storageKey(), b64FromBytes(state));
+    } catch (e) {
+      // Quota exceeded or storage disabled — surface once, keep running.
+      this.handlers?.onError(e instanceof Error ? e : new Error(String(e)));
+    }
   }
 }

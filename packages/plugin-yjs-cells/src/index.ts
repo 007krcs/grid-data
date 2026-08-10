@@ -17,3 +17,6 @@ export type { InMemoryCrdtTransportOptions } from './adapters/in-memory';
 
 export { BroadcastChannelCrdtTransport } from './adapters/broadcast-channel';
 export type { BroadcastChannelCrdtTransportOptions } from './adapters/broadcast-channel';
+
+export { WebSocketCrdtTransport } from './adapters/websocket';
+export type { WebSocketCrdtTransportOptions } from './adapters/websocket';

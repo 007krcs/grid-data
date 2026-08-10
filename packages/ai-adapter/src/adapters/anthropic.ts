@@ -30,6 +30,15 @@ import { applyRedaction, chainAbort, statusToErrorKind, wrapAIError } from '../u
 
 export interface AnthropicAdapterOptions {
   apiKey: string;
+  /**
+   * Default model — used when AICompleteOptions.model is unset.
+   * Defaults to `claude-opus-5`. (The previous default,
+   * claude-3-5-sonnet-20240620, was retired by Anthropic in Oct 2025 and
+   * now returns 404.)
+   *
+   * Note: on Claude Opus 4.7+ models the `temperature` option is rejected
+   * by the API — leave AICompleteOptions.temperature unset for those.
+   */
   defaultModel?: string;
   baseURL?: string;
   timeoutMs?: number;
@@ -89,7 +98,7 @@ export class AnthropicAdapter implements AIAdapter {
     const redacted = applyRedaction(messages, options.redact);
     const { system, conversation } = splitSystem(redacted);
     const body: AnthropicRequest = {
-      model: options.model ?? this.options.defaultModel ?? 'claude-3-5-sonnet-20240620',
+      model: options.model ?? this.options.defaultModel ?? 'claude-opus-5',
       max_tokens: options.maxTokens ?? 1024,
       messages: conversation,
       ...(system ? { system } : {}),
@@ -121,7 +130,7 @@ export class AnthropicAdapter implements AIAdapter {
     const redacted = applyRedaction(messages, options.redact);
     const { system, conversation } = splitSystem(redacted);
     const body: AnthropicRequest = {
-      model: options.model ?? this.options.defaultModel ?? 'claude-3-5-sonnet-20240620',
+      model: options.model ?? this.options.defaultModel ?? 'claude-opus-5',
       max_tokens: options.maxTokens ?? 2048,
       messages: conversation,
       ...(system ? { system } : {}),

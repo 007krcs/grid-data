@@ -190,14 +190,34 @@ const engine = createGrid({
 // React/Vue <GridStorm> component instead.
 ```
 
-For real cross-device sync, swap the BroadcastChannel transport for a server-backed one (e.g. y-websocket, Liveblocks).
+`BroadcastChannel` reaches tabs of the **same browser on the same machine only**. Two things extend it:
+
+- **Persistence:** pass `persist: true` to `BroadcastChannelCrdtTransport` and the doc is saved to localStorage — comments and co-edits survive closing every tab (~5MB origin cap applies).
+- **Cross-device sync:** use the bundled `WebSocketCrdtTransport` / `WebSocketPresenceAdapter` against a trivial relay server (any WebSocket server that forwards each frame to the other clients in the same room — a ~20-line reference relay is in the transport's source docs):
+
+```ts
+import { WebSocketCrdtTransport, WebSocketPresenceAdapter } from 'gridstorm';
+
+YjsCellsPlugin({
+  docId: 'my-grid',
+  transport: new WebSocketCrdtTransport({ url: 'wss://collab.example.com', docId: 'my-grid' }),
+});
+PresencePlugin({
+  author,
+  adapter: new WebSocketPresenceAdapter({ url: 'wss://collab.example.com', channelName: 'my-grid' }),
+});
+```
+
+For production-grade collaboration (auth, persistence, scale), a y-websocket server or Liveblocks Yjs Provider remains the recommended path.
 
 ---
 
 ## LLM-backed natural language
 
+Bring your own provider — `OpenAIAdapter`, `AnthropicAdapter`, or any object implementing the `AIAdapter` interface. (`EchoAdapter` is an offline mock for demos and tests — it is not an LLM.)
+
 ```ts
-import { createGrid, AiQueryPlugin, OpenAIAdapter } from 'gridstorm';
+import { createGrid, AiQueryPlugin, OpenAIAdapter, AnthropicAdapter } from 'gridstorm';
 
 const engine = createGrid({
   columns,
@@ -221,6 +241,14 @@ engine.api.dispatchCommand('ai-query:ask', { query: 'sort by revenue descending,
 The legacy `setGridStormLicense()`, `validateLicense()`, and `enforceLicense()` exports are kept as permissive no-ops so older code keeps compiling — you can safely delete every call to them.
 
 ---
+
+## Known limitations (honest edition)
+
+- **Framework adapters are not at parity.** React is the most complete (component + 8 hooks + ErrorBoundary + portals). Vue has the component, composables, and an ErrorBoundary. Svelte and Angular are functional but thinner. If adapter depth matters, React or Vue are the safe picks today.
+- **Excel/PDF export builds the whole document in memory.** Enforced caps: 100k rows / 5M cells (Excel), 25k rows / 1M cells (PDF). No streaming export yet — very large exports should be chunked by the caller.
+- **`Store.setState()` is advisory, not locked down.** The "commands are the only way to mutate state" invariant emits a dev-mode warning when bypassed, but is not enforced at runtime. Direct mutation fights with undo/time-travel.
+- **BroadcastChannel collab is same-browser scope** (see the realtime section above for the WebSocket path). The bundled WebSocket transports use a simple JSON relay protocol — they are not the y-websocket protocol.
+- **localStorage persistence caps at ~5MB per origin.** Fine for comments and cell edits; use a server-backed provider for large documents.
 
 ## Links
 

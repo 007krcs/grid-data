@@ -92,11 +92,11 @@ const FEATURES: FeatureDemo[] = [
   // ── Pillar 1 (Collaboration) + Pillar 2 (Native AI) — new in 2026-06 ──
   // Each demo wires the real plugin with a real transport / adapter, so
   // the cards lead to something you can actually use, not a marketing slide.
-  { id: 'ai-query-llm', title: 'AI Query (LLM)', description: 'LLM-backed natural language → sort / filter / clear via @gridstorm/plugin-ai-query. Uses an Echo adapter so it works offline; swap in OpenAIAdapter or AnthropicAdapter for production.', category: 'enterprise' },
+  { id: 'ai-query-llm', title: 'AI Query (BYO LLM)', description: 'Natural language → sort / filter / clear via @gridstorm/plugin-ai-query. THIS DEMO uses an offline Echo mock adapter (no real LLM); swap in OpenAIAdapter or AnthropicAdapter with your API key for production.', category: 'enterprise' },
   { id: 'cell-autocomplete', title: 'Cell Autocomplete (Copilot)', description: 'Copilot-style cell suggestions via @gridstorm/plugin-cell-autocomplete. Click a cell, watch a suggestion appear, press Accept (or Esc to dismiss).', category: 'enterprise' },
-  { id: 'live-cursors', title: 'Live Cursors (Presence)', description: 'Open this tab in two windows — you will see the other user\'s name + selected cell update in real time via the BroadcastChannel presence adapter. No server.', category: 'enterprise' },
-  { id: 'co-editing', title: 'Co-Editing (CRDT)', description: 'Conflict-free concurrent cell editing via Yjs. Open in two tabs, edit the same cell from both — they converge deterministically. Real-world transport is y-websocket; this demo uses BroadcastChannel for in-browser sync.', category: 'enterprise' },
-  { id: 'cell-comments', title: 'Cell Comments (CRDT)', description: 'CRDT-backed comment threads anchored to cells. Two tabs see each other\'s threads instantly.', category: 'enterprise' },
+  { id: 'live-cursors', title: 'Live Cursors (Presence)', description: 'Open this tab in two windows of the SAME browser — the other user\'s name + selected cell update live via BroadcastChannel (same-browser scope, no server). For cross-device presence use WebSocketPresenceAdapter with a relay.', category: 'enterprise' },
+  { id: 'co-editing', title: 'Co-Editing (CRDT)', description: 'Conflict-free concurrent cell editing via Yjs. Open in two tabs of the SAME browser, edit the same cell — edits converge deterministically. For cross-device sync use WebSocketCrdtTransport with a relay server.', category: 'enterprise' },
+  { id: 'cell-comments', title: 'Cell Comments (CRDT)', description: 'CRDT-backed comment threads anchored to cells. Two tabs of the same browser see each other\'s threads instantly, and threads persist in localStorage across page reloads.', category: 'enterprise' },
   { id: 'sorting', title: 'Sorting', description: 'Single & multi-column sorting with custom sort cycles', category: 'core' },
   { id: 'filtering', title: 'Filtering', description: 'Quick-filter search across all columns', category: 'core' },
   { id: 'selection', title: 'Row Selection', description: 'Click rows to select with multi-select support', category: 'core' },
@@ -3520,7 +3520,7 @@ function CellCommentsDemo() {
     CommentsPlugin({
       docId: 'gridstorm-showcase-comments',
       author: { userId: identity.userId, displayName: identity.displayName, color: identity.color },
-      transport: new BroadcastChannelCrdtTransport({ docId: 'gridstorm-showcase-comments' }),
+      transport: new BroadcastChannelCrdtTransport({ docId: 'gridstorm-showcase-comments', persist: true }),
     }),
   ], [identity]);
 
@@ -3557,8 +3557,9 @@ function CellCommentsDemo() {
     <>
       <p style={hintStyle}>
         Click a cell, type a comment in the sidebar, press <strong>Post</strong>.
-        Open in two tabs — both see the thread. Comments are signed by tab; each
-        tab gets a random name and color.
+        Open in two tabs of the same browser — both see the thread, and threads
+        persist in localStorage across reloads. Each tab gets a random name and
+        color. (Cross-device sync needs WebSocketCrdtTransport + a relay.)
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 12 }}>
         <GridStorm columns={columns} rowData={EMPLOYEES_50} plugins={plugins}

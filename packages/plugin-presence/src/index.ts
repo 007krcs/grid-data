@@ -17,3 +17,6 @@ export type { InMemoryPresenceAdapterOptions } from './adapters/in-memory';
 
 export { BroadcastChannelPresenceAdapter } from './adapters/broadcast-channel';
 export type { BroadcastChannelPresenceAdapterOptions } from './adapters/broadcast-channel';
+
+export { WebSocketPresenceAdapter } from './adapters/websocket';
+export type { WebSocketPresenceAdapterOptions } from './adapters/websocket';

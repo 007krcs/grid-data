@@ -231,6 +231,75 @@ Show HN authors give context):**
 
 ---
 
+## 4. LinkedIn (no filter, your professional network sees it)
+
+> After months of building: GridStorm is live — an open-source TypeScript data
+> grid where the features that normally cost $999+ per developer are free
+> under MIT.
+>
+> Row grouping, pivoting, Excel export, server-side row model — plus things
+> no grid ships at any price: real-time CRDT co-editing, live cursors, cell
+> comment threads, and natural-language queries with a bring-your-own-LLM
+> adapter.
+>
+> One npm install. 45+ plugins. React, Vue, Svelte, and Angular adapters.
+> 2,100+ tests.
+>
+> 🔗 40+ live demos: https://grid-data-analytics-explorer.vercel.app/
+> 📦 npm install gridstorm
+> ⭐ GitHub: https://github.com/007krcs/grid-data
+>
+> Built it because every data-heavy project I've seen hits the same wall:
+> the free grid lacks the features, the featured grid costs more than the
+> laptop it runs on. Feedback and stars genuinely help an independent OSS
+> project get discovered.
+>
+> #opensource #react #typescript #webdev #javascript
+
+## 5. X/Twitter thread (post as 4 tweets)
+
+> 1/ The data-grid market: free grids without grouping/pivoting/Excel export,
+> or $999+/developer to unlock them.
+>
+> So I built GridStorm — ALL of it MIT-licensed. One npm install.
+> 40+ live demos, no signup: https://grid-data-analytics-explorer.vercel.app/
+>
+> 2/ The features nobody ships at any price:
+> • CRDT co-editing (Yjs) — two users, same cell, deterministic merge
+> • Live cursors + presence
+> • Cell comment threads
+> • Natural-language queries, bring-your-own LLM key
+> • Time-travel undo/redo
+>
+> 3/ Architecture: headless TS core <50KB, DOM rendering (real a11y + CSS
+> theming), command-driven state (that's why time travel is cheap), AST
+> formula engine — no eval. React/Vue/Svelte/Angular adapters.
+>
+> 4/ It's MIT everything — no license keys, no watermarks, no enterprise
+> tier. README has an honest limitations section too.
+>
+> npm install gridstorm
+> https://github.com/007krcs/grid-data ⭐
+
+## 6. Reactiflux Discord (#showcase channel — very active, no karma gates)
+
+> Built an MIT data grid where the usually-paid features (grouping, pivoting,
+> Excel export, SSRM) are free — plus CRDT co-editing, live cursors, and
+> NL queries via bring-your-own-LLM. React adapter has 8 hooks +
+> ErrorBoundary + portal cell renderers. 40+ live demos:
+> https://grid-data-analytics-explorer.vercel.app/ — feedback on the hook
+> APIs especially welcome!
+
+## 7. Awesome-list PRs (durable SEO, zero gatekeeping drama)
+
+Submit PRs adding GridStorm to:
+- `enaqx/awesome-react` (Components → Table/Grid section)
+- `brillout/awesome-react-components` (table section)
+- `sindresorhus/awesome` ecosystem lists where relevant
+One-line format: `[GridStorm](https://github.com/007krcs/grid-data) - MIT data
+grid with grouping, pivoting, Excel export, CRDT co-editing, and 45+ plugins.`
+These convert slowly but permanently — awesome lists rank high in search.
+
 ## Post-launch (all venues)
 
 - Watch npm weekly downloads + GitHub traffic (Insights → Traffic) for 7 days.

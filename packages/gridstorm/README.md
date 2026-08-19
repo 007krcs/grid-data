@@ -2,8 +2,38 @@
 
 > **One package. Everything included. 100% free.** The complete data grid platform — core engine, 45+ plugins, framework adapters, theming, i18n, AI adapter, and the PDF toolkit — all in a single npm install, all MIT-licensed.
 
-[![npm](https://img.shields.io/npm/v/gridstorm)](https://www.npmjs.com/package/gridstorm)
+[![npm](https://img.shields.io/npm/v/gridstorm?color=cb3837)](https://www.npmjs.com/package/gridstorm)
+[![downloads](https://img.shields.io/npm/dw/gridstorm)](https://www.npmjs.com/package/gridstorm)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)](https://www.typescriptlang.org/)
+[![tests](https://img.shields.io/badge/tests-2%2C100%2B-green)](https://github.com/007krcs/grid-data)
+
+**[▶ Try 40+ live demos](https://grid-data-analytics-explorer.vercel.app/)** — every plugin, interactive, no signup.
+
+![GridStorm feature showcase — 39 interactive plugin demos](https://raw.githubusercontent.com/007krcs/grid-data/main/docs/assets/gridstorm-showcase.png)
+
+## The enterprise features, free
+
+The features other grids sell for $999+/developer are MIT-licensed here:
+
+| Feature | GridStorm | Typical "Community" grid | Typical "Enterprise" grid |
+|---|:---:|:---:|:---:|
+| Sorting / filtering / editing / selection | ✅ Free | ✅ | ✅ |
+| Virtual scrolling (100K+ rows @ 60fps) | ✅ Free | ✅ | ✅ |
+| Row grouping + aggregation | ✅ Free | ❌ | 💰 Paid |
+| Pivoting | ✅ Free | ❌ | 💰 Paid |
+| Master-detail / tree data | ✅ Free | ❌ | 💰 Paid |
+| Excel + PDF export | ✅ Free | ❌ | 💰 Paid |
+| Server-side row model | ✅ Free | ❌ | 💰 Paid |
+| Sparklines + charts | ✅ Free | ❌ | 💰 Paid |
+| CRDT co-editing (Yjs) | ✅ Free | ❌ | ❌ not offered |
+| Live cursors / presence | ✅ Free | ❌ | ❌ not offered |
+| Cell comment threads (CRDT) | ✅ Free | ❌ | ❌ not offered |
+| Natural-language query (BYO LLM) | ✅ Free | ❌ | ❌ not offered |
+| Formula engine (AST-based, no `eval`) | ✅ Free | ❌ | ❌ not offered |
+| Time-travel undo/redo snapshots | ✅ Free | ❌ | ❌ not offered |
+| Conditional formatting (18 rule types) | ✅ Free | ❌ | 💰 Paid |
+| WCAG 2.1 AA accessibility | ✅ Free | varies | 💰 |
 
 If you're starting a new project, **install only this package**. You do not need any of the individual `@gridstorm/*` workspace packages — they are all bundled here and re-exported through subpath entries.
 

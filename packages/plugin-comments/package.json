@@ -29,7 +29,7 @@
   "dependencies": {
     "@gridstorm/core": "workspace:*",
     "@gridstorm/plugin-yjs-cells": "workspace:*",
-    "yjs": "^13.6.31"
+    "yjs": "^13.6.32"
   },
   "devDependencies": {
     "tsup": "^8.2.0",

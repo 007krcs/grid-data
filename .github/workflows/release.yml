@@ -43,7 +43,7 @@ jobs:
         run: pnpm verify:publish
 
       - name: Create Release PR or Publish
-        uses: changesets/action@v1
+        uses: changesets/action@v2
         with:
           publish: pnpm changeset publish
           version: pnpm changeset version

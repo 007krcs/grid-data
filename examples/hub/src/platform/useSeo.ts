@@ -43,11 +43,11 @@ export interface SeoConfig {
  *   buildBreadcrumb([
  *     { name: 'Products', url: '/products' },
  *     { name: 'GridStorm', url: '/product/gridstorm' },
- *   ], 'https://gridstorm.tekivex.com')
+ *   ], 'https://www.tekivex.com/gridstorm')
  */
 export function buildBreadcrumb(
   trail: Array<{ name: string; url: string }>,
-  baseUrl = 'https://gridstorm.tekivex.com',
+  baseUrl = 'https://www.tekivex.com/gridstorm',
 ): object {
   // Always anchor the breadcrumb in the site root so crawlers see the full
   // path. The first item is implicit; callers pass only the descendants.
@@ -113,7 +113,7 @@ function setJsonLd(data: object | object[] | null) {
 // ── Build SeoConfig from a ProductSeoMeta manifest entry ─────────────────
 export function seoFromManifest(
   seo: ProductSeoMeta,
-  baseUrl = 'https://gridstorm.tekivex.com',
+  baseUrl = 'https://www.tekivex.com/gridstorm',
   route = '/',
 ): SeoConfig {
   const canonical = `${baseUrl}/${route.replace(/^\//, '')}`;

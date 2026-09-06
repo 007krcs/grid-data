@@ -5,7 +5,7 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [gridstormResolve(), react()],
-  base: '/',
+  base: (process.env.SITE_BASE || '') + '/',
   resolve: {
     alias: {
       '@docs': path.resolve(__dirname, '../../docs/src/content/docs'),

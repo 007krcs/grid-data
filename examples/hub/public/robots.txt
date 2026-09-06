@@ -64,8 +64,8 @@ User-agent: Amazonbot
 Allow: /
 
 # ── Sitemap (single index pointing to hub + docs sitemaps) ───────────────
-Sitemap: https://gridstorm.tekivex.com/sitemap-index.xml
+Sitemap: https://www.tekivex.com/gridstorm/sitemap-index.xml
 
 # ── LLM-friendly documentation index (llms.txt spec) ─────────────────────
 # https://llmstxt.org/
-# https://gridstorm.tekivex.com/llms.txt
+# https://www.tekivex.com/gridstorm/llms.txt

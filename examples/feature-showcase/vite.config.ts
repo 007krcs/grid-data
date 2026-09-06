@@ -4,5 +4,5 @@ import { gridstormResolve } from '../shared/gridstorm-resolve';
 
 export default defineConfig({
   plugins: [gridstormResolve(), react()],
-  base: '/feature-showcase/',
+  base: (process.env.SITE_BASE || '') + '/feature-showcase/',
 });

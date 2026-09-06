@@ -4,5 +4,5 @@ import { gridstormResolve } from '../shared/gridstorm-resolve';
 
 export default defineConfig({
   plugins: [gridstormResolve(), react()],
-  base: '/pdf-viewer/',
+  base: (process.env.SITE_BASE || '') + '/pdf-viewer/',
 });

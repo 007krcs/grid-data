@@ -1,0 +1,44 @@
+# Publishes the assembled GridStorm site (hub + example apps + Astro docs) to
+# the `build` branch so the tekivex marketing site can vendor it into
+# dist/gridstorm/ and serve it at https://www.tekivex.com/gridstorm — one
+# domain, no subdomain. Storybooks are skipped (separate base handling).
+name: Publish static build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build all apps with base /gridstorm
+        env:
+          SITE_BASE: /gridstorm
+          SKIP_STORYBOOK: '1'
+        run: pnpm run build:examples
+      - name: Publish dist to the build branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: build
+          publish_dir: dist
+          force_orphan: true
+          commit_message: 'build: ${{ github.sha }}'

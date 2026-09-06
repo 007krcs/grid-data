@@ -6,7 +6,7 @@
 import { type SeoConfig, seoFromManifest, buildBreadcrumb } from './useSeo';
 import { getProduct } from './registry';
 
-const BASE_URL = 'https://gridstorm.tekivex.com';
+const BASE_URL = 'https://www.tekivex.com/gridstorm';
 
 // ── Static route configs ───────────────────────────────────────────────────
 

@@ -9,8 +9,8 @@ import sitemap from '@astrojs/sitemap';
 // added alongside this change), so `base: '/docs'` makes every
 // generated link, asset URL, and sitemap entry resolve correctly.
 export default defineConfig({
-  site: 'https://gridstorm.tekivex.com',
-  base: '/docs',
+  site: 'https://www.tekivex.com',
+  base: (process.env.SITE_BASE || '') + '/docs',
   integrations: [
     // Generates dist/sitemap-index.xml + dist/sitemap-0.xml on `astro build`.
     // Picks up `site` and `base` above; emitted URLs are

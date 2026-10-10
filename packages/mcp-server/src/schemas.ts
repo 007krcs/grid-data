@@ -1,10 +1,38 @@
 // © 2025 GridStorm / Tekivex — All Rights Reserved
 // Unauthorized reproduction or distribution is prohibited.
+const gridIdProp = {
+  gridId: { type: 'string' as const, description: "Target grid ID. Omit for 'default'. Use grid_list to discover attached application grids." },
+};
+
 export const gridSchemas = {
+  grid_list: {
+    type: 'object' as const,
+    properties: {},
+  },
+  grid_describe: {
+    type: 'object' as const,
+    properties: { ...gridIdProp },
+  },
   grid_create: {
     type: 'object' as const,
     properties: {
-      columns: { type: 'array' as const, description: 'Column definitions', items: { type: 'object' as const, properties: { field: { type: 'string' as const }, headerName: { type: 'string' as const }, width: { type: 'number' as const } } } },
+      ...gridIdProp,
+      columns: {
+        type: 'array' as const,
+        description: 'Column definitions',
+        items: {
+          type: 'object' as const,
+          properties: {
+            field: { type: 'string' as const, description: 'Row data key this column reads' },
+            headerName: { type: 'string' as const },
+            width: { type: 'number' as const },
+            sortable: { type: 'boolean' as const, description: 'Default true' },
+            filter: { type: 'boolean' as const, description: 'Default true' },
+            editable: { type: 'boolean' as const, description: 'Default false. Required for grid_update_rows to write this column' },
+          },
+          required: ['field'] as const,
+        },
+      },
       rowData: { type: 'array' as const, description: 'Row data array', items: { type: 'object' as const } },
     },
     required: ['columns', 'rowData'] as const,
@@ -12,35 +40,88 @@ export const gridSchemas = {
   grid_sort: {
     type: 'object' as const,
     properties: {
-      sortModel: { type: 'array' as const, items: { type: 'object' as const, properties: { colId: { type: 'string' as const }, sort: { type: 'string' as const, enum: ['asc', 'desc'] } } } },
+      ...gridIdProp,
+      sortModel: {
+        type: 'array' as const,
+        description: 'Ordered sort entries. Empty array clears sorting.',
+        items: {
+          type: 'object' as const,
+          properties: {
+            colId: { type: 'string' as const, description: 'Column ID or field (see grid_describe)' },
+            sort: { type: 'string' as const, enum: ['asc', 'desc'] },
+          },
+          required: ['colId'] as const,
+        },
+      },
     },
     required: ['sortModel'] as const,
   },
   grid_filter: {
     type: 'object' as const,
     properties: {
-      filterModel: { type: 'object' as const, description: 'Filter model keyed by column ID' },
+      ...gridIdProp,
+      filterModel: {
+        type: 'object' as const,
+        description:
+          "Filter model keyed by column ID. Each value: { filterType: 'text'|'number'|'date'|'set', type: <operator>, filter, filterTo?, values? }. " +
+          'Operators: equals, notEqual, contains, notContains, startsWith, endsWith, lessThan, lessThanOrEqual, greaterThan, greaterThanOrEqual, inRange, blank, notBlank. ' +
+          'filterType is inferred from the operand when omitted. Empty object clears all filters.',
+        additionalProperties: {
+          type: 'object' as const,
+          properties: {
+            filterType: { type: 'string' as const, enum: ['text', 'number', 'date', 'set', 'custom'] },
+            type: { type: 'string' as const },
+            filter: {},
+            filterTo: {},
+            dateFrom: { type: 'string' as const },
+            dateTo: { type: 'string' as const },
+            values: { type: 'array' as const },
+          },
+        },
+      },
     },
     required: ['filterModel'] as const,
+  },
+  grid_update_rows: {
+    type: 'object' as const,
+    properties: {
+      ...gridIdProp,
+      updates: {
+        type: 'array' as const,
+        description: 'Cell writes. rowId comes from grid_get_data; values is keyed by column ID and holds primitives only.',
+        items: {
+          type: 'object' as const,
+          properties: {
+            rowId: { type: 'string' as const },
+            values: { type: 'object' as const, additionalProperties: true },
+          },
+          required: ['rowId', 'values'] as const,
+        },
+      },
+    },
+    required: ['updates'] as const,
   },
   grid_export_csv: {
     type: 'object' as const,
     properties: {
+      ...gridIdProp,
       fileName: { type: 'string' as const, description: 'Output file name' },
-      columnKeys: { type: 'array' as const, items: { type: 'string' as const }, description: 'Columns to include' },
+      columnKeys: { type: 'array' as const, items: { type: 'string' as const }, description: 'Columns to include (default: all visible)' },
     },
   },
   grid_get_data: {
     type: 'object' as const,
     properties: {
-      pageSize: { type: 'number' as const, description: 'Number of rows to return' },
+      ...gridIdProp,
+      pageSize: { type: 'number' as const, description: 'Rows per page, 1-1000 (default 100)' },
       page: { type: 'number' as const, description: 'Page number (0-indexed)' },
     },
   },
   grid_aggregate: {
     type: 'object' as const,
     properties: {
-      columnId: { type: 'string' as const, description: 'Column to aggregate' },
+      ...gridIdProp,
+      columnId: { type: 'string' as const, description: 'Column to aggregate (ID or field)' },
       function: { type: 'string' as const, enum: ['sum', 'avg', 'min', 'max', 'count'], description: 'Aggregation function' },
     },
     required: ['columnId', 'function'] as const,

@@ -4,11 +4,26 @@ import type {
   MCPPermissions,
   MCPServerConfig,
   MCPToolRegistry,
+  ServerManifest,
   ToolCallEvent,
   ToolDefinition,
   ToolKind,
   ToolResult,
 } from './types';
+import type { GridEngine } from '@gridstorm/core';
+
+/** MCP protocol revision this server speaks. */
+export const MCP_PROTOCOL_VERSION = '2025-06-18';
+
+function isGridEngine(value: unknown): value is GridEngine {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    typeof (value as any).api === 'object' &&
+    typeof (value as any).store === 'object' &&
+    typeof (value as any).store.getState === 'function'
+  );
+}
 import { createGridTools } from './tools/grid-tools';
 import { createPdfTools } from './tools/pdf-tools';
 import { createAiTools } from './tools/ai-tools';
@@ -98,15 +113,15 @@ export function createMCPServer(config: MCPServerConfig = {}): MCPToolRegistry {
   const permissions = resolvePermissions(config.permissions);
   maybeShowExperimentalWarning(permissions);
 
-  const gridTools = createGridTools();
+  const attached: Record<string, GridEngine> = { ...(config.grids ?? {}) };
+  // Legacy: a GridEngine passed as `gridApi` is attached as 'default'.
+  if (config.gridApi && !attached.default && isGridEngine(config.gridApi)) {
+    attached.default = config.gridApi;
+  }
+
+  const gridTools = createGridTools({ grids: attached });
   const pdfTools = createPdfTools();
   const aiTools = createAiTools();
-
-  // If a gridApi was provided via config, it can be used for future extensions.
-  // The grid tools maintain their own engine instance via context.
-  if (config.gridApi) {
-    // Reserved for external grid API injection
-  }
 
   const tools: ToolDefinition[] = [
     ...gridTools.definitions,
@@ -120,7 +135,54 @@ export function createMCPServer(config: MCPServerConfig = {}): MCPToolRegistry {
     ...aiTools.handlers,
   };
 
-  return { tools, handlers, permissions };
+  return {
+    name: config.name ?? 'gridstorm',
+    version: config.version ?? '0.1.0',
+    tools,
+    handlers,
+    permissions,
+    attachGrid: gridTools.attachGrid,
+    detachGrid: gridTools.detachGrid,
+  };
+}
+
+/** True when a tool of this kind would pass the permission gate right now. */
+export function isToolEnabled(registry: MCPToolRegistry, def: ToolDefinition): boolean {
+  if (def.kind === 'mutation') return registry.permissions.allowMutations;
+  if (def.kind === 'export') return registry.permissions.allowExport;
+  return true;
+}
+
+/**
+ * Build the server manifest: every tool with its effect kind and whether the
+ * current permissions allow it, plus the grids the agent can address. Agents
+ * read this once to plan instead of discovering denials by trial and error.
+ */
+export async function describeServer(registry: MCPToolRegistry): Promise<ServerManifest> {
+  const listHandler = registry.handlers.grid_list;
+  const listed = listHandler ? await listHandler({}) : { success: false };
+  const grids = listed.success
+    ? (listed.data.grids as Array<{ gridId: string; attached: boolean; rows: number; columns: number }>).map(
+        (g) => ({ gridId: g.gridId, attached: g.attached, rows: g.rows, columns: g.columns }),
+      )
+    : [];
+  return {
+    name: registry.name,
+    version: registry.version,
+    protocolVersion: MCP_PROTOCOL_VERSION,
+    permissions: {
+      allowMutations: registry.permissions.allowMutations,
+      allowExport: registry.permissions.allowExport,
+      maxStringInput: registry.permissions.maxStringInput,
+    },
+    tools: registry.tools.map((t) => ({
+      name: t.name,
+      kind: t.kind,
+      enabled: isToolEnabled(registry, t),
+      description: t.description,
+    })),
+    grids,
+  };
 }
 
 export async function handleToolCall(

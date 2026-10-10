@@ -1,5 +1,6 @@
 // © 2025 GridStorm / Tekivex — All Rights Reserved
 // Unauthorized reproduction or distribution is prohibited.
+import type { GridEngine } from '@gridstorm/core';
 
 /**
  * Classification of an MCP tool's effect on grid state and data egress.
@@ -105,8 +106,24 @@ export interface MCPPermissions {
 export interface MCPServerConfig {
   name?: string;
   version?: string;
-  gridApi?: any;  // GridApi instance
-  pdfApi?: any;   // PdfApi instance
+  /**
+   * Live grid engines to expose to the agent, keyed by gridId. This is how a
+   * host application lets an agent operate the grid the user is actually
+   * looking at, rather than a throwaway copy. Attached grids are never
+   * destroyed, evicted, or replaced by `grid_create`.
+   *
+   * @example
+   * const engine = createGrid({ columns, rowData, plugins });
+   * const registry = createMCPServer({ grids: { default: engine } });
+   */
+  grids?: Record<string, GridEngine>;
+  /**
+   * @deprecated Pass a `GridEngine` under `grids.default` instead. If a
+   * GridEngine is supplied here it is attached as `'default'` for
+   * backwards compatibility.
+   */
+  gridApi?: any;
+  pdfApi?: any;   // PdfApi instance (reserved)
   /**
    * Security knobs. Merged with safe defaults. See {@link MCPPermissions} for
    * the threat model and recommended deployment patterns.
@@ -115,8 +132,35 @@ export interface MCPServerConfig {
 }
 
 export interface MCPToolRegistry {
+  /** Server name reported to MCP clients during `initialize`. */
+  name: string;
+  /** Server version reported to MCP clients during `initialize`. */
+  version: string;
   tools: ToolDefinition[];
   handlers: Record<string, ToolHandler>;
   /** Resolved permissions in effect for this registry. */
   permissions: MCPPermissions;
+  /**
+   * Attach a live grid engine under `gridId` after construction (e.g. when
+   * the grid mounts later than the MCP server starts). Replaces any
+   * agent-created grid with the same id.
+   */
+  attachGrid(gridId: string, engine: GridEngine): void;
+  /** Detach a previously attached grid. Returns false if none was attached. */
+  detachGrid(gridId: string): boolean;
+}
+
+/**
+ * Machine-readable description of the whole server: what tools exist, which
+ * are currently permitted, and which grids are attached. Returned by
+ * {@link describeServer} and exposed as the `gridstorm://manifest` MCP
+ * resource so an agent can plan before calling anything.
+ */
+export interface ServerManifest {
+  name: string;
+  version: string;
+  protocolVersion: string;
+  permissions: { allowMutations: boolean; allowExport: boolean; maxStringInput: number };
+  tools: Array<{ name: string; kind: ToolKind; enabled: boolean; description: string }>;
+  grids: Array<{ gridId: string; attached: boolean; rows: number; columns: number }>;
 }

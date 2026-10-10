@@ -118,7 +118,7 @@ AiQueryPlugin({
 // engine.api.dispatchCommand('aiQuery:ask', { text: 'sort by revenue desc, group by region' })
 ```
 
-`OpenAIAdapter` and `AnthropicAdapter` ship in the box; the `AIAdapter` interface is ~2 methods if you want another provider. An offline `EchoAdapter` mock powers demos and tests. There's also an [MCP server](./packages/mcp-server) exposing grid operations as tools for LLM agents.
+`OpenAIAdapter` and `AnthropicAdapter` ship in the box; the `AIAdapter` interface is ~2 methods if you want another provider. An offline `EchoAdapter` mock powers demos and tests. There's also an [MCP server](./packages/mcp-server) that exposes a **live grid** to any MCP agent: attach your `GridEngine`, and the agent gets `grid_describe` (typed columns, capabilities, current state, operator vocabulary), validated sort / filter / edit / aggregate / export tools, a fail-closed permission gate, and a stdio transport (`npx @gridstorm/mcp-server`).
 
 ## What's in the box
 

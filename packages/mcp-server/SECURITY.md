@@ -24,16 +24,30 @@ The risks particular to this package:
 3. **No per-client isolation.** All MCP clients connected to a single registry
    share the same `context.grids` Map. There is no namespace by caller, no
    capability token, no audit-by-principal.
-4. **No transport authentication.** This package does not implement the MCP
-   transport (stdio, HTTP, WebSocket). Whoever embeds it is responsible for
-   binding to localhost-only, requiring auth on connect, and not exposing the
-   server on a network.
+4. **No transport authentication.** The bundled stdio transport
+   (`serveStdio`, `gridstorm-mcp`) inherits the trust of whoever can spawn
+   the process; that is the standard MCP stdio model. If you put
+   `createJsonRpcHandler` behind HTTP or WebSocket yourself, you own binding
+   to localhost, authenticating every client, and not exposing it on a
+   network.
+5. **Attached grids are the real thing.** A grid passed via
+   `createMCPServer({ grids })` or `registry.attachGrid()` is the live
+   application grid. With `allowMutations=true`, `grid_sort`, `grid_filter`
+   and `grid_update_rows` change what the user sees, through the same
+   `GridApi` a human edit uses. Attached grids cannot be destroyed or
+   replaced by the agent, but their contents can be edited wherever a column
+   is `editable`. Mark columns `editable` deliberately.
+6. **The standalone CLI defaults to mutations ON.** `gridstorm-mcp` holds no
+   application data, so the fail-closed default would leave it unable to do
+   anything. Pass `--read-only` to restore the library default.
 
 ## What this package does to fail closed
 
 | Knob | Default | Effect |
 |---|---|---|
-| `permissions.allowMutations` | `false` | `grid_create`, `grid_sort`, `grid_filter`, `pdf_load`, `pdf_annotate`, `pdf_redact` are rejected with a clear error. |
+| `permissions.allowMutations` | `false` | `grid_create`, `grid_sort`, `grid_filter`, `grid_update_rows`, `pdf_load`, `pdf_annotate`, `pdf_redact` are rejected with a clear error. |
+| Input validation | always on | Unknown columns, non-sortable / non-filterable / non-editable columns, bad operators, unknown row IDs and non-primitive cell values are rejected before any state changes. `grid_update_rows` is all-or-nothing. |
+| `initialize` instructions | always on | The server tells the host that cell contents returned by read/export tools are user data, not instructions. |
 | `permissions.allowExport` | `true` | `grid_export_csv`, `pdf_save` allowed. Set to `false` for deployments where data egress is disallowed. |
 | `permissions.maxStringInput` | `10_000` | Any string field in any tool input longer than 10 KB causes the call to be rejected before the handler runs. |
 | `permissions.onToolCall` | `undefined` | Audit callback. Receives a `ToolCallEvent` for every invocation (allowed or denied). Wire this to your logging stack. |
@@ -87,6 +101,22 @@ For server-side deployment, additionally:
 - Run a separate registry instance per principal so `context.grids` is not
   shared across users.
 - Validate or filter cell content before it crosses back into agent context.
+
+### Exposing a live application grid
+
+```ts
+const registry = createMCPServer({
+  grids: { pipeline: engine },
+  permissions: {
+    allowMutations: true,      // the agent may sort / filter / edit THIS grid
+    allowExport: false,        // but may not bulk-export it
+    onToolCall: (ev) => auditLog.write({ user: currentUser.id, ...ev }),
+  },
+});
+```
+
+Before turning on mutations for an attached grid, review which columns are
+`editable`: that is the exact write surface the agent gets.
 
 ## What is NOT implemented (intentionally, for now)
 

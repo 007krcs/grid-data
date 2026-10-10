@@ -1,10 +1,13 @@
 {
   "name": "@gridstorm/mcp-server",
   "version": "0.1.4",
-  "description": "GridStorm MCP server — tool definitions for Claude/LLM integration with grid and PDF APIs",
+  "description": "GridStorm MCP server: expose live data grids to AI agents as Model Context Protocol tools (stdio transport included)",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
+  "bin": {
+    "gridstorm-mcp": "./dist/cli.js"
+  },
   "types": "./dist/index.d.ts",
   "source": "./src/index.ts",
   "exports": {
@@ -24,7 +27,8 @@
   ],
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch"
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@gridstorm/core": "workspace:*",
@@ -32,7 +36,8 @@
   },
   "devDependencies": {
     "tsup": "^8.2.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "@types/node": "^20.14.0"
   },
   "sideEffects": false,
   "publishConfig": {
@@ -54,6 +59,11 @@
   "keywords": [
     "gridstorm",
     "data-grid",
-    "mcp-server"
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "ai-agent",
+    "llm",
+    "claude"
   ]
 }

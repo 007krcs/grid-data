@@ -1638,8 +1638,9 @@ out of date. When Sections 1–14 and Section 15 disagree, Section 15 wins.
   original architecture; their relationship to the grid product is currently
   organizational (shared monorepo, shared release process), not architectural.
 - **An MCP server** (`packages/mcp-server`) exposes grid operations as MCP
-  tools for LLM agents. This is a new trust boundary that Sections 1–14 do
-  not cover. See §15.4 for the open question.
+  tools for LLM agents, over a bundled JSON-RPC stdio transport, and can be
+  attached to live `GridEngine` instances. This is a trust boundary that
+  Sections 1–14 do not cover. See §15.5 for the current design.
 - **Additional engine-adjacent packages**: `platform-core` (purpose under
   review), `codemod` (migration CLI), `gridstorm` (umbrella re-export).
 
@@ -1792,15 +1793,40 @@ Beyond the items above, ARCHITECTURE.md and CONTRIBUTING.md should be
 sweep-edited for stale counts (e.g. CONTRIBUTING references "51 packages",
 now 65) on the next docs pass.
 
-## 15.5 — MCP server: open architectural question
+## 15.5 — MCP server: trust boundary and current design (updated 2026-10-11)
 
-The MCP server is a new trust boundary that the original architecture does
-not address. It exposes grid operations (potentially including
-`dispatchCommand`, `setRowData`, mutation paths) as tools an LLM agent can
-invoke based on natural-language input.
+The MCP server is a trust boundary that the original architecture does not
+address. It exposes grid operations as tools an LLM agent can invoke based on
+natural-language input. As of 2026-10-11 it is a complete agent surface, not
+a registry stub:
 
-Two architectural questions must be resolved before this ships against real
-customer data:
+- **Live attachment.** `createMCPServer({ grids })` / `registry.attachGrid()`
+  bind tools to real `GridEngine` instances. Every mutation goes through
+  `GridApi` (`setSortModel`, `setFilterModel`, `updateRows`), so plugins
+  observe agent actions exactly as they observe user actions. Attached grids
+  cannot be destroyed, evicted, or replaced by the agent.
+- **Self-description.** `grid_describe` returns typed columns (type inferred
+  from a bounded sample of displayed rows), capabilities, current
+  sort/filter/pagination state, installed plugin IDs, and the filter /
+  aggregation vocabulary. `gridstorm://manifest` (also `describeServer()`)
+  returns the tool list with effect kinds and current enablement.
+- **Validation before mutation.** Column references are resolved against
+  `ColumnState` (colId or field); unknown / non-sortable / non-filterable /
+  non-editable columns, bad operators, unknown row IDs and non-primitive
+  cell values are rejected with an error that lists the valid options.
+  `grid_update_rows` validates the whole batch before applying any of it.
+- **Transport.** `createJsonRpcHandler` implements `initialize`, `ping`,
+  `tools/list` (with `readOnlyHint`/`destructiveHint` annotations derived
+  from tool kind), `tools/call` (execution failures as `isError` results,
+  protocol failures as JSON-RPC errors), `resources/list`, `resources/read`.
+  `serveStdio` frames it as newline-delimited JSON; `gridstorm-mcp` is the
+  published binary. No SDK dependency.
+- **Fail closed.** Mutations off by default, exports gateable, input length
+  cap, audit hook with input keys only. The standalone CLI is the one
+  deliberate exception (mutations on, since it has no data of its own;
+  `--read-only` restores the default).
+
+Two architectural questions remain and are mitigated, not solved:
 
 1. **Authorization.** The grid's CommandBus has no permission model; it
    broadcasts to all handlers. If an MCP-driven command bypasses any
@@ -1815,8 +1841,13 @@ customer data:
    tightly, and cell content should be treated as untrusted regardless of
    source.
 
-Until these are designed and reviewed, the MCP server should be marked
-experimental and not enabled by default in any customer-facing build.
+Mitigations in place: the permission gate sits in front of the CommandBus
+(the bus itself is still unauthenticated); the server declares in its
+`initialize` instructions that returned cell content is data, not
+instructions; tool schemas are tightened and inputs validated. Still open:
+per-client isolation within one registry, per-tool ACLs, cell-content
+sanitization. The package remains marked experimental and mutations remain
+off by default.
 
 ## 15.6 — Build & release constraints (added 2026-05-27)
 

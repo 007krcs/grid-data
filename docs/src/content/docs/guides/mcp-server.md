@@ -1,9 +1,16 @@
 ---
 title: MCP Server
-description: Expose GridStorm grid and PDF operations to AI agents via the Model Context Protocol (MCP) server.
+description: Let AI agents operate a live GridStorm grid through the Model Context Protocol — self-describing columns, validated sort/filter/edit tools, fail-closed permissions, and a stdio transport.
 ---
 
-The `@gridstorm/mcp-server` package exposes GridStorm's grid, PDF, and AI capabilities as tools that AI agents can invoke through the Model Context Protocol. This lets Claude, GPT, and other AI assistants create grids, sort and filter data, export CSV files, and run aggregations without writing code.
+`@gridstorm/mcp-server` exposes a **live GridStorm grid to AI agents** through the [Model Context Protocol](https://modelcontextprotocol.io). Claude, GPT, Gemini, or any MCP-capable agent can discover what a grid contains, sort and filter it, edit cells, aggregate, and export, against the grid your user is actually looking at.
+
+What makes it different from bolting a chat box onto a grid:
+
+- **Self-describing.** `grid_describe` tells the agent every column's inferred data type, whether it is sortable / filterable / editable, the current sort and filter state, and the exact operator vocabulary the other tools accept. Agents plan from facts, not guesses.
+- **Live.** Attach your running `GridEngine`. Agent actions go through the same `GridApi` and emit the same events as a human user, so every plugin (status bar, time travel, collaboration, validation) sees them.
+- **Fail closed.** Mutations are off by default, exports can be disabled, every input is validated with an actionable error message, and every call hits an audit hook.
+- **Real transport.** A dependency-free JSON-RPC 2.0 stdio transport and a `gridstorm-mcp` binary, so Claude Desktop, Claude Code, Cursor, VS Code and the MCP Inspector connect with one line of config.
 
 ## Installation
 
@@ -11,294 +18,245 @@ The `@gridstorm/mcp-server` package exposes GridStorm's grid, PDF, and AI capabi
 pnpm add @gridstorm/mcp-server
 ```
 
-:::example{title="MCP Server Demo" href="/feature-showcase/"}
-See GridStorm features in action through the Feature Showcase. The MCP server exposes these same capabilities to AI assistants.
-:::
+## Quick start: attach a live grid
 
-## Quick Start
+```typescript title="Expose your application's grid to an agent"
+import { createGrid } from '@gridstorm/core';
+import { createMCPServer, serveStdio } from '@gridstorm/mcp-server';
 
-```typescript title="Create and use the MCP server"
-import { createMCPServer, handleToolCall, listTools } from '@gridstorm/mcp-server';
+const engine = createGrid({ columns, rowData, plugins });
 
-// Create the server registry
-const server = createMCPServer();
-
-// List all available tools
-const tools = listTools(server);
-console.log(tools.map(t => t.name));
-
-// Handle a tool call from an AI agent
-const result = await handleToolCall(server, 'grid_create', {
-  columns: [
-    { field: 'name', headerName: 'Name' },
-    { field: 'revenue', headerName: 'Revenue' },
-  ],
-  rowData: [
-    { name: 'Acme Corp', revenue: 50000 },
-    { name: 'Globex', revenue: 75000 },
-    { name: 'Initech', revenue: 30000 },
-  ],
+const registry = createMCPServer({
+  name: 'crm-pipeline',
+  grids: { pipeline: engine },            // the agent operates THIS grid
+  permissions: {
+    allowMutations: true,                 // allow sort / filter / edit
+    onToolCall: (ev) => audit.write(ev),  // every call, allowed or denied
+  },
 });
+
+await serveStdio(registry);
 ```
 
-## Server Configuration
+Grids can be attached and detached at any time, for example when a component mounts or unmounts:
 
-```typescript title="MCPServerConfig"
-interface MCPServerConfig {
-  name?: string;      // Server name identifier
-  version?: string;   // Server version string
-  gridApi?: any;      // External GridApi instance (reserved)
-  pdfApi?: any;       // External PdfApi instance (reserved)
-}
+```typescript title="Attach later"
+registry.attachGrid('pipeline', engine);
+registry.detachGrid('pipeline');
 ```
 
-## Grid Tools
+Attached grids are never destroyed, evicted, or replaced by `grid_create`. If the agent tries, it gets a clear refusal.
 
-These tools are fully functional and operate on in-memory grid engine instances.
+## Quick start: standalone server
 
-### grid_create
+The standalone server holds no application data; the agent builds grids itself with `grid_create`. Register it with any MCP host:
 
-Create a new data grid with columns and row data.
-
-```json title="Input schema"
+```json title="claude_desktop_config.json / .mcp.json"
 {
-  "columns": [
-    { "field": "name", "headerName": "Name", "width": 200 },
-    { "field": "price", "headerName": "Price" }
-  ],
-  "rowData": [
-    { "name": "Widget A", "price": 29.99 },
-    { "name": "Widget B", "price": 49.99 }
-  ],
-  "gridId": "my-grid"
+  "mcpServers": {
+    "gridstorm": { "command": "npx", "args": ["-y", "@gridstorm/mcp-server"] }
+  }
 }
 ```
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `columns` | `array` | yes | Column definitions with `field`, `headerName`, and optional `width` |
-| `rowData` | `array` | yes | Array of row data objects |
-| `gridId` | `string` | no | Grid identifier (default: `'default'`) |
+| Flag | Effect |
+|------|--------|
+| `--read-only` | Disable mutation tools (the library default). |
+| `--no-export` | Disable `grid_export_csv`. |
+| `--quiet` | Suppress the one-time experimental warning. |
+
+## The agent workflow
+
+A well-behaved agent session looks like this:
+
+1. **`grid_list`** — which grids exist, and which are live application grids.
+2. **`grid_describe`** — columns, types, capabilities, current state, vocabulary.
+3. **`grid_filter` / `grid_sort`** — using only columns and operators the description allows.
+4. **`grid_get_data`** — read rows, each with its `rowId`.
+5. **`grid_update_rows`** — write back to editable columns by `rowId`.
+6. **`grid_aggregate` / `grid_export_csv`** — summarize or hand the result over.
+
+The server's `initialize` response carries these instructions, so hosts that forward server instructions get the workflow for free.
+
+## Tools
+
+Every tool accepts an optional `gridId` (default `'default'`). Column references accept either the `colId` or the `field`.
+
+### grid_describe
+
+The agent contract for one grid.
+
+```json title="Example response (abridged)"
+{
+  "gridId": "pipeline",
+  "attached": true,
+  "rows": { "total": 1200, "displayed": 87, "selected": 0 },
+  "columns": [
+    { "colId": "account", "type": "string",  "sortable": true, "filterable": true, "editable": false, "hidden": false, "pinned": "left", "sort": null },
+    { "colId": "amount",  "type": "number",  "sortable": true, "filterable": true, "editable": true,  "hidden": false, "pinned": null,   "sort": "desc", "sortIndex": 0 },
+    { "colId": "closeOn", "type": "date",    "sortable": true, "filterable": true, "editable": true,  "hidden": false, "pinned": null,   "sort": null }
+  ],
+  "sortModel": [{ "colId": "amount", "sort": "desc" }],
+  "filterModel": { "stage": { "filterType": "set", "values": ["Negotiation"] } },
+  "pagination": { "currentPage": 0, "pageSize": 100, "totalRows": 87, "totalPages": 1 },
+  "plugins": ["sorting", "filtering", "editing", "status-bar"],
+  "vocabulary": {
+    "filterTypes": ["text", "number", "date", "set", "custom"],
+    "filterOperators": ["equals", "notEqual", "contains", "notContains", "startsWith", "endsWith", "lessThan", "lessThanOrEqual", "greaterThan", "greaterThanOrEqual", "inRange", "blank", "notBlank"],
+    "aggregations": ["sum", "avg", "min", "max", "count"]
+  }
+}
+```
+
+Column `type` is inferred from a sample of displayed rows: `number`, `string`, `boolean`, `date` (ISO-8601 strings or `Date`), `object`, `mixed` when the sample disagrees, `empty` when every sampled value is blank. `editable` is `true`, `false`, or `"conditional"` when the column uses a function.
+
+### grid_list
+
+```json title="Response"
+{ "grids": [{ "gridId": "pipeline", "attached": true, "rows": 1200, "displayedRows": 87, "columns": 9 }], "defaultGridId": "default" }
+```
 
 ### grid_sort
 
-Apply sorting to a grid by one or more columns.
-
-```json title="Input schema"
-{
-  "sortModel": [
-    { "colId": "price", "sort": "desc" }
-  ],
-  "gridId": "my-grid"
-}
+```json title="Input"
+{ "sortModel": [{ "colId": "amount", "sort": "desc" }, { "colId": "account" }] }
 ```
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `sortModel` | `array` | yes | Sort entries with `colId` and `sort` (`'asc'` or `'desc'`) |
-| `gridId` | `string` | no | Target grid ID |
+Replaces the whole sort model. `[]` clears sorting. Unknown or non-sortable columns and bad directions are rejected with the list of real columns.
 
 ### grid_filter
 
-Apply filters to grid data.
-
-```json title="Input schema"
+```json title="Input"
 {
   "filterModel": {
-    "price": { "type": "greaterThan", "filter": 30 }
-  },
-  "gridId": "my-grid"
+    "amount":  { "type": "greaterThan", "filter": 50000 },
+    "stage":   { "filterType": "set", "values": ["Negotiation", "Proposal"] },
+    "closeOn": { "filterType": "date", "type": "inRange", "dateFrom": "2026-01-01", "dateTo": "2026-03-31" }
+  }
 }
 ```
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `filterModel` | `object` | yes | Filter model keyed by column ID |
-| `gridId` | `string` | no | Target grid ID |
+Replaces the whole filter model. `{}` clears all filters. `filterType` is inferred from the operand when omitted (`number` for numeric operands, `set` when `values` is present, `date` when `dateFrom`/`dateTo` are present, otherwise `text`).
 
 ### grid_get_data
 
-Get filtered and sorted grid data with pagination.
+```json title="Input"
+{ "page": 0, "pageSize": 50 }
+```
 
-```json title="Input schema"
+Returns `rows` (each with `rowId` plus the row's fields), `total`, `page`, `pageSize`, `hasMore`. `pageSize` is clamped to 1–1000.
+
+### grid_update_rows
+
+```json title="Input"
 {
-  "pageSize": 50,
-  "page": 0,
-  "gridId": "my-grid"
+  "updates": [
+    { "rowId": "row-17", "values": { "amount": 62000 } },
+    { "rowId": "row-42", "values": { "amount": 15000, "closeOn": "2026-04-30" } }
+  ]
 }
 ```
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `pageSize` | `number` | no | Rows per page (default: 100) |
-| `page` | `number` | no | Page number, 0-indexed (default: 0) |
-| `gridId` | `string` | no | Target grid ID |
+All-or-nothing: the batch is validated first (row exists, column exists and is editable, value is a primitive), then applied through `GridApi.updateRows`, which emits one `cell:valueChanged` per changed cell exactly as a user edit does. The response lists every changed cell with `oldValue` and `newValue`.
 
 ### grid_aggregate
 
-Compute an aggregation function on a column.
-
-```json title="Input schema"
-{
-  "columnId": "revenue",
-  "function": "sum",
-  "gridId": "my-grid"
-}
+```json title="Input"
+{ "columnId": "amount", "function": "sum" }
 ```
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `columnId` | `string` | yes | Column to aggregate |
-| `function` | `string` | yes | One of: `sum`, `avg`, `min`, `max`, `count` |
-| `gridId` | `string` | no | Target grid ID |
+Runs over the **displayed** rows (after sort and filter). Response includes `result`, `count`, and `skippedNonNumeric`.
 
 ### grid_export_csv
 
-Export grid data to CSV format.
+```json title="Input"
+{ "fileName": "pipeline.csv", "columnKeys": ["account", "amount"] }
+```
 
-```json title="Input schema"
+RFC 4180 output (CRLF line endings, quotes doubled, fields containing commas, quotes or newlines quoted). Defaults to all visible columns.
+
+### grid_create
+
+```json title="Input"
 {
-  "fileName": "report.csv",
-  "columnKeys": ["name", "revenue"],
-  "gridId": "my-grid"
+  "gridId": "scratch",
+  "columns": [
+    { "field": "sku", "headerName": "SKU" },
+    { "field": "qty", "editable": true }
+  ],
+  "rowData": [{ "sku": "A-1", "qty": 4 }]
 }
 ```
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `fileName` | `string` | no | Output file name (default: `'export.csv'`) |
-| `columnKeys` | `string[]` | no | Columns to include (default: all visible) |
-| `gridId` | `string` | no | Target grid ID |
+Columns default to `sortable: true`, `filterable: true`, `editable: false`. Creating a grid with an existing agent-created `gridId` replaces it; attempting to replace an attached grid is refused. Agent-created grids are capped at 50 with oldest-first eviction. Attached grids are never evicted.
 
-## Multi-Grid Sessions
+## Permissions
 
-The MCP server supports multiple simultaneous grid instances identified by `gridId`. Each tool accepts an optional `gridId` parameter.
-
-- If `gridId` is omitted, the `'default'` grid is used.
-- Creating a grid with an existing `gridId` destroys the previous instance.
-- Maximum **50 grids** can exist simultaneously.
-- When the limit is reached, the oldest grid is evicted (LRU policy).
-
-```typescript title="Working with multiple grids"
-// Create two separate grids
-await handleToolCall(server, 'grid_create', {
-  gridId: 'sales',
-  columns: [{ field: 'region' }, { field: 'amount' }],
-  rowData: salesData,
-});
-
-await handleToolCall(server, 'grid_create', {
-  gridId: 'inventory',
-  columns: [{ field: 'sku' }, { field: 'stock' }],
-  rowData: inventoryData,
-});
-
-// Sort each independently
-await handleToolCall(server, 'grid_sort', {
-  gridId: 'sales',
-  sortModel: [{ colId: 'amount', sort: 'desc' }],
-});
-
-await handleToolCall(server, 'grid_aggregate', {
-  gridId: 'inventory',
-  columnId: 'stock',
-  function: 'sum',
-});
-```
-
-## PDF Tools (Planned)
-
-The server defines PDF tool schemas but requires a configured `PdfParser` backend to function. The following tools return a configuration hint until a parser is provided:
-
-| Tool | Description | Status |
-|------|-------------|--------|
-| `pdf_load` | Load a PDF from a file path or URL | Planned |
-| `pdf_extract_text` | Extract text from PDF pages | Planned |
-| `pdf_search` | Search for text within a loaded PDF | Planned |
-| `pdf_annotate` | Add annotations to PDF pages | Planned |
-| `pdf_redact` | Redact sensitive content regions | Planned |
-| `pdf_save` | Save the modified PDF | Planned |
-| `pdf_get_metadata` | Get document metadata | Planned |
-
-## AI Tools (Planned)
-
-AI-powered PDF analysis tools that combine the PDF engine with ML backends:
-
-| Tool | Description | Status |
-|------|-------------|--------|
-| `pdf_detect_pii` | Detect PII in PDF pages | Planned |
-| `pdf_classify` | Classify the document type | Planned |
-| `pdf_summarize` | Generate a document summary | Planned |
-| `pdf_extract_fields` | Extract structured field values | Planned |
-
-## Tool Response Format
-
-Every tool returns a `ToolResult` object:
-
-```typescript title="ToolResult structure"
-interface ToolResult {
-  success: boolean;
-  data?: any;     // Tool-specific response data
-  error?: string; // Error message if success is false
+```typescript title="MCPPermissions"
+interface MCPPermissions {
+  allowMutations: boolean;   // default false — gates every 'mutation' tool
+  allowExport: boolean;      // default true  — gates grid_export_csv, pdf_save
+  maxStringInput: number;    // default 10_000 — any longer string in any input is rejected
+  onToolCall?: (event: ToolCallEvent) => void; // audit: tool, kind, allowed, denyReason, inputKeys
+  suppressExperimentalWarning?: boolean;
 }
 ```
 
-Successful grid operations return contextual data:
+Denied calls return `{ success: false, error }` (or an MCP result with `isError: true`) that names the knob to flip. The audit event carries input **keys**, never values, so cell content does not leak into logs.
 
-```json title="Example: grid_create response"
+## Server manifest
+
+Agents and hosts can read a machine-readable description of the whole server before calling anything:
+
+- **MCP resource** `gridstorm://manifest`
+- **In code** `await describeServer(registry)`
+
+```json title="Manifest (abridged)"
 {
-  "success": true,
-  "data": {
-    "message": "Grid created",
-    "gridId": "sales",
-    "columns": 3,
-    "rows": 150
-  }
+  "name": "crm-pipeline",
+  "version": "0.1.4",
+  "protocolVersion": "2025-06-18",
+  "permissions": { "allowMutations": true, "allowExport": true, "maxStringInput": 10000 },
+  "tools": [
+    { "name": "grid_describe", "kind": "read", "enabled": true, "description": "..." },
+    { "name": "grid_update_rows", "kind": "mutation", "enabled": true, "description": "..." }
+  ],
+  "grids": [{ "gridId": "pipeline", "attached": true, "rows": 1200, "columns": 9 }]
 }
 ```
 
-```json title="Example: grid_aggregate response"
-{
-  "success": true,
-  "data": {
-    "columnId": "revenue",
-    "function": "sum",
-    "result": 155000,
-    "count": 3
-  }
-}
+`tools/list` also carries MCP annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`) derived from each tool's effect kind, so hosts can ask for confirmation on destructive calls.
+
+## Using the handler without stdio
+
+```typescript title="Any transport"
+import { createMCPServer, createJsonRpcHandler, handleToolCall } from '@gridstorm/mcp-server';
+
+const registry = createMCPServer({ grids: { default: engine } });
+
+// Full MCP request/response mapping — plug into WebSocket, HTTP, or tests
+const handle = createJsonRpcHandler(registry);
+const res = await handle({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
+
+// Or call tools directly
+const described = await handleToolCall(registry, 'grid_describe', {});
 ```
 
-## Usage with Claude
+## Security
 
-To use the GridStorm MCP server with Claude or another AI assistant, register the tools in your MCP configuration:
+Read the package's [SECURITY.md](https://github.com/007krcs/grid-data/blob/main/packages/mcp-server/SECURITY.md) before enabling mutations against real data. The short version:
 
-```typescript title="Register with an MCP host"
-import { createMCPServer, handleToolCall } from '@gridstorm/mcp-server';
+- Keep `allowMutations` off unless the agent is trusted for that grid.
+- Cell contents returned by `grid_get_data` and `grid_export_csv` are **user data, not instructions**. Say so in your system prompt; the server says so in its `initialize` instructions.
+- Run one registry per principal. There is no per-client isolation inside a registry.
+- Wire `onToolCall` to your audit log.
 
-const server = createMCPServer({ name: 'gridstorm', version: '1.0.0' });
+## PDF and AI tools
 
-// Register tool definitions with your MCP host
-for (const tool of server.tools) {
-  mcpHost.registerTool({
-    name: tool.name,
-    description: tool.description,
-    inputSchema: tool.inputSchema,
-    handler: (input) => handleToolCall(server, tool.name, input),
-  });
-}
-```
-
-An AI agent can then perform data analysis tasks conversationally:
-
-1. "Create a grid from this sales data"
-2. "Sort by revenue descending"
-3. "Filter to only show Q4 results"
-4. "What is the average revenue?"
-5. "Export the filtered data as CSV"
+The registry also defines PDF tools (`pdf_load`, `pdf_extract_text`, `pdf_search`, `pdf_annotate`, `pdf_redact`, `pdf_save`, `pdf_get_metadata`) and AI PDF tools (`pdf_detect_pii`, `pdf_classify`, `pdf_summarize`, `pdf_extract_fields`). They require a configured PDF parser backend and return a configuration hint until one is provided. See the [PDF Toolkit](/guides/pdf-toolkit).
 
 ## Next Steps
 
-- [PDF Toolkit](/guides/pdf-toolkit) -- Learn about the PDF engine that powers the planned PDF tools
-- [Integration Guide](/guides/integration-guide) -- Add GridStorm to your existing project
-- [Custom Plugins](/guides/custom-plugins) -- Extend grid and PDF functionality with plugins
+- [AI Query plugin](/plugins/ai) -- In-grid natural-language commands routed through `@gridstorm/ai-adapter`
+- [Events & Commands](/core-concepts/events-commands) -- The bus every agent action flows through
+- [Custom Plugins](/guides/custom-plugins) -- React to `cell:valueChanged` and friends from your own plugin

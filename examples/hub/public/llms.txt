@@ -1,19 +1,28 @@
 # GridStorm
 
 > GridStorm is an open-source, headless enterprise data grid platform for the web.
-> MIT-licensed core with 40+ composable plugins, virtual scrolling (100K+ rows @ 60fps),
-> WCAG 2.1 AA accessibility, 42-function Excel formula engine, Excel-compatible copy/paste,
-> and framework adapters for React, Vue, Angular, Svelte, and Vanilla JS.
+> Everything is MIT-licensed: core, renderer, framework adapters, and all 50+ plugins.
+> Virtual scrolling (100K+ rows @ 60fps), WCAG 2.1 AA accessibility, 42-function Excel
+> formula engine, Excel-compatible copy/paste, real-time collaboration (Yjs), a
+> vendor-neutral AI adapter, and an MCP server that lets AI agents operate a live grid.
+> Framework adapters for React, Vue, Angular, Svelte, and Vanilla JS.
 
 GridStorm ships as a pnpm monorepo with a sub-50 KB headless core, a DOM renderer,
-framework adapters, and 40+ plugins across three tiers:
+framework adapters, and 50+ plugins. There is no commercial tier, no license key, and
+no feature gating: every plugin listed below is free under MIT.
 
-- **Tier 1 (MIT, free forever)**: Sorting, Filtering, Selection, Editing, Pagination,
-  Column Pinning, Column Resize, Column Reorder, Context Menu, Clipboard
-- **Tier 2 (Pro)**: Grouping, Aggregation, Pivoting, Master-Detail, Tree Data,
+- **Core**: Sorting, Filtering, Selection, Editing, Pagination,
+  Column Pinning, Column Resize, Column Reorder, Context Menu, Clipboard, Accessibility
+- **Enterprise-grade**: Grouping, Aggregation, Pivoting, Master-Detail, Tree Data,
   Row Reorder, Excel Export, PDF Export, Sparklines, Charts, Server-Side Row Model
-- **Tier 3 / Next-Gen (Pro)**: Status Bar, State Persistence, Row Pinning,
-  Conditional Formatting, Live Streaming, NL Query (AI/offline), Anomaly Detection (AI)
+- **Next-Gen**: Status Bar, State Persistence, Row Pinning, Conditional Formatting,
+  Live Streaming, Time Travel, Formula Engine, Validation, Comments, Presence,
+  Yjs collaborative cells, AI Query (LLM-backed via @gridstorm/ai-adapter), Cell Autocomplete,
+  NL Query (offline), Anomaly Detection
+- **Agent surface**: @gridstorm/mcp-server — attach a live GridEngine; agents get
+  grid_describe (typed columns, capabilities, state, operator vocabulary), validated
+  grid_sort / grid_filter / grid_update_rows / grid_aggregate / grid_export_csv, a
+  fail-closed permission gate, and a stdio transport (`npx @gridstorm/mcp-server`)
 
 Install:
 ```
@@ -37,7 +46,7 @@ npm install @gridstorm/core @gridstorm/dom-renderer @gridstorm/react
 - [DOM Renderer](https://www.tekivex.com/gridstorm/#/docs/core-concepts/dom-renderer): Virtual scroll, row/cell rendering, scroll sync, keyboard navigation
 - [Plugin System (Deep Dive)](https://www.tekivex.com/gridstorm/#/docs/core-concepts/plugin-system): Topological resolution, lifecycle hooks, writing your own plugin
 
-### Plugins — Core (Free, MIT)
+### Plugins — Core
 
 - [Plugin System](https://www.tekivex.com/gridstorm/#/docs/plugins/plugin-system): Plugin API, install/uninstall, dependency ordering
 - [Sorting](https://www.tekivex.com/gridstorm/#/docs/plugins/sorting): Single/multi-column sort, custom comparators, sort indicators
@@ -51,7 +60,7 @@ npm install @gridstorm/core @gridstorm/dom-renderer @gridstorm/react
 - [Context Menu](https://www.tekivex.com/gridstorm/#/docs/plugins/context-menu): Right-click menus, custom items, separator, async items
 - [Clipboard](https://www.tekivex.com/gridstorm/#/docs/plugins/clipboard): Copy/paste cells and ranges, CSV format, custom serializers
 
-### Plugins — Enterprise (Pro)
+### Plugins — Enterprise-grade (MIT)
 
 - [Grouping](https://www.tekivex.com/gridstorm/#/docs/plugins/grouping): Row grouping by column, group expand/collapse, group footers
 - [Aggregation](https://www.tekivex.com/gridstorm/#/docs/plugins/aggregation): sum, avg, min, max, count per group, custom aggregators
@@ -65,7 +74,7 @@ npm install @gridstorm/core @gridstorm/dom-renderer @gridstorm/react
 - [Charts](https://www.tekivex.com/gridstorm/#/docs/plugins/charts): Full chart panel from selected ranges — bar, line, scatter, pie
 - [Server-Side Row Model](https://www.tekivex.com/gridstorm/#/docs/plugins/ssrm): Lazy-load rows from server, infinite scroll, server-side grouping
 
-### Plugins — Next-Gen (Pro)
+### Plugins — Next-Gen (MIT)
 
 - [Status Bar](https://www.tekivex.com/gridstorm/#/docs/plugins/status-bar): Aggregation summary bar (sum/avg/min/max/count), selection-aware
 - [State Persistence](https://www.tekivex.com/gridstorm/#/docs/plugins/state-persistence): Auto-save/restore grid state to localStorage or custom storage; commands: state:save, state:restore, state:clear
@@ -81,7 +90,7 @@ npm install @gridstorm/core @gridstorm/dom-renderer @gridstorm/react
 - [Cell Range Selection](https://www.tekivex.com/gridstorm/#/docs/plugins/cell-range): Excel-like range selection, fill handle, range copy
 - [Data Validation](https://www.tekivex.com/gridstorm/#/docs/plugins/validation): Cell-level validation rules, error display, blocking vs warning mode
 
-### Plugins — Enterprise Tier
+### Plugins — Accessibility & Pro-grade editing (MIT)
 
 - [Accessibility (WCAG 2.1 AA)](https://www.tekivex.com/gridstorm/#/docs/plugins/a11y): Full keyboard navigation, ARIA roles, screen-reader announcements
 - [Formula Engine Pro](https://www.tekivex.com/gridstorm/#/docs/plugins/formula-engine): 42 Excel functions, cross-cell dependencies, array formulas
@@ -98,7 +107,7 @@ npm install @gridstorm/core @gridstorm/dom-renderer @gridstorm/react
 ### Guides
 
 - [Migrate from AG Grid](https://www.tekivex.com/gridstorm/#/docs/guides/migration-from-ag-grid): Column defs, plugin equivalents, API mapping, breaking differences
-- [MCP Server (AI Integration)](https://www.tekivex.com/gridstorm/#/docs/guides/mcp-server): Expose grid state to LLMs via Model Context Protocol
+- [MCP Server (AI Integration)](https://www.tekivex.com/gridstorm/#/docs/guides/mcp-server): Let AI agents operate a live grid via Model Context Protocol — attach a GridEngine, grid_describe self-description, validated sort/filter/edit tools, permissions, stdio transport
 - [PDF Toolkit](https://www.tekivex.com/gridstorm/#/docs/guides/pdf-toolkit): WASM-based PDF rendering, text extraction, full-text search, AI redaction
 - [Integration Guide](https://www.tekivex.com/gridstorm/#/docs/guides/integration-guide): Adding GridStorm to existing React/Vue/Angular projects
 - [Custom Plugins](https://www.tekivex.com/gridstorm/#/docs/guides/custom-plugins): Writing, registering, and publishing your own GridStorm plugin
@@ -131,6 +140,11 @@ npm install @gridstorm/core @gridstorm/dom-renderer @gridstorm/react
 - [CSS Variable Theming](https://www.tekivex.com/gridstorm/#/docs/blog/css-variable-theming): How GridStorm uses CSS custom properties for zero-JS runtime theming
 
 ### Key Technical Notes for LLMs
+
+- Licensing: everything is MIT. `@gridstorm/license` exports are no-op compatibility stubs; no key is needed for any plugin.
+- MCP server: `createMCPServer({ grids: { default: engine }, permissions: { allowMutations: true } })` attaches a live grid; `serveStdio(registry)` runs it; `npx @gridstorm/mcp-server` runs a standalone server (flags: --read-only, --no-export, --quiet)
+- MCP tools: grid_list, grid_describe, grid_create, grid_sort, grid_filter, grid_update_rows, grid_get_data, grid_aggregate, grid_export_csv. Mutations are OFF by default in the library. Column refs accept colId or field. grid_filter infers filterType when omitted. grid_update_rows is all-or-nothing and emits cell:valueChanged.
+- MCP resource `gridstorm://manifest` (or `describeServer(registry)`) lists tools with kind (read|mutation|export) and whether each is currently enabled
 
 - Plugin options use exact TypeScript types — e.g. StatePersistenceOptions has: storageKey, storage, autoSave, debounceMs, include, exclude, migrations, onRestoreError
 - State persistence commands: 'state:save', 'state:restore', 'state:clear', 'state:export', 'state:import'

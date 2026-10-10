@@ -184,10 +184,8 @@ describe('MCP Server', () => {
     it('grid_sort should require grid_create first', () => {
       const handlers = getSyncHandlers(createGridTools());
       const result = handlers.grid_sort!({ sortModel: [{ colId: 'name', sort: 'asc' }] });
-      expect(result).toEqual({
-        success: false,
-        error: 'No grid created. Call grid_create first.',
-      });
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/not found/);
     });
 
     it('grid_sort should apply sorting to a real engine', () => {
@@ -206,10 +204,8 @@ describe('MCP Server', () => {
     it('grid_filter should require grid_create first', () => {
       const handlers = getSyncHandlers(createGridTools());
       const result = handlers.grid_filter!({ filterModel: {} });
-      expect(result).toEqual({
-        success: false,
-        error: 'No grid created. Call grid_create first.',
-      });
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/not found/);
     });
 
     it('grid_filter should apply filter model to real engine', () => {
@@ -230,10 +226,8 @@ describe('MCP Server', () => {
     it('grid_get_data should require grid_create first', () => {
       const handlers = getSyncHandlers(createGridTools());
       const result = handlers.grid_get_data!({});
-      expect(result).toEqual({
-        success: false,
-        error: 'No grid created. Call grid_create first.',
-      });
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/not found/);
     });
 
     it('grid_get_data should return actual row data', () => {
@@ -247,8 +241,8 @@ describe('MCP Server', () => {
       expect(result.success).toBe(true);
       expect(result.data.total).toBe(2);
       expect(result.data.rows).toHaveLength(2);
-      expect(result.data.rows[0]).toEqual({ name: 'Alice', age: 30 });
-      expect(result.data.rows[1]).toEqual({ name: 'Bob', age: 25 });
+      expect(result.data.rows[0]).toMatchObject({ name: 'Alice', age: 30 });
+      expect(result.data.rows[1]).toMatchObject({ name: 'Bob', age: 25 });
     });
 
     it('grid_get_data should respect pagination', () => {
@@ -262,8 +256,8 @@ describe('MCP Server', () => {
       expect(result.success).toBe(true);
       expect(result.data.total).toBe(5);
       expect(result.data.rows).toHaveLength(2);
-      expect(result.data.rows[0]).toEqual({ id: 3 });
-      expect(result.data.rows[1]).toEqual({ id: 4 });
+      expect(result.data.rows[0]).toMatchObject({ id: 3 });
+      expect(result.data.rows[1]).toMatchObject({ id: 4 });
       expect(result.data.page).toBe(1);
       expect(result.data.pageSize).toBe(2);
     });
@@ -271,10 +265,8 @@ describe('MCP Server', () => {
     it('grid_aggregate should require grid_create first', () => {
       const handlers = getSyncHandlers(createGridTools());
       const result = handlers.grid_aggregate!({ columnId: 'price', function: 'sum' });
-      expect(result).toEqual({
-        success: false,
-        error: 'No grid created. Call grid_create first.',
-      });
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/not found/);
     });
 
     it('grid_aggregate should compute sum on real data', () => {
@@ -331,10 +323,8 @@ describe('MCP Server', () => {
     it('grid_export_csv should require grid_create first', () => {
       const handlers = getSyncHandlers(createGridTools());
       const result = handlers.grid_export_csv!({});
-      expect(result).toEqual({
-        success: false,
-        error: 'No grid created. Call grid_create first.',
-      });
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/not found/);
     });
 
     it('grid_export_csv should produce real CSV output', () => {
@@ -385,7 +375,7 @@ describe('MCP Server', () => {
 
       // Verify data comes from second grid
       const getData = handlers.grid_get_data!({ gridId: 'test-grid' });
-      expect(getData.data.rows[0]).toEqual({ b: 10, c: 20 });
+      expect(getData.data.rows[0]).toMatchObject({ b: 10, c: 20 });
     });
 
     it('end-to-end: create, filter, sort, aggregate, export', () => {
@@ -552,9 +542,9 @@ describe('MCP Server', () => {
   });
 
   describe('tool count integrity', () => {
-    it('should have exactly 6 grid tools', () => {
+    it('should have exactly 9 grid tools', () => {
       const { definitions } = createGridTools();
-      expect(definitions).toHaveLength(6);
+      expect(definitions).toHaveLength(9);
     });
 
     it('should have exactly 7 PDF tools', () => {
@@ -567,10 +557,10 @@ describe('MCP Server', () => {
       expect(definitions).toHaveLength(4);
     });
 
-    it('should have 17 total tools in the registry', () => {
+    it('should have 20 total tools in the registry', () => {
       const registry = createMCPServer();
-      expect(registry.tools).toHaveLength(17);
-      expect(Object.keys(registry.handlers)).toHaveLength(17);
+      expect(registry.tools).toHaveLength(20);
+      expect(Object.keys(registry.handlers)).toHaveLength(20);
     });
   });
 });

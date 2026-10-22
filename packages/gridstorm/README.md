@@ -8,7 +8,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)](https://www.typescriptlang.org/)
 [![tests](https://img.shields.io/badge/tests-2%2C100%2B-green)](https://github.com/007krcs/grid-data)
 
-**[▶ Try 40+ live demos](https://grid-data-analytics-explorer.vercel.app/)** — every plugin, interactive, no signup.
+**[▶ Try 40+ live demos](https://www.tekivex.com/gridstorm/feature-showcase/)** — every plugin, interactive, no signup.
 
 ![GridStorm feature showcase — 39 interactive plugin demos](https://raw.githubusercontent.com/007krcs/grid-data/main/docs/assets/gridstorm-showcase.png)
 
@@ -34,6 +34,27 @@ The features other grids sell for $999+/developer are MIT-licensed here:
 | Time-travel undo/redo snapshots | ✅ Free | ❌ | ❌ not offered |
 | Conditional formatting (18 rule types) | ✅ Free | ❌ | 💰 Paid |
 | WCAG 2.1 AA accessibility | ✅ Free | varies | 💰 |
+
+## What's new in 0.6
+
+- **20–40× faster shipped bundles.** Published builds are no longer obfuscated; the same code that passes 2,100+ tests is what you run. A 100k-row sort dropped from 1,433 ms to 74 ms and the core gzip from 86 KB to 36 KB.
+- **Measured performance, not marketing.** The [docs home page](https://gridstorm.tekivex.com/#benchmarks) builds a 100k-row grid in *your* browser and reports time-to-first-row, scroll FPS, sort and filter times. CI fails on a 10 % regression.
+- **AI agents can drive a live grid.** [`@gridstorm/mcp-server`](https://www.npmjs.com/package/@gridstorm/mcp-server) attaches to a running engine and exposes self-describing, validated tools over the Model Context Protocol.
+- **`strictMutations`.** Opt in and any state write that bypasses the command pipeline throws, which is what undo, audit and collaboration need.
+- **Streaming export.** CSV/Excel export runs in chunks, reports progress, and can stream to a `WritableStream` so memory no longer grows with row count.
+- **Pinned rows render**, the status bar emits `status-bar:updated`, clipboard copy neutralizes formula injection, and the adapters have an [honest parity matrix](https://gridstorm.tekivex.com/#/docs/frameworks/adapter-parity).
+
+## Performance (measured, 100k rows × 10 columns, Node 24, 10 iterations, min)
+
+| Operation | Time |
+|---|---:|
+| `createGrid()` with 100k rows and 3 plugins | 38 ms |
+| Sort, single string column | 74 ms |
+| Sort, three columns | 124 ms |
+| Text filter | 44 ms |
+| Core bundle, gzip | 36 KB |
+
+These come from `benchmarks/` in the repo, run on every pull request with a regression gate. The hub home page runs the browser version live.
 
 If you're starting a new project, **install only this package**. You do not need any of the individual `@gridstorm/*` workspace packages — they are all bundled here and re-exported through subpath entries.
 
@@ -264,6 +285,28 @@ engine.api.dispatchCommand('ai-query:ask', { query: 'sort by revenue descending,
 
 ---
 
+## AI agents: let Claude or GPT operate the grid
+
+The umbrella bundles the grid; the agent bridge is its own small package so servers don't pull in the DOM renderer:
+
+```bash
+npm install @gridstorm/mcp-server
+```
+
+```ts
+import { createMCPServer, serveStdio } from '@gridstorm/mcp-server';
+
+const registry = createMCPServer({
+  grids: { pipeline: engine },               // the live grid your user sees
+  permissions: { allowMutations: true },     // off by default
+});
+await serveStdio(registry);
+```
+
+The agent gets `grid_describe` (typed columns, capabilities, current sort/filter state, operator vocabulary), validated `grid_sort` / `grid_filter` / `grid_update_rows` / `grid_aggregate` / `grid_export_csv`, a fail-closed permission gate, and an audit hook. Or run it standalone: `npx @gridstorm/mcp-server`.
+
+---
+
 ## Licensing — fully free
 
 **Every plugin is free, MIT-licensed, no key required.** There are no enterprise tiers, no premium plugins, no watermarks, no `console.warn` for unlicensed plugins, no domain restrictions. Use any plugin in production without contacting anyone or paying anything.
@@ -274,15 +317,15 @@ The legacy `setGridStormLicense()`, `validateLicense()`, and `enforceLicense()` 
 
 ## Known limitations (honest edition)
 
-- **Framework adapters are not at parity.** React is the most complete (component + 8 hooks + ErrorBoundary + portals). Vue has the component, composables, and an ErrorBoundary. Svelte and Angular are functional but thinner. If adapter depth matters, React or Vue are the safe picks today.
-- **Excel/PDF export builds the whole document in memory.** Enforced caps: 100k rows / 5M cells (Excel), 25k rows / 1M cells (PDF). No streaming export yet — very large exports should be chunked by the caller.
-- **`Store.setState()` is advisory, not locked down.** The "commands are the only way to mutate state" invariant emits a dev-mode warning when bypassed, but is not enforced at runtime. Direct mutation fights with undo/time-travel.
+- **Framework adapters are not at parity.** React and Vue expose the full hook/composable surface and an error boundary; Svelte is an action plus store helpers; Angular is a component plus a service. Exact table: [adapter parity matrix](https://gridstorm.tekivex.com/#/docs/frameworks/adapter-parity). Framework-native cell renderers exist only for React.
+- **PDF export is still single-shot in memory** (caps: 25k rows / 1M cells). CSV/Excel export is chunked and can stream to a sink; raise `maxRows` when you provide one.
+- **`strictMutations` is opt-in.** Without it, a direct `Store.setState()` only logs a development warning. Turn it on if you use undo, time-travel or collaboration.
 - **BroadcastChannel collab is same-browser scope** (see the realtime section above for the WebSocket path). The bundled WebSocket transports use a simple JSON relay protocol — they are not the y-websocket protocol.
 - **localStorage persistence caps at ~5MB per origin.** Fine for comments and cell edits; use a server-backed provider for large documents.
 
 ## Links
 
-- **Live demos** — <https://grid-data-analytics-explorer.vercel.app/>
+- **Live demos** — <https://www.tekivex.com/gridstorm/feature-showcase/>
 - **Documentation hub** — <https://gridstorm.tekivex.com>
 - **GitHub** — <https://github.com/007krcs/grid-data>
 - **Issues** — <https://github.com/007krcs/grid-data/issues>

@@ -7,6 +7,21 @@
 import type { PdfTextContent, PdfRect } from '@gridstorm/pdf-core';
 
 /** Search options. */
+/** Queries longer than this are searched literally, never as a regex. */
+export const MAX_REGEX_QUERY_LENGTH = 256;
+
+/**
+ * Heuristic for catastrophic backtracking: a quantified group that itself
+ * contains a quantifier, e.g. `(a+)+`, `(\w*)*`, `(x|y+)*`. Such patterns are
+ * searched literally instead. Not a proof, but it removes the common
+ * exponential shapes from an input box exposed to end users.
+ */
+const NESTED_QUANTIFIER = /\([^()]*[+*][^()]*\)\s*[+*{]/;
+
+export function isSafeUserRegex(query: string): boolean {
+  return query.length <= MAX_REGEX_QUERY_LENGTH && !NESTED_QUANTIFIER.test(query) && !/\\\d/.test(query);
+}
+
 export interface SearchOptions {
   /** Case-sensitive search. */
   caseSensitive?: boolean;
@@ -146,7 +161,7 @@ export class SearchEngine {
 
     let pattern: RegExp;
     try {
-      if (options.regex) {
+      if (options.regex && isSafeUserRegex(query)) {
         const flags = options.caseSensitive ? 'g' : 'gi';
         pattern = new RegExp(query, flags);
       } else {

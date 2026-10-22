@@ -30,6 +30,33 @@ const isDevEnv = ((): boolean => {
 
 let _externalSetStateWarned = false;
 
+/**
+ * Thrown by {@link Store.setState} when the grid was created with
+ * `strictMutations: true` and a caller mutates state without going through
+ * the command pipeline (GridApi / CommandBus / PluginContext).
+ */
+export class GridStormMutationError extends Error {
+  constructor() {
+    super(
+      '[GridStorm] Store.setState() was called from outside the command pipeline while ' +
+        'strictMutations is enabled. Mutate state through GridApi methods, ' +
+        'api.dispatchCommand(), or ctx.setState / ctx.store.setState inside a plugin.',
+    );
+    this.name = 'GridStormMutationError';
+  }
+}
+
+export interface StoreOptions {
+  /**
+   * When true, any `setState` call that does not carry the internal marker
+   * throws {@link GridStormMutationError} (in every environment, not just
+   * development). This turns the "commands are the only way to mutate
+   * state" invariant from a convention into an enforced guarantee, which is
+   * what undo/redo, audit logs and collaboration rely on.
+   */
+  strictMutations?: boolean;
+}
+
 export type StoreListener = () => void;
 export type Selector<TState, TResult> = (state: TState) => TResult;
 
@@ -41,9 +68,16 @@ export class Store<TState> {
   private version = 0;
   private notifying = false;
   private pendingUpdates: Array<(prev: TState) => TState> = [];
+  private readonly strictMutations: boolean;
 
-  constructor(initialState: TState) {
+  constructor(initialState: TState, options: StoreOptions = {}) {
     this.state = initialState;
+    this.strictMutations = options.strictMutations === true;
+  }
+
+  /** True when this store rejects unmarked external mutations. */
+  isStrict(): boolean {
+    return this.strictMutations;
   }
 
   /** Get current state snapshot. */
@@ -67,6 +101,9 @@ export class Store<TState> {
    *   is suppressed entirely to avoid overhead.
    */
   setState(updater: (prev: TState) => TState, marker?: symbol): void {
+    if (this.strictMutations && marker !== INTERNAL_SETSTATE) {
+      throw new GridStormMutationError();
+    }
     if (isDevEnv && marker !== INTERNAL_SETSTATE && !_externalSetStateWarned) {
       _externalSetStateWarned = true;
       console.warn(

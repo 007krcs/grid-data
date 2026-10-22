@@ -99,6 +99,7 @@ export const DOC_SECTIONS: DocSection[] = [
       { slug: 'frameworks/svelte', title: 'Svelte' },
       { slug: 'frameworks/vanilla', title: 'Vanilla JS' },
       { slug: 'frameworks/angular', title: 'Angular' },
+      { slug: 'frameworks/adapter-parity', title: 'Adapter Parity Matrix' },
     ],
   },
   {

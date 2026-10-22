@@ -9,6 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@gridstorm/core": "workspace:*",
+    "@gridstorm/dom-renderer": "workspace:*",
+    "@gridstorm/plugin-filtering": "workspace:*",
+    "@gridstorm/plugin-selection": "workspace:*",
+    "@gridstorm/plugin-sorting": "workspace:*",
+    "@gridstorm/theme-default": "workspace:*",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "react-markdown": "^9.0.0",

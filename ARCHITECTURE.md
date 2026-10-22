@@ -1849,6 +1849,44 @@ per-client isolation within one registry, per-tool ACLs, cell-content
 sanitization. The package remains marked experimental and mutations remain
 off by default.
 
+## 15.6a — Build output, performance gate, and e2e (updated 2026-10-22)
+
+- **Obfuscation removed from every package build.** The former
+  `scripts/obfuscate.mjs` post-build step (control-flow flattening, string
+  array encoding, self-defending) shipped bundles that were 2.3× larger and
+  20–40× slower on hot paths than the source: a 100k-row sort measured
+  1,433 ms obfuscated vs 74 ms plain; `createGrid` with 100k rows 157 ms vs
+  38 ms; core gzip 86 KB vs 36 KB. The source is MIT and public, so the step
+  protected nothing. Do not reintroduce it.
+- **Sorting precomputes keys.** `sortRowNodes` resolves columns once and
+  builds normalized key arrays per sort level, then sorts an index array.
+  Semantics (null-last, case-insensitive strings, custom comparators,
+  stability) are pinned by `row-model.test.ts` against a reference
+  implementation.
+- **Benchmark regression gate.** `benchmarks/` writes `results/latest.json`;
+  `bench:check` fails on >10 % timing (min of 10 iterations, 2 ms floor),
+  >20 % memory, or >10 % bundle growth. Timing baseline = last passing main
+  run, kept in the Actions cache; bundle baseline = committed
+  `benchmarks/bundle-baseline.json`. The job runs on every PR and push.
+- **Live, measured benchmark page.** The hub home section builds a 100k-row
+  grid in the visitor's browser and reports time-to-first-row, scroll FPS,
+  sort, filter, engine creation and heap delta. No static numbers remain.
+- **E2E in CI.** Playwright (Chromium) boots every example app on its own
+  port: per-app smoke specs, ten cross-plugin interaction scenarios, and the
+  hub benchmark run. The first run found three shipped bugs (status bar never
+  emitted its event, pinned rows were never rendered, playground had a
+  duplicate import), which is the argument for keeping it.
+- **`strictMutations`.** `createGrid({ strictMutations: true })` makes
+  `Store.setState` throw `GridStormMutationError` for unmarked callers.
+  `strict-mutations.test.ts` runs 13 bundled plugins under it. Row data has
+  one write path (`writeRowField`) shared by editing commits and
+  `updateRows`.
+- **Chunked export.** Excel/CSV export serializes in 5k-row chunks, yields
+  between chunks, emits `excel:exportProgress`, hands Blob an array of parts
+  (never one concatenated string), and streams to a `sink`
+  (`WritableStream` or `{write, close}`) when given, making memory
+  O(chunk). Ceilings: `maxRows` 100k, `maxCells` 5M, raisable with a sink.
+
 ## 15.6 — Build & release constraints (added 2026-05-27)
 
 - **Internal deps use `workspace:*` and are rewritten at pack time only by

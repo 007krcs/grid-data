@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createGrid } from '@gridstorm/core';
 import { StatusBarPlugin } from '../status-bar-plugin';
+import { SelectionPlugin } from '../../../plugin-selection/src/selection-plugin';
 import type { StatusBarState, AggregationResult } from '../status-bar-plugin';
 
 function makeRowData() {
@@ -223,6 +224,34 @@ describe('StatusBarPlugin', () => {
     const state = getStatusBarState(engine);
     expect(state.panels).toHaveLength(1);
     expect(state.panels[0]!.id).toBe('total');
+
+    engine.destroy();
+  });
+
+  it("emits 'status-bar:updated' on install, selection, and filter changes", () => {
+    const engine = createGrid({
+      columns: makeColumns(),
+      rowData: makeRowData(),
+      plugins: [SelectionPlugin({ mode: 'multiple' }), StatusBarPlugin()],
+    });
+    const events: any[] = [];
+    engine.eventBus.on('status-bar:updated' as any, (e: any) => events.push(e));
+
+    // Selection narrows the basis to the selected rows.
+    const firstId = engine.store.getState().displayedRowIds[0]!;
+    engine.commandBus.dispatch('selection:select', { rowId: firstId });
+    const sel = events.find((e) => e.source === 'selection');
+    expect(sel).toBeDefined();
+    expect(sel.rowCount).toBe(1);
+    expect(sel.aggregations.age.sum).toBe(30);
+
+    // Clearing selection and filtering recomputes over displayed rows.
+    engine.api.deselectAll();
+    engine.api.setFilterModel({ age: { filterType: 'number', type: 'greaterThan', filter: 26 } });
+    const last = events[events.length - 1];
+    expect(last.source).toBe('all');
+    expect(last.rowCount).toBe(2);
+    expect(last.aggregations.age.sum).toBe(65);
 
     engine.destroy();
   });

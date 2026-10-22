@@ -213,10 +213,45 @@ jobs:
       - name: Run security unit tests
         run: pnpm vitest run packages/core/src/__tests__/security.test.ts packages/dom-renderer/src/__tests__/security.test.ts
 
-  benchmark:
-    name: Benchmarks
+  e2e:
+    name: E2E (Playwright, Chromium)
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [build]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      # Boots every example app on its own port (see e2e/playwright.config.ts):
+      # per-app smoke specs, cross-plugin interaction specs, and the hub's
+      # in-browser 100k-row benchmark.
+      - name: Run e2e suites
+        run: pnpm test:e2e:ci
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
+  benchmark:
+    name: Benchmarks (regression gate)
+    runs-on: ubuntu-latest
     needs: [test, build]
     steps:
       - uses: actions/checkout@v6
@@ -233,10 +268,37 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
-      - name: Run benchmarks
-        run: pnpm --filter benchmarks bench:report 2>/dev/null || echo "Benchmarks skipped"
+      # Timing/memory baseline is the most recent passing run on main, kept in
+      # the Actions cache so it was produced on the same runner class. The
+      # bundle-size baseline is committed (benchmarks/bundle-baseline.json).
+      - name: Restore timing baseline from last main run
+        id: baseline
+        uses: actions/cache/restore@v4
+        with:
+          path: benchmarks/results/baseline.json
+          key: bench-baseline-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            bench-baseline-${{ runner.os }}-
+
+      - name: Run benchmarks (writes results/latest.json)
+        run: pnpm --filter @gridstorm/benchmarks bench:report
+
+      - name: Regression gate (fails on >10% timing, >20% memory, >10% bundle growth)
+        run: pnpm --filter @gridstorm/benchmarks bench:check
+
+      - name: Promote this run to the baseline (main only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: cp benchmarks/results/latest.json benchmarks/results/baseline.json
+
+      - name: Save timing baseline (main only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/cache/save@v4
+        with:
+          path: benchmarks/results/baseline.json
+          key: bench-baseline-${{ runner.os }}-${{ github.sha }}
 
       - name: Upload benchmark results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results

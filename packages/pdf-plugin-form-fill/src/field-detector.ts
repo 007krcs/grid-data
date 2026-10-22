@@ -16,11 +16,16 @@ const TYPE_KEYWORDS: Record<string, FieldType> = {
 
 let fieldCounter = 0;
 
+/** Lines longer than this cannot be form labels and are not scanned. */
+const MAX_LINE_LENGTH = 500;
+
 export function detectFields(textLines: Array<{ text: string; rect: [number, number, number, number] }>, pageIndex: number): FormField[] {
   const fields: FormField[] = [];
 
   for (const line of textLines) {
     const text = line.text.trim();
+    // A real form label is short; skip pathological lines before any regex runs.
+    if (text.length > MAX_LINE_LENGTH) continue;
 
     // Pattern 1: "Label:" followed by empty space or underscores
     const colonMatch = text.match(/^(.+?):\s*(_+|\.{3,}|\s{3,})?$/);

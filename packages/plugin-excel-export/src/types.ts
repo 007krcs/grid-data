@@ -4,7 +4,32 @@
 
 import type { ColumnState, RowNode } from '@gridstorm/core';
 
+/**
+ * Destination for a streamed export. Pass a `WritableStream<string>` (for
+ * example from `showSaveFilePicker()` → `createWritable()`) or any object
+ * with `write`/`close`. When a sink is present the plugin never assembles
+ * the whole document in memory: each chunk is written and released.
+ */
+export type ExportSink =
+  | WritableStream<string>
+  | { write(chunk: string): void | Promise<void>; close(): void | Promise<void> };
+
 export interface ExcelExportOptions {
+  /**
+   * Rows per processing chunk. Exports larger than one chunk yield to the
+   * event loop between chunks (keeping the UI responsive) and emit
+   * `excel:exportProgress` after each chunk. Exports that fit in one chunk
+   * complete synchronously.
+   * @default 5000
+   */
+  chunkSize?: number;
+  /**
+   * Stream the document to this sink instead of building a Blob download.
+   * See {@link ExportSink}. Memory use becomes O(chunkSize) regardless of
+   * row count, which lifts the practical ceiling from "what fits in a tab"
+   * to "what fits on disk".
+   */
+  sink?: ExportSink;
   /** Output file name (without extension). Default: 'gridstorm-export'. */
   fileName?: string;
   /** Sheet name for Excel export. Default: 'Sheet1'. */

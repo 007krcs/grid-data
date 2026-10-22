@@ -8,12 +8,14 @@ import { getValueFromData } from '@gridstorm/core';
 import { enforceLicense, createWatermark } from '@gridstorm/license';
 import type { ExcelExportOptions } from './types';
 import { ExportLimitExceededError } from './types';
-import { buildCsvContent, buildExcelXml, toCellData } from './excel-builder';
+import { csvLine, csvChunk, excelXmlHead, excelXmlRows, excelXmlTail, toCellData } from './excel-builder';
 
 // Default ceilings — see ExcelExportOptions.maxRows / maxCells JSDoc for the
 // rationale. Override per call via the corresponding option.
 const DEFAULT_MAX_ROWS = 100_000;
 const DEFAULT_MAX_CELLS = 5_000_000;
+/** Rows serialized per chunk before yielding to the event loop. */
+const DEFAULT_CHUNK_SIZE = 5_000;
 
 /**
  * Check row + cell ceilings before serialization. Returns an
@@ -177,12 +179,14 @@ export function ExcelExportPlugin(
       }
 
       // ── Trigger browser download ──
+      // Accepts the document as parts so no single concatenated string of
+      // the whole file ever exists: Blob assembles from the parts directly.
       function triggerDownload(
-        content: string,
+        parts: BlobPart[],
         fileName: string,
         mimeType: string,
       ): void {
-        const blob = new Blob([content], { type: mimeType });
+        const blob = new Blob(parts, { type: mimeType });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -195,6 +199,84 @@ export function ExcelExportPlugin(
           URL.revokeObjectURL(url);
           document.body.removeChild(link);
         }, 100);
+      }
+
+      // ── Chunked / streamed document assembly ──
+      //
+      // Rows are serialized `chunkSize` at a time. Between chunks the export
+      // yields to the event loop so a 100k-row export no longer freezes the
+      // tab, and `excel:exportProgress` lets the host show a progress bar.
+      // With a `sink`, chunks are written out and dropped immediately, so
+      // peak memory is one chunk rather than the whole file. Without a sink
+      // the chunks are handed to Blob as separate parts (no mega-string).
+      // Exports that fit in a single chunk run synchronously, so small
+      // exports keep their old fire-and-forget semantics.
+      interface ChunkedExportSpec {
+        format: 'csv' | 'excel';
+        fileName: string;
+        mimeType: string;
+        options: ExcelExportOptions;
+        rowCount: number;
+        head: string;
+        chunk: (start: number, end: number) => string;
+        tail: string;
+      }
+
+      const yieldToEventLoop = () => new Promise<void>((r) => setTimeout(r, 0));
+
+      async function runChunkedExport(spec: ChunkedExportSpec): Promise<void> {
+        const { format, fileName, mimeType, options, rowCount, head, chunk, tail } = spec;
+        const chunkSize = Math.max(1, Math.floor(options.chunkSize ?? DEFAULT_CHUNK_SIZE));
+        const sink = options.sink;
+        const writer = sink
+          ? 'getWriter' in sink
+            ? sink.getWriter()
+            : sink
+          : null;
+        const parts: string[] = [];
+
+        // Fast path: a single-chunk download needs no yielding and keeps the
+        // historical synchronous semantics (event fires before dispatch returns).
+        if (!writer && rowCount <= chunkSize) {
+          if (head) parts.push(head);
+          if (rowCount > 0) parts.push(chunk(0, rowCount));
+          if (tail) parts.push(tail);
+          triggerDownload(parts, fileName, mimeType);
+          ctx.eventBus.emit('excel:exported', { format, fileName, rowCount });
+          return;
+        }
+
+        const emitWrite = async (text: string) => {
+          if (!text) return;
+          if (writer) await writer.write(text);
+          else parts.push(text);
+        };
+
+        try {
+          await emitWrite(head);
+          const multiChunk = rowCount > chunkSize;
+          for (let start = 0; start < rowCount; start += chunkSize) {
+            const end = Math.min(start + chunkSize, rowCount);
+            await emitWrite(chunk(start, end));
+            if (multiChunk) {
+              ctx.eventBus.emit('excel:exportProgress', { format, done: end, total: rowCount });
+              if (end < rowCount) await yieldToEventLoop();
+            }
+          }
+          await emitWrite(tail);
+
+          if (writer) {
+            await writer.close();
+          } else {
+            triggerDownload(parts, fileName, mimeType);
+          }
+          ctx.eventBus.emit('excel:exported', { format, fileName, rowCount });
+        } catch (err) {
+          console.error(`[GridStorm ExcelExport] ${format} export failed:`, err);
+          if (writer && 'abort' in writer) {
+            try { await (writer as WritableStreamDefaultWriter<string>).abort(err); } catch { /* ignore */ }
+          }
+        }
       }
 
       // ── Command: Export CSV ──
@@ -219,17 +301,21 @@ export function ExcelExportPlugin(
 
           const fileName = (options.fileName || 'gridstorm-export') + '.csv';
 
-          const stringRows = dataRows.map((row) =>
-            row.map((v) => (v != null ? String(v) : '')),
-          );
-
-          const csvContent = buildCsvContent(headers, stringRows);
-          triggerDownload(csvContent, fileName, 'text/csv;charset=utf-8;');
-
-          ctx.eventBus.emit('excel:exported', {
+          void runChunkedExport({
             format: 'csv',
             fileName,
-            rowCount: stringRows.length,
+            mimeType: 'text/csv;charset=utf-8;',
+            options,
+            rowCount: dataRows.length,
+            head: headers.length > 0 ? csvLine(headers) + (dataRows.length > 0 ? '\n' : '') : '',
+            chunk: (start, end) => {
+              const slice = new Array<string[]>(end - start);
+              for (let i = start; i < end; i++) {
+                slice[i - start] = dataRows[i]!.map((v) => (v != null ? String(v) : ''));
+              }
+              return csvChunk(slice) + (end < dataRows.length ? '\n' : '');
+            },
+            tail: '',
           });
         },
       );
@@ -256,21 +342,19 @@ export function ExcelExportPlugin(
           const fileName = (options.fileName || 'gridstorm-export') + '.xml';
           const sheetName = options.sheetName || 'Sheet1';
 
-          const cellDataRows = dataRows.map((row) =>
-            row.map((v) => toCellData(v)),
-          );
-
-          const xmlContent = buildExcelXml(sheetName, headers, cellDataRows);
-          triggerDownload(
-            xmlContent,
-            fileName,
-            'application/vnd.ms-excel;charset=utf-8;',
-          );
-
-          ctx.eventBus.emit('excel:exported', {
+          void runChunkedExport({
             format: 'excel',
             fileName,
-            rowCount: cellDataRows.length,
+            mimeType: 'application/vnd.ms-excel;charset=utf-8;',
+            options,
+            rowCount: dataRows.length,
+            head: excelXmlHead(sheetName, headers),
+            chunk: (start, end) => {
+              const slice = new Array<ReturnType<typeof toCellData>[]>(end - start);
+              for (let i = start; i < end; i++) slice[i - start] = dataRows[i]!.map((v) => toCellData(v));
+              return excelXmlRows(slice);
+            },
+            tail: excelXmlTail(),
           });
         },
       );

@@ -16,6 +16,7 @@ export function ClipboardPlugin(options: ClipboardPluginOptions = {}): GridPlugi
     processCellFromClipboard,
     suppressPaste = false,
     suppressCut = false,
+    neutralizeFormulas = true,
   } = options;
 
   return {
@@ -140,7 +141,7 @@ export function ClipboardPlugin(options: ClipboardPluginOptions = {}): GridPlugi
         if (selectedNodes.length === 0) return null;
 
         const visibleCols = context.store.getState().columns.filter((c: ColumnState) => !c.hide);
-        return serializeToTSV(selectedNodes, visibleCols, { delimiter, copyHeaders, processCellForClipboard });
+        return serializeToTSV(selectedNodes, visibleCols, { delimiter, copyHeaders, processCellForClipboard, neutralizeFormulas });
       }
 
       function clearSelectedCells(context: PluginContext): void {

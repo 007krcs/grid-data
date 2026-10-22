@@ -289,9 +289,10 @@ export function AIPlugin(options: AIPluginOptions = {}): GridPlugin {
   if (!_deprecationWarned) {
     _deprecationWarned = true;
     console.warn(
-      '[GridStorm] @gridstorm/plugin-ai is deprecated. ' +
-        'Migrate to @gridstorm/plugin-ai-query for vendor-neutral LLM-backed NL queries. ' +
-        'The regex-based parser in this plugin will not receive further updates.',
+      '[GridStorm] @gridstorm/plugin-ai is deprecated and will be removed in 0.3.0. ' +
+        'Migrate: NL queries → @gridstorm/plugin-nl-query (offline) or @gridstorm/plugin-ai-query (LLM); ' +
+        'anomaly detection → @gridstorm/plugin-anomaly; suggestions → @gridstorm/plugin-intent-engine. ' +
+        'Decision table: https://gridstorm.tekivex.com/#/docs/plugins/ai',
     );
   }
   const {

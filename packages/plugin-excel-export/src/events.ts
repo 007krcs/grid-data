@@ -24,6 +24,16 @@ declare module '@gridstorm/core' {
      * (or any other failure-classified outcome). The `error` is the
      * structured `ExportLimitExceededError` when limits trip.
      */
+    /**
+     * Emitted after each chunk of a multi-chunk export. `done === total`
+     * on the final chunk, immediately before `excel:exported`.
+     */
+    'excel:exportProgress': {
+      format: ExcelFormat;
+      done: number;
+      total: number;
+    };
+
     'excel:exportFailed': {
       format: ExcelFormat;
       reason: 'rows' | 'cells';

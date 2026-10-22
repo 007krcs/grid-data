@@ -1,6 +1,10 @@
 # Plugin Consolidation Plan
 
-> Status: **plan only** — no code changes have landed against this document.
+> Status (2026-10-22): **partially landed.** Cluster 1 step 1 (the
+> `computedColumn:*` namespace rename with deprecated `formula:*` aliases) is
+> in `plugin-cell-formula`. Cluster 2 step 1 (one-time deprecation warning in
+> `plugin-ai`, README notice, decision table in docs/plugins/ai.md) landed
+> 2026-10-22. Package renames/merges (steps 2–3) are still pending.
 > Drafted 2026-05-28 from a read-only audit of `packages/plugin-formula*` and
 > `packages/plugin-ai`, `plugin-anomaly`, `plugin-nl-query`, `plugin-semantic`,
 > `plugin-intent-engine`, `plugin-intelligence-hub`.

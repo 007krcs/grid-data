@@ -18,6 +18,8 @@ export {
   useGridSelection,
   useGridPagination,
   useGridEvent,
+  useGridState,
+  useGridColumn,
 } from './composables';
 
 // Vue adapter types

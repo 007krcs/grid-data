@@ -4,6 +4,12 @@
 
 import { performance } from 'node:perf_hooks';
 
+/**
+ * Default iterations per measurement. 10 keeps the median stable enough for
+ * the 10 % regression gate in `compare.ts`; override with BENCH_ITERATIONS.
+ */
+export const DEFAULT_ITERATIONS = Math.max(3, Number(process.env.BENCH_ITERATIONS) || 10);
+
 export interface BenchmarkResult {
   median: number;
   mean: number;
@@ -20,7 +26,7 @@ export interface BenchmarkResult {
  * @param iterations - Number of iterations to run (default: 5).
  * @returns Aggregated timing statistics.
  */
-export function benchmark(fn: () => void, iterations: number = 5): BenchmarkResult {
+export function benchmark(fn: () => void, iterations: number = DEFAULT_ITERATIONS): BenchmarkResult {
   const times: number[] = [];
 
   // Warmup run (not measured)
@@ -52,7 +58,7 @@ export function benchmark(fn: () => void, iterations: number = 5): BenchmarkResu
  */
 export async function benchmarkAsync(
   fn: () => Promise<void>,
-  iterations: number = 5,
+  iterations: number = DEFAULT_ITERATIONS,
 ): Promise<BenchmarkResult> {
   const times: number[] = [];
 

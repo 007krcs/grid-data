@@ -57,3 +57,10 @@ coverage
 
 # Claude Code local config
 .claude/
+
+# benchmark outputs (baseline lives in CI cache; bundle-baseline.json is committed)
+benchmarks/results/
+
+# playwright
+test-results/
+playwright-report/

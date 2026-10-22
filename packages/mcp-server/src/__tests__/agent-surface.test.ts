@@ -229,6 +229,14 @@ describe('input validation gives actionable errors', () => {
     expect(res.data.skippedNonNumeric).toBe(0);
   });
 
+  it('neutralizes CSV formula injection in exported cells', async () => {
+    engine.api.updateRows([{ id: 'row-2', data: { name: '=HYPERLINK("http://evil","click")' } }]);
+    const res = await handleToolCall(registry, 'grid_export_csv', { columnKeys: ['name'] });
+    const lines = res.data.csv.split('\r\n');
+    expect(lines).toContain('"\t=HYPERLINK(""http://evil"",""click"")"');
+    expect(lines.some((l: string) => l.startsWith('='))).toBe(false);
+  });
+
   it('rejects unknown columns in grid_export_csv columnKeys', async () => {
     const res = await handleToolCall(registry, 'grid_export_csv', { columnKeys: ['name', 'profit'] });
     expect(res.success).toBe(false);

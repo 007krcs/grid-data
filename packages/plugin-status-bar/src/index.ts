@@ -2,5 +2,7 @@
 // Unauthorized reproduction or distribution is prohibited.
 // ─── @gridstorm/plugin-status-bar — Public API ───
 
+import './events';
+
 export { StatusBarPlugin } from './status-bar-plugin';
 export type { StatusBarPluginOptions } from './status-bar-plugin';

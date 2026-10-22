@@ -2,7 +2,7 @@
 // Runs all benchmark suites and generates a consolidated markdown report
 // at benchmarks/results/latest.md with system info and timestamp.
 
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import os from 'node:os';
 
@@ -16,6 +16,18 @@ export interface FullBenchmarkReport {
   timestamp: string;
   systemInfo: SystemInfo;
   markdown: string;
+  /**
+   * Flat, machine-readable metrics for the regression gate (`bench:check`).
+   * Keys: `render.<rows>.min`, `sort.single.<rows>.min`,
+   * `sort.multi.<rows>.min`, `filter.text.<rows>.min`,
+   * `filter.range.<rows>.min` (ms); `memory.<rows>.heapDelta` (bytes);
+   * Timing metrics gate on the MIN of the iterations: a real regression
+   * shifts the whole distribution including the floor, while scheduler
+   * noise on shared runners mostly inflates the upper half. The markdown
+   * report still prints median/mean/p95 for humans.
+   * `bundle.<package>.gzip` and `bundle.<tier>.gzip` (bytes).
+   */
+  metrics: Record<string, number>;
 }
 
 export interface SystemInfo {
@@ -54,6 +66,7 @@ export function generateFullReport(): FullBenchmarkReport {
   const sysInfo = getSystemInfo();
 
   const sections: string[] = [];
+  const metrics: Record<string, number> = {};
 
   // Header
   sections.push('# GridStorm Benchmark Report');
@@ -80,30 +93,46 @@ export function generateFullReport(): FullBenchmarkReport {
   console.log('[1/5] Running bundle size benchmark...');
   const bundleResult = runBundleSizeBenchmark();
   sections.push(formatBundleSizeReport(bundleResult));
+  for (const pkg of bundleResult.packages) {
+    if (pkg.gzipSize > 0) metrics[`bundle.${pkg.package.replace('@gridstorm/', '')}.gzip`] = pkg.gzipSize;
+  }
+  metrics['bundle.tier-core.gzip'] = bundleResult.coreOnly.gzip;
+  metrics['bundle.tier-core-plus-community.gzip'] = bundleResult.corePlusCommunity.gzip;
+  metrics['bundle.tier-full.gzip'] = bundleResult.fullEnterprise.gzip;
   sections.push('---');
   sections.push('');
 
   console.log('[2/5] Running render time benchmark...');
   const renderResults = runRenderTimeBenchmark();
   sections.push(formatRenderTimeReport(renderResults));
+  for (const r of renderResults) metrics[`render.${r.rowCount}.min`] = r.result.min;
   sections.push('---');
   sections.push('');
 
   console.log('[3/5] Running sort performance benchmark...');
   const sortResults = runSortPerfBenchmark();
   sections.push(formatSortPerfReport(sortResults));
+  for (const r of sortResults) {
+    metrics[`sort.single.${r.rowCount}.min`] = r.singleColumn.min;
+    metrics[`sort.multi.${r.rowCount}.min`] = r.multiColumn.min;
+  }
   sections.push('---');
   sections.push('');
 
   console.log('[4/5] Running filter performance benchmark...');
   const filterResults = runFilterPerfBenchmark();
   sections.push(formatFilterPerfReport(filterResults));
+  for (const r of filterResults) {
+    metrics[`filter.text.${r.rowCount}.min`] = r.textFilter.min;
+    metrics[`filter.range.${r.rowCount}.min`] = r.numberRangeFilter.min;
+  }
   sections.push('---');
   sections.push('');
 
   console.log('[5/5] Running memory benchmark...');
   const memoryResults = runMemoryBenchmark();
   sections.push(formatMemoryReport(memoryResults));
+  for (const r of memoryResults) metrics[`memory.${r.rowCount}.heapDelta`] = r.heapDelta;
 
   // Footer
   sections.push('---');
@@ -117,6 +146,7 @@ export function generateFullReport(): FullBenchmarkReport {
     timestamp,
     systemInfo: sysInfo,
     markdown,
+    metrics,
   };
 }
 
@@ -125,10 +155,23 @@ export function generateFullReport(): FullBenchmarkReport {
  */
 export function generateAndSaveReport(): string {
   const report = generateFullReport();
-  const outputPath = resolve(import.meta.dirname, '../../results/latest.md');
+  const resultsDir = resolve(import.meta.dirname, '../../results');
+  mkdirSync(resultsDir, { recursive: true });
+  const outputPath = resolve(resultsDir, 'latest.md');
+  const jsonPath = resolve(resultsDir, 'latest.json');
 
   writeFileSync(outputPath, report.markdown, 'utf-8');
+  writeFileSync(
+    jsonPath,
+    JSON.stringify(
+      { timestamp: report.timestamp, systemInfo: report.systemInfo, metrics: report.metrics },
+      null,
+      2,
+    ) + '\n',
+    'utf-8',
+  );
   console.log(`\nReport written to: ${outputPath}`);
+  console.log(`Metrics written to: ${jsonPath}`);
 
   return outputPath;
 }

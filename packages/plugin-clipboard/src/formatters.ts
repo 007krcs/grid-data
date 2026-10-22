@@ -35,6 +35,22 @@ function formatField(cell: string, delimiter: string): string {
   return needsQuoting(cell, delimiter) ? quoteCell(cell) : cell;
 }
 
+/** Leading characters that Excel, Sheets and LibreOffice evaluate as a formula. */
+const FORMULA_TRIGGERS = new Set(['=', '+', '-', '@', '\t', '\r']);
+
+/**
+ * Defuse CSV/TSV formula injection (CWE-1236). A cell such as
+ * `=HYPERLINK("http://evil","click")` pasted into a spreadsheet executes;
+ * a leading apostrophe makes the application treat it as text, which is the
+ * OWASP-recommended mitigation. Numeric-looking negatives like "-5" are left
+ * alone so copied numbers still paste as numbers.
+ */
+export function neutralizeFormula(cell: string): string {
+  if (cell.length === 0 || !FORMULA_TRIGGERS.has(cell[0]!)) return cell;
+  if (/^-?\d+(\.\d+)?$/.test(cell)) return cell;
+  return "'" + cell;
+}
+
 export function serializeToTSV(
   rows: RowNode[],
   columns: ColumnState[],
@@ -42,8 +58,11 @@ export function serializeToTSV(
     delimiter?: string;
     copyHeaders?: boolean;
     processCellForClipboard?: (params: { value: any; node: RowNode; column: ColumnState }) => string;
+    /** Prefix formula-like cells with an apostrophe. Default: true. */
+    neutralizeFormulas?: boolean;
   } = {},
 ): string {
+  const neutralize = options.neutralizeFormulas !== false;
   const delimiter = options.delimiter ?? '\t';
   const lines: string[] = [];
 
@@ -62,6 +81,7 @@ export function serializeToTSV(
       } else {
         raw = value != null ? String(value) : '';
       }
+      if (neutralize) raw = neutralizeFormula(raw);
       return formatField(raw, delimiter);
     });
     lines.push(cells.join(delimiter));

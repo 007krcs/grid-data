@@ -75,7 +75,19 @@ function noGridError(context: GridToolsContext, gridId?: string): ToolResult {
   return { success: false, error: `Grid '${asked}' not found. ${hint}` };
 }
 
+/** Leading characters that spreadsheet apps treat as a formula (CSV injection). */
+const FORMULA_PREFIXES = new Set(['=', '+', '-', '@', '\t', '\r']);
+
+/**
+ * RFC 4180 quoting plus CSV-injection neutralization: a cell beginning with
+ * a formula trigger is prefixed with a tab inside quotes, the same defense
+ * `@gridstorm/plugin-excel-export` applies. Cell data is untrusted; an agent
+ * may hand this CSV straight to a user who opens it in Excel.
+ */
 function escapeCSVField(value: string): string {
+  if (value.length > 0 && FORMULA_PREFIXES.has(value[0]!)) {
+    return '"\t' + value.replace(/"/g, '""') + '"';
+  }
   if (value.includes(',') || value.includes('"') || value.includes('\n') || value.includes('\r')) {
     return '"' + value.replace(/"/g, '""') + '"';
   }

@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-10-22T11:49:44.899Z",
+  "systemInfo": {},
+  "metrics": {
+    "bundle.core.gzip": 14204,
+    "bundle.dom-renderer.gzip": 21507,
+    "bundle.plugin-sorting.gzip": 4020,
+    "bundle.plugin-filtering.gzip": 8362,
+    "bundle.plugin-selection.gzip": 7382,
+    "bundle.plugin-grouping.gzip": 11067,
+    "bundle.plugin-aggregation.gzip": 7578,
+    "bundle.tier-core.gzip": 35711,
+    "bundle.tier-core-plus-community.gzip": 55475,
+    "bundle.tier-full.gzip": 74120
+  }
+}

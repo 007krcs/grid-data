@@ -230,6 +230,9 @@ const BUILTIN_PATTERNS: PatternDef[] = [
  * @param customPatterns - Optional additional patterns to try before built-in ones.
  * @returns A GridAction if a pattern matched, or null if no pattern matched.
  */
+/** Queries longer than this are rejected before any regex runs. */
+export const MAX_QUERY_LENGTH = 500;
+
 export function parseNaturalLanguage(
   query: string,
   columns: ColumnInfo[],
@@ -237,6 +240,8 @@ export function parseNaturalLanguage(
 ): GridAction | null {
   const trimmed = query.trim();
   if (!trimmed) return null;
+  // ReDoS guard: the patterns below are regex-based and run on user text.
+  if (trimmed.length > MAX_QUERY_LENGTH) return null;
 
   // Try custom patterns first (if any)
   if (customPatterns) {

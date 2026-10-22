@@ -3569,3 +3569,46 @@ body {
     display: none;
   }
 }
+
+/* ── 12b. Live benchmark controls ── */
+.benchmark-intro {
+  max-width: 760px;
+  margin: 0 0 18px;
+  color: var(--hub-text-secondary);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.benchmark-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.benchmark-actions .btn-primary[disabled] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.benchmark-host {
+  margin-top: 20px;
+  border-radius: var(--hub-radius);
+  overflow: hidden;
+}
+
+.benchmark-host:empty {
+  display: none;
+}
+
+.benchmark-footnote {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--hub-text-muted);
+}
+
+.benchmark-error {
+  margin: 0 0 14px;
+  color: #d14343;
+  font-size: 13px;
+}

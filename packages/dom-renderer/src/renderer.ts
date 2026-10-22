@@ -21,6 +21,14 @@ import type { ActiveEditor, EditingOverlayHost } from './editing-overlay';
 import { HeaderRenderer } from './header-renderer';
 import type { HeaderRendererHost } from './header-renderer';
 
+/** Shape of a row kept by @gridstorm/plugin-row-pinning (duck-typed to avoid a hard dependency). */
+interface PinnedRowLike {
+  id: string;
+  data: unknown;
+  position: 'top' | 'bottom';
+  originalIndex?: number;
+}
+
 export interface DomRendererConfig {
   /** Container element to mount the grid into. */
   container: HTMLElement;
@@ -83,6 +91,11 @@ export class DomRenderer {
   private bodyContainer: HTMLElement | null = null;
   private heightSpacer: HTMLElement | null = null;
   private liveRegion: HTMLElement | null = null;
+  /** Non-scrolling row areas fed by @gridstorm/plugin-row-pinning state. */
+  private pinnedTopContainer: HTMLElement | null = null;
+  private pinnedBottomContainer: HTMLElement | null = null;
+  private lastPinnedState: unknown = undefined;
+  private lastPinnedColumns: ColumnState[] | null = null;
 
   // Feature config
   private enableCellEditing: boolean;
@@ -273,6 +286,7 @@ export class DomRenderer {
     this.subscribeToState();
     this.renderHeader();
     this.renderVisibleRows();
+    this.renderPinnedRows();
 
     // Mount all extensions (floating filter, pagination, sidebar, user-provided)
     if (this.root) {
@@ -427,11 +441,22 @@ export class DomRenderer {
     this.bodyViewport.appendChild(this.heightSpacer);
     this.bodyViewport.appendChild(this.bodyContainer);
 
+    // Pinned row areas: rendered outside the scroll viewport so they stay
+    // visible while the body scrolls. Populated from pluginState.rowPinning.
+    this.pinnedTopContainer = this.el('div', `${p}-pinned-top`);
+    this.pinnedTopContainer.setAttribute('role', 'rowgroup');
+    this.pinnedTopContainer.style.cssText = 'position:relative;overflow:hidden;flex:none;display:none;';
+    this.pinnedBottomContainer = this.el('div', `${p}-pinned-bottom`);
+    this.pinnedBottomContainer.setAttribute('role', 'rowgroup');
+    this.pinnedBottomContainer.style.cssText = 'position:relative;overflow:hidden;flex:none;display:none;';
+
     // Assemble wrapper (extensions inject their DOM in mount phase)
     const wrapper = this.el('div', `${p}-wrapper`);
     wrapper.style.cssText = 'display:flex;flex-direction:column;height:100%;';
     wrapper.appendChild(this.headerContainer);
+    wrapper.appendChild(this.pinnedTopContainer);
     wrapper.appendChild(this.bodyViewport);
+    wrapper.appendChild(this.pinnedBottomContainer);
 
     this.root.appendChild(wrapper);
     this.root.appendChild(this.liveRegion!);
@@ -536,6 +561,9 @@ export class DomRenderer {
         if (this.headerContainer) {
           this.headerContainer.scrollLeft = scrollLeft;
         }
+        // Pinned row areas follow the body horizontally too
+        if (this.pinnedTopContainer) this.pinnedTopContainer.scrollLeft = scrollLeft;
+        if (this.pinnedBottomContainer) this.pinnedBottomContainer.scrollLeft = scrollLeft;
         // Sync floating filter horizontal scroll (via extension)
         if (this.extFloatingFilter) {
           this.extFloatingFilter.syncScroll(scrollLeft);
@@ -889,6 +917,7 @@ export class DomRenderer {
       if (!this.engine) return;
       this.renderPending = false;
       this.renderVisibleRows();
+      this.renderPinnedRows();
 
       // Update extensions
       if (this.root) {
@@ -1001,6 +1030,87 @@ export class DomRenderer {
         this.engine.commandBus.dispatch('editing:stop', { cancel: true });
       }
     }
+  }
+
+  // ── Pinned Rows ──
+
+  /**
+   * Render the rows that @gridstorm/plugin-row-pinning keeps in
+   * `pluginState.rowPinning` into the non-scrolling top/bottom areas. Cheap
+   * when nothing changed: re-renders only when the plugin state object or the
+   * visible column set is a new reference.
+   */
+  private renderPinnedRows(): void {
+    if (!this.pinnedTopContainer || !this.pinnedBottomContainer) return;
+    const state = this.engine.store.getState();
+    const pinned = (state.pluginState as Record<string, unknown> | undefined)?.['rowPinning'] as
+      | { pinnedTopRows?: PinnedRowLike[]; pinnedBottomRows?: PinnedRowLike[] }
+      | undefined;
+    const columns = this.getVisibleColumnsForRender(this.bodyViewport?.scrollLeft ?? 0).columns;
+    if (pinned === this.lastPinnedState && columns === this.lastPinnedColumns) return;
+    this.lastPinnedState = pinned;
+    this.lastPinnedColumns = columns;
+
+    this.fillPinnedArea(this.pinnedTopContainer, pinned?.pinnedTopRows ?? [], 'top', columns, state.rowNodes);
+    this.fillPinnedArea(this.pinnedBottomContainer, pinned?.pinnedBottomRows ?? [], 'bottom', columns, state.rowNodes);
+  }
+
+  private fillPinnedArea(
+    container: HTMLElement,
+    rows: PinnedRowLike[],
+    position: 'top' | 'bottom',
+    columns: ColumnState[],
+    rowNodes: Map<string, RowNode>,
+  ): void {
+    while (container.firstChild) {
+      const child = container.firstChild as HTMLElement;
+      container.removeChild(child);
+      this.recycleRow(child);
+    }
+    if (rows.length === 0) {
+      container.style.display = 'none';
+      return;
+    }
+    const rowHeight = (this.engine.api.getGridOption('rowHeight') as number) ?? 40;
+    const p = this.prefix;
+    rows.forEach((pinnedRow, i) => {
+      // A pinned row may mirror a live body row (pinned by id) or carry its
+      // own data (declarative pinnedTopRowData). Reuse the live node when
+      // present so selection/version stay in sync; otherwise synthesize one.
+      const live = rowNodes.get(pinnedRow.id);
+      const node: RowNode = live ?? {
+        id: pinnedRow.id,
+        data: pinnedRow.data,
+        sourceIndex: pinnedRow.originalIndex ?? -1,
+        displayIndex: i,
+        level: 0,
+        rowHeight,
+        rowTop: 0,
+        parent: null,
+        children: null,
+        expanded: false,
+        group: false,
+        groupField: null,
+        groupValue: null,
+        leafChildrenCount: 0,
+        aggData: null,
+        selected: false,
+        selectable: false,
+        detail: false,
+        rowPinned: position,
+        version: 0,
+      };
+      const rowEl = this.acquireRow();
+      this.setupRow(rowEl, node, columns, i, 0, rowHeight);
+      // Pinned rows stack in normal flow instead of absolute virtual positions.
+      rowEl.style.position = 'relative';
+      rowEl.style.top = '0';
+      rowEl.classList.add(`${p}-row-pinned`, `${p}-row-pinned-${position}`);
+      rowEl.setAttribute('data-row-pinned', position);
+      rowEl.removeAttribute('aria-rowindex');
+      container.appendChild(rowEl);
+    });
+    container.style.display = '';
   }
 
   private setupRow(

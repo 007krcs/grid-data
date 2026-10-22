@@ -80,7 +80,7 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
   };
 
   // ── Create infrastructure ──
-  const store = new Store<GridState<TData>>(initialState);
+  const store = new Store<GridState<TData>>(initialState, { strictMutations: config.strictMutations === true });
   const eventBus = new EventBus<GridEventMap<TData>>();
   const commandBus = new CommandBus();
 
@@ -88,6 +88,14 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
   const removeValidators = registerCoreCommandValidators(commandBus);
 
   // ── Row processing pipeline ──
+  /**
+   * The ONLY place row data is written. Editing commits and `updateRows`
+   * both route here so there is exactly one mutation path to audit.
+   */
+  function writeRowField(node: RowNode<TData>, field: string, value: unknown): void {
+    (node.data as any)[field] = value;
+  }
+
   function reprocessRows(): void {
     const state = store.getState();
 
@@ -233,7 +241,9 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
           const node = state.rowNodes.get(update.id);
           if (!node || !node.data) continue;
           const oldData = { ...node.data } as any;
-          Object.assign(node.data as any, update.data);
+          for (const [field, value] of Object.entries(update.data as Record<string, unknown>)) {
+            writeRowField(node, field, value);
+          }
           node.version++;
           // Emit one cell:valueChanged per changed field with correct colId
           for (const colId of Object.keys(update.data as any)) {
@@ -533,10 +543,10 @@ export function createGrid<TData = any>(_config: GridConfig<TData>): GridEngine<
                 colDef: col.originalDef,
               });
             } catch { /* fallback to direct write */
-              (node.data as any)[field] = finalValue;
+              writeRowField(node, field, finalValue);
             }
           } else {
-            (node.data as any)[field] = finalValue;
+            writeRowField(node, field, finalValue);
           }
           node.version++;
         }

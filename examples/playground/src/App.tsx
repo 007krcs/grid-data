@@ -5,7 +5,6 @@ import {
   useMemo,
   useRef,
   useEffect,
-  useEffect,
 } from 'react';
 import Editor from '@monaco-editor/react';
 import { GridStorm } from '@gridstorm/react';

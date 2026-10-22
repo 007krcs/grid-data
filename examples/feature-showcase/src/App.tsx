@@ -2643,23 +2643,27 @@ function RowPinningDemo() {
 
   const onGridReady = useCallback((api: GridApi) => {
     apiRef.current = api;
-    api.addEventListener('row-pinning:changed' as any, (e: any) => {
+    api.addEventListener('rowPinning:changed' as any, (e: any) => {
       setTopCount(e.pinnedTopRows?.length ?? 0);
       setBottomCount(e.pinnedBottomRows?.length ?? 0);
     });
+    // Declarative pinnedTopRowData / pinnedBottomRowData are applied at
+    // install time, before this listener exists; read them once.
+    const initial = (api.getState() as any).pluginState?.rowPinning;
+    setTopCount(initial?.pinnedTopRows?.length ?? 0);
+    setBottomCount(initial?.pinnedBottomRows?.length ?? 0);
   }, []);
 
   const pinSelected = (pos: 'top' | 'bottom') => {
     const api = apiRef.current as any;
     if (!api) return;
-    const selected = api.getSelectedNodes?.() ?? [];
-    selected.forEach((node: any, i: number) => {
-      api.dispatchCommand?.('row-pinning:pin', { rowId: node.id ?? `row-${i}`, position: pos, data: node.data });
-    });
+    const rowIds = (api.getSelectedNodes?.() ?? []).map((node: any) => node.id);
+    if (rowIds.length === 0) return;
+    api.dispatchCommand(pos === 'top' ? 'rowPinning:pinTop' : 'rowPinning:pinBottom', { rowIds });
   };
 
   const unpinAll = () => {
-    apiRef.current?.dispatchCommand?.('row-pinning:clear-all', {});
+    apiRef.current?.dispatchCommand('rowPinning:unpinAll', {});
   };
 
   return (
@@ -2692,19 +2696,20 @@ const plugins = [
 ];
 
 // Pin/unpin imperatively:
-api.dispatchCommand('row-pinning:pin', { rowId: 'row-5', position: 'top', data: rowData });
-api.dispatchCommand('row-pinning:unpin', { rowId: 'row-5' });
-api.dispatchCommand('row-pinning:clear-all', {});
+api.dispatchCommand('rowPinning:pinTop', { rowIds: ['row-5'] });
+api.dispatchCommand('rowPinning:pinBottom', { rowIds: ['row-7'] });
+api.dispatchCommand('rowPinning:unpin', { rowIds: ['row-5'] });
+api.dispatchCommand('rowPinning:unpinAll', {});
 
 // React to changes:
-api.addEventListener('row-pinning:changed', (e) => {
+api.addEventListener('rowPinning:changed', (e) => {
   console.log(e.pinnedTopRows.length, e.pinnedBottomRows.length);
 });`}
         features={[
           'Pin any row to top or bottom with one command — stays visible during scroll',
           'Declarative initial pinned rows via pinnedTopRowData / pinnedBottomRowData',
           'maxPinnedRows cap prevents accidental flooding of the pin area',
-          'row-pinning:changed event fires on every pin/unpin',
+          'rowPinning:changed event fires on every pin/unpin',
           'Pinned rows are excluded from sort and filter operations',
         ]}
       />

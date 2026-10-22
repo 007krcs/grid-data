@@ -41,16 +41,21 @@ function escapeCsvCell(value: string): string {
  * @returns A complete CSV string.
  */
 export function buildCsvContent(headers: string[], rows: string[][]): string {
-  const lines: string[] = [];
+  const parts: string[] = [];
+  if (headers.length > 0) parts.push(csvLine(headers));
+  if (rows.length > 0) parts.push(csvChunk(rows));
+  return parts.join('\n');
+}
 
-  if (headers.length > 0) {
-    lines.push(headers.map(escapeCsvCell).join(','));
-  }
+/** One CSV line (no trailing newline). */
+export function csvLine(row: string[]): string {
+  return row.map(escapeCsvCell).join(',');
+}
 
-  for (const row of rows) {
-    lines.push(row.map(escapeCsvCell).join(','));
-  }
-
+/** A block of CSV lines joined with newlines (no trailing newline). Used by chunked export. */
+export function csvChunk(rows: string[][]): string {
+  const lines = new Array<string>(rows.length);
+  for (let i = 0; i < rows.length; i++) lines[i] = csvLine(rows[i]!);
   return lines.join('\n');
 }
 
@@ -118,6 +123,11 @@ export function buildExcelXml(
   headers: string[],
   rows: CellData[][],
 ): string {
+  return excelXmlHead(sheetName, headers) + excelXmlRows(rows) + excelXmlTail();
+}
+
+/** Workbook preamble, styles, worksheet open and header row. Ends with a newline. */
+export function excelXmlHead(sheetName: string, headers: string[]): string {
   const lines: string[] = [];
 
   // XML declaration and workbook start
@@ -158,7 +168,12 @@ export function buildExcelXml(
     lines.push('   </Row>');
   }
 
-  // Data rows
+  return lines.join('\n') + '\n';
+}
+
+/** A block of `<Row>` elements, each line newline-terminated. Used by chunked export. */
+export function excelXmlRows(rows: CellData[][]): string {
+  const lines: string[] = [];
   for (const row of rows) {
     lines.push('   <Row>');
     for (const cell of row) {
@@ -169,10 +184,10 @@ export function buildExcelXml(
     }
     lines.push('   </Row>');
   }
+  return lines.length ? lines.join('\n') + '\n' : '';
+}
 
-  lines.push('  </Table>');
-  lines.push(' </Worksheet>');
-  lines.push('</Workbook>');
-
-  return lines.join('\n');
+/** Closes table, worksheet and workbook. */
+export function excelXmlTail(): string {
+  return '  </Table>\n </Worksheet>\n</Workbook>';
 }

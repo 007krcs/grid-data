@@ -81,7 +81,7 @@ npm install @gridstorm/core @gridstorm/dom-renderer @gridstorm/react
 - [Row Pinning](https://www.tekivex.com/gridstorm/#/docs/plugins/row-pinning): Pin rows to top/bottom (floating rows), capacity limits
 - [Conditional Formatting](https://www.tekivex.com/gridstorm/#/docs/plugins/conditional-formatting): 18 condition types — colorScale, dataBar, iconSet, topN, aboveAverage, etc.
 - [Streaming / Live Data](https://www.tekivex.com/gridstorm/#/docs/plugins/streaming): Real-time updates via command streaming:push-updates, cell direction tracking, batched processing
-- [AI Integration](https://www.tekivex.com/gridstorm/#/docs/plugins/ai): NL Query (nlquery:execute command, offline regex engine) and Anomaly Detection (Z-score + IQR, columnId/watchThreshold/warningThreshold/criticalThreshold/windowSize config)
+- [AI Integration](https://www.tekivex.com/gridstorm/#/docs/plugins/ai): Decision table for the intelligence plugins. `@gridstorm/plugin-ai` is DEPRECATED (removed in 0.3.0); use plugin-nl-query (offline NL, nlquery:execute), plugin-ai-query (LLM NL via ai-adapter), plugin-anomaly (Z-score + IQR, columnId/watchThreshold/warningThreshold/criticalThreshold/windowSize), plugin-intent-engine (suggestions), plugin-semantic (column typing), plugin-intelligence-hub (cross-grid telemetry)
 
 ### Plugins — Differentiators
 
@@ -152,7 +152,8 @@ npm install @gridstorm/core @gridstorm/dom-renderer @gridstorm/react
 - AnomalyPlugin column config: { columnId, watchThreshold, warningThreshold, criticalThreshold, windowSize }
 - StatusBarPlugin event: 'status-bar:updated' with aggregations object per configured column
 - StreamingPlugin command: 'streaming:push-updates', event: 'streaming:stats'
-- RowPinningPlugin commands: 'row-pinning:pin', 'row-pinning:clear-all'; event: 'row-pinning:changed'
+- RowPinningPlugin commands: 'rowPinning:pinTop' / 'rowPinning:pinBottom' / 'rowPinning:unpin' (payload { rowIds }), 'rowPinning:unpinAll', 'rowPinning:setTopData' / 'rowPinning:setBottomData' (payload { data }); event: 'rowPinning:changed'. Pinned rows render in .gs-pinned-top / .gs-pinned-bottom outside the scroll viewport.
+- StatusBarPlugin event payload: { aggregations, rowCount, source: 'selection' | 'all' | 'none' }; recalculates on selection, filter, sort, rowData and cell changes
 - ConditionalFormattingPlugin: 18 condition types including colorScale, dataBar, iconSet, topN, aboveAverage
 - CSS custom properties namespace: --hub-* (hub UI), --gs-* (grid theming)
 - GridEventMap does not have extensible index signature — plugins must use 'as any' for custom events

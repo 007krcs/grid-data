@@ -7,7 +7,8 @@ export { createGrid } from './engine/grid-engine';
 export type { GridEngine } from './engine/grid-engine';
 
 // State
-export { Store, createSelector } from './state/store';
+export { Store, createSelector, GridStormMutationError, INTERNAL_SETSTATE } from './state/store';
+export type { StoreOptions } from './state/store';
 
 // Events
 export { EventBus } from './events/event-bus';

@@ -10,7 +10,9 @@
     "bench:sort": "tsx src/runners/sort-perf.ts",
     "bench:filter": "tsx src/runners/filter-perf.ts",
     "bench:memory": "tsx src/runners/memory.ts",
-    "bench:report": "tsx src/reports/generate-report.ts"
+    "bench:report": "tsx src/reports/generate-report.ts",
+    "bench:check": "tsx src/compare.ts",
+    "bench:gate": "tsx src/reports/generate-report.ts && tsx src/compare.ts"
   },
   "dependencies": {
     "@gridstorm/core": "workspace:*",

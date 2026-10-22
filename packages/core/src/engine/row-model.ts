@@ -73,35 +73,86 @@ export function sortRowNodes<TData>(
 ): RowNode<TData>[] {
   if (sortModel.length === 0) return nodes;
 
-  const sortedNodes = [...nodes]; // shallow copy to avoid mutating original
+  // Resolve each sort level ONCE. The previous implementation did a linear
+  // `columns.find` and two `String(x).toLowerCase()` allocations inside the
+  // comparator, i.e. per comparison (~1.7M comparisons for 100k rows). That
+  // made a 100k-row string sort take seconds. Keys are now precomputed in a
+  // single O(n) pass per level and the comparator only compares primitives.
+  interface Level {
+    desc: boolean;
+    comparator: ColumnState['originalDef']['comparator'] | undefined;
+    /** Raw values; needed for custom comparators and as fallback. */
+    raw: any[];
+    /** Normalized keys for the default comparator: number | lowercased string | null. */
+    keys: Array<number | string | null> | null;
+  }
 
-  sortedNodes.sort((a, b) => {
-    for (const sortItem of sortModel) {
-      const col = columns.find((c) => c.colId === sortItem.colId);
-      if (!col) continue;
+  const n = nodes.length;
+  const levels: Level[] = [];
+  for (const sortItem of sortModel) {
+    const col = columns.find((c) => c.colId === sortItem.colId);
+    if (!col) continue;
+    const comparator = col.originalDef.comparator;
+    const raw: any[] = new Array(n);
+    const keys: Array<number | string | null> | null = comparator ? null : new Array(n);
+    for (let i = 0; i < n; i++) {
+      const v = getValueFromData(nodes[i]!.data, col.field);
+      raw[i] = v;
+      if (keys) keys[i] = toSortKey(v);
+    }
+    levels.push({ desc: sortItem.sort === 'desc', comparator, raw, keys });
+  }
+  if (levels.length === 0) return [...nodes];
 
-      const valueA = getValueFromData(a.data, col.field);
-      const valueB = getValueFromData(b.data, col.field);
-      const isDesc = sortItem.sort === 'desc';
+  // Sort an index array so the comparator touches only flat arrays.
+  const order: number[] = new Array(n);
+  for (let i = 0; i < n; i++) order[i] = i;
 
-      // Use custom comparator if provided
-      const comparator = col.originalDef.comparator;
+  order.sort((ia, ib) => {
+    for (let l = 0; l < levels.length; l++) {
+      const level = levels[l]!;
       let result: number;
-
-      if (comparator) {
-        result = comparator(valueA, valueB, a, b, isDesc);
+      if (level.comparator) {
+        result = level.comparator(level.raw[ia], level.raw[ib], nodes[ia]!, nodes[ib]!, level.desc);
       } else {
-        result = defaultComparator(valueA, valueB);
+        result = compareSortKeys(level.keys![ia]!, level.keys![ib]!);
       }
-
-      if (result !== 0) {
-        return isDesc ? -result : result;
-      }
+      if (result !== 0) return level.desc ? -result : result;
     }
     return 0;
   });
 
+  const sortedNodes: RowNode<TData>[] = new Array(n);
+  for (let i = 0; i < n; i++) sortedNodes[i] = nodes[order[i]!]!;
   return sortedNodes;
+}
+
+/**
+ * Normalize a cell value into a comparison key with the exact semantics of
+ * {@link defaultComparator}: null/undefined → null, numbers stay numbers,
+ * everything else becomes its lowercased string form.
+ */
+function toSortKey(v: any): number | string | null {
+  if (v == null) return null;
+  if (typeof v === 'number') return v;
+  return String(v).toLowerCase();
+}
+
+/** Compare two precomputed sort keys. Mirrors {@link defaultComparator}. */
+function compareSortKeys(a: number | string | null, b: number | string | null): number {
+  const aNull = a === null;
+  const bNull = b === null;
+  if (aNull && bNull) return 0;
+  if (aNull) return 1;
+  if (bNull) return -1;
+  if (typeof a === 'number' && typeof b === 'number') return a - b;
+  // Mixed number/string: defaultComparator stringifies both. String(number)
+  // has no letters, so lowercasing is a no-op and this stays equivalent.
+  const sa = typeof a === 'number' ? String(a) : a;
+  const sb = typeof b === 'number' ? String(b) : b;
+  if (sa < sb) return -1;
+  if (sa > sb) return 1;
+  return 0;
 }
 
 /**

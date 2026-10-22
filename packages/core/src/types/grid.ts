@@ -34,6 +34,22 @@ import type { CellPosition, CellRange, RowSelectionMode } from './selection';
  */
 export interface GridConfig<TData = any> {
   /**
+   * Enforce the "commands are the only way to mutate state" invariant.
+   *
+   * When true, `engine.store.setState()` called from application code (i.e.
+   * without the internal marker that GridApi, CommandBus handlers and plugin
+   * contexts carry) throws a `GridStormMutationError` instead of logging a
+   * development warning. Every bundled plugin passes under strict mode; see
+   * `packages/core/src/__tests__/strict-mutations.test.ts`.
+   *
+   * Recommended for applications using undo/redo, audit logging, or
+   * collaboration, where an untracked mutation silently corrupts history.
+   *
+   * @default false
+   */
+  strictMutations?: boolean;
+
+  /**
    * Array of column definitions that describe the columns to render.
    *
    * Each entry configures one column's header, width, sorting, filtering,

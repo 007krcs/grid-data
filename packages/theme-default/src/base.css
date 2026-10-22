@@ -102,6 +102,27 @@
   background-color: var(--gs-color-row-bg-hover);
 }
 
+/* Pinned rows (plugin-row-pinning) live outside the scroll viewport */
+.gs-pinned-top,
+.gs-pinned-bottom {
+  background-color: var(--gs-color-row-bg);
+  z-index: 1;
+}
+
+.gs-pinned-top {
+  border-bottom: 2px solid var(--gs-color-border);
+}
+
+.gs-pinned-bottom {
+  border-top: 2px solid var(--gs-color-border);
+}
+
+.gs-row-pinned {
+  position: relative;
+  font-weight: 500;
+  background-color: var(--gs-color-row-bg-pinned, var(--gs-color-row-bg-alt));
+}
+
 .gs-row-selected,
 .gs-row[aria-selected='true'] {
   background-color: var(--gs-color-row-bg-selected);

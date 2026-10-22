@@ -89,7 +89,7 @@ const engine = createGrid({ columns, rowData, plugins: [SortingPlugin()] });
 new DomRenderer({ engine, container: document.getElementById('grid')! }).mount();
 ```
 
-Vue 3 (`gridstorm/vue`), Svelte (`gridstorm/svelte`), and Angular (`gridstorm/angular`) adapters included. Prefer granular installs? Every plugin is also published as `@gridstorm/plugin-*`.
+Vue 3 (`gridstorm/vue`), Svelte (`gridstorm/svelte`), and Angular (`gridstorm/angular`) adapters are included, at different levels of completeness: React and Vue expose the full hook/composable surface, Svelte and Angular expose a component or action plus the core `GridApi`. The exact matrix is in the [adapter parity guide](https://gridstorm.tekivex.com/#/docs/frameworks/adapter-parity). Prefer granular installs? Every plugin is also published as `@gridstorm/plugin-*`.
 
 ## Realtime collaboration, zero backend
 
@@ -125,7 +125,7 @@ AiQueryPlugin({
 - **Headless core** (<50KB, tree-shakeable) — store, event bus, command bus, plugin manager
 - **DOM renderer** — virtual scrolling, keyboard nav, full ARIA contract (screen-reader tested)
 - **45+ plugins** across sorting/filtering/editing → grouping/pivoting/exports → CRDT collab/AI/formulas
-- **4 framework adapters** — React (most complete: 8 hooks + ErrorBoundary + portals), Vue 3, Svelte, Angular
+- **4 framework adapters** — React (9 hooks + ErrorBoundary + portals), Vue 3 (9 composables + error boundary), Svelte (action + 12 store helpers), Angular (component + service). [Parity matrix →](https://gridstorm.tekivex.com/#/docs/frameworks/adapter-parity)
 - **Theming** — CSS custom properties; light/dark/high-contrast; density modes; RTL
 - **i18n** — 20 locales, CLDR pluralization via `Intl.PluralRules`, `{placeholder}` interpolation
 - **PDF toolkit** — viewer, text extraction, form fill, PII detection (`gridstorm/pdf`)

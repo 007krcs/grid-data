@@ -73,7 +73,8 @@ Select rows in the grid and watch the status bar recalculate sum, average, and c
 
 | Name | Payload | Description |
 | --- | --- | --- |
-| `selection:changed` | selection state | The plugin listens to this event to trigger automatic recalculation. |
+| `status-bar:updated` | `{ aggregations: Record<colId, AggregationResult>; rowCount: number; source: 'selection' \| 'all' \| 'none' }` | Emitted after every recalculation. Subscribe to this instead of polling plugin state. |
+| `selection:changed`, `filter:changed`, `column:sort:changed`, `rowData:changed`, `cell:valueChanged` | core events | The plugin listens to these to trigger automatic recalculation. |
 
 ## Usage Examples
 

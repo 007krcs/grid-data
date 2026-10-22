@@ -11,6 +11,13 @@ export interface ClipboardPluginOptions {
   delimiter?: string;
   /** Custom cell value processor for copy. */
   processCellForClipboard?: (params: ProcessCellParams) => string;
+  /**
+   * Prefix cells that start with `=`, `+`, `-`, `@`, tab or CR with an
+   * apostrophe so spreadsheets paste them as text instead of evaluating
+   * them (CSV injection, CWE-1236). Default: true. Disable only when the
+   * clipboard target is never a spreadsheet.
+   */
+  neutralizeFormulas?: boolean;
   /** Custom cell value processor for paste. */
   processCellFromClipboard?: (params: { value: string; column: ColumnState }) => any;
   /** Suppress paste operations. Default: false. */

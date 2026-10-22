@@ -126,10 +126,50 @@ const parts = buildXlsxParts(
 | `excel:exportExcel` | `ExcelExportOptions` | Export grid data as an Excel XML file. Triggers a browser download. |
 | `excel:exportData` | `ExcelExportOptions` | Return raw export data (`{ headers, rows }`) without triggering a download. Useful for custom export workflows. |
 
+## Large Exports
+
+Exports are serialized in chunks (default `chunkSize: 5000` rows). Between chunks the plugin yields to the event loop, so a 100k-row export keeps the page responsive, and it emits `excel:exportProgress` after every chunk. Exports that fit in a single chunk complete synchronously, exactly as before.
+
+### Ceilings
+
+| Option | Default | Effect |
+|--------|---------|--------|
+| `maxRows` | `100000` | Exports with more rows fail fast with `excel:exportFailed` before any work starts. |
+| `maxCells` | `5000000` | Rows × columns ceiling for wide datasets. |
+
+The defaults describe what fits comfortably in a browser tab. Raise them when you stream to a sink (below); memory then no longer depends on row count.
+
+### Progress
+
+```typescript title="progress-bar.ts"
+api.addEventListener('excel:exportProgress', ({ done, total }) => {
+  progress.value = done / total;
+});
+api.addEventListener('excel:exported', ({ rowCount }) => progress.value = 1);
+```
+
+### Streaming to disk
+
+Pass a `sink` and the document is written chunk by chunk instead of being assembled into a Blob. With the File System Access API this streams straight to a file on disk:
+
+```typescript title="stream-to-file.ts"
+const handle = await window.showSaveFilePicker({ suggestedName: 'pipeline.csv' });
+const writable = await handle.createWritable();
+
+api.dispatchCommand('excel:exportCsv', {
+  sink: writable,          // WritableStream<string> or { write, close }
+  chunkSize: 10_000,
+  maxRows: 5_000_000,      // safe: peak memory is one chunk
+});
+```
+
+Any object with `write(chunk)` and `close()` works as a sink (a WebSocket relay, an IndexedDB writer, a test spy).
+
 ## Events
 
 | Name | Payload | Description |
 | --- | --- | --- |
+| `excel:exportProgress` | `{ format, done, total }` | After each chunk of a multi-chunk export. |
 | `excel:exported` | `{ format: 'csv' \| 'excel'; fileName: string; rowCount: number }` | Emitted after a successful export with the format, file name, and number of exported rows. |
 
 ## React Integration

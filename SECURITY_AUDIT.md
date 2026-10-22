@@ -113,6 +113,21 @@ deserializing third-party JSON into a dynamic dispatch table), enable the
 rule for those files only via an additional `files` block in the eslint
 config.
 
+
+## Update 2026-10-22 — mitigations landed
+
+| Finding | Status |
+|---|---|
+| plugin-clipboard-pro type-coercion ReDoS | Already guarded by `COERCE_MAX_LEN` before regex evaluation (audit entry was stale). |
+| plugin-ai nl-query-parser ReDoS | `MAX_QUERY_LENGTH = 500` guard added; plugin is deprecated (one-time warning). |
+| plugin-privacy-lens / plugin-semantic | Length guards were already present (4 each). |
+| pdf-plugin-pii detectors | `MAX_SCAN_LENGTH = 200_000` bounds text per call. |
+| pdf-plugin-form-fill field-detector | Lines over 500 chars are skipped before any regex. |
+| pdf-plugin-text user regex search (not previously listed) | `isSafeUserRegex`: length cap 256, nested-quantifier and backreference heuristics; unsafe input is searched literally. |
+| CSV/TSV formula injection (CWE-1236) on clipboard copy (not previously listed) | `neutralizeFormulas` (default on) prefixes `= + - @ \t \r` cells with an apostrophe. |
+| CSV formula injection in MCP `grid_export_csv` | Tab-prefix neutralization, same as plugin-excel-export. |
+| Dependency advisories | 126 → 16 via same-major `pnpm.overrides`. Remaining are dev-only: vite 5 / esbuild 0.21 (dev server CORS/path), vitest 2 (UI server). Clearing them requires the vite 7 / vitest 3+ major upgrade, tracked separately. Published packages have no runtime dependencies. |
+
 ## How this audit was generated
 
 ```sh

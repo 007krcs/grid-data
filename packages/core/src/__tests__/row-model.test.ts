@@ -125,6 +125,75 @@ describe('sortRowNodes', () => {
   });
 });
 
+describe('sortRowNodes (precomputed keys)', () => {
+  function naiveSort(nodes: ReturnType<typeof createRowNodes>, model: { colId: string; sort: 'asc' | 'desc' }[], columns: ReturnType<typeof col>[]) {
+    // Reference implementation: the original per-comparison algorithm.
+    return [...nodes].sort((a, b) => {
+      for (const item of model) {
+        const c = columns.find((x) => x.colId === item.colId)!;
+        const r = defaultComparator(getValueFromData(a.data, c.field), getValueFromData(b.data, c.field));
+        if (r !== 0) return item.sort === 'desc' ? -r : r;
+      }
+      return 0;
+    });
+  }
+
+  it('matches the reference comparator on mixed numbers, strings, nulls, and case', () => {
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+    const pool = [3, 'b', null, 'A', 10, undefined, 'a', '2', 2, 'B', '', 'zeta', 0, -1];
+    const data = Array.from({ length: 500 }, () => ({
+      x: pool[Math.floor(rnd() * pool.length)],
+      y: pool[Math.floor(rnd() * pool.length)],
+    }));
+    const nodes = createRowNodes(data);
+    const columns = [col('x', 'x'), col('y', 'y')];
+    for (const model of [
+      [{ colId: 'x', sort: 'asc' as const }],
+      [{ colId: 'x', sort: 'desc' as const }],
+      [{ colId: 'x', sort: 'asc' as const }, { colId: 'y', sort: 'desc' as const }],
+    ]) {
+      const fast = sortRowNodes(nodes, model, columns).map((n) => n.id);
+      const slow = naiveSort(nodes, model, columns).map((n) => n.id);
+      expect(fast).toEqual(slow);
+    }
+  });
+
+  it('is stable: equal keys keep source order', () => {
+    const data = Array.from({ length: 50 }, (_, i) => ({ g: i % 3, i }));
+    const nodes = createRowNodes(data);
+    const sorted = sortRowNodes(nodes, [{ colId: 'g', sort: 'asc' }], [col('g', 'g')]);
+    const zeros = sorted.filter((n) => n.data!.g === 0).map((n) => n.data!.i);
+    expect(zeros).toEqual([...zeros].sort((a, b) => a - b));
+  });
+
+  it('still honours a custom comparator with raw values and nodes', () => {
+    const data = [{ v: 'bb' }, { v: 'a' }, { v: 'cccc' }];
+    const nodes = createRowNodes(data);
+    const c = col('v', 'v');
+    (c.originalDef as any).comparator = (a: string, b: string) => a.length - b.length;
+    const sorted = sortRowNodes(nodes, [{ colId: 'v', sort: 'desc' }], [c]);
+    expect(sorted.map((n) => n.data!.v)).toEqual(['cccc', 'bb', 'a']);
+  });
+
+  it('ignores sort items whose column does not exist', () => {
+    const nodes = createRowNodes([{ a: 2 }, { a: 1 }]);
+    const sorted = sortRowNodes(nodes, [{ colId: 'missing', sort: 'asc' }, { colId: 'a', sort: 'asc' }], [col('a', 'a')]);
+    expect(sorted.map((n) => n.data!.a)).toEqual([1, 2]);
+  });
+
+  it('sorts 100k rows by a string column well under a second', () => {
+    const data = Array.from({ length: 100_000 }, (_, i) => ({ name: `Person ${(i * 7919) % 100_000}` }));
+    const nodes = createRowNodes(data);
+    const t0 = performance.now();
+    const sorted = sortRowNodes(nodes, [{ colId: 'name', sort: 'asc' }], [col('name', 'name')]);
+    const ms = performance.now() - t0;
+    expect(sorted).toHaveLength(100_000);
+    expect(sorted[0]!.data!.name).toBe('Person 0');
+    expect(ms).toBeLessThan(1000);
+  });
+});
+
 describe('defaultComparator', () => {
   it('should compare numbers', () => {
     expect(defaultComparator(1, 2)).toBeLessThan(0);

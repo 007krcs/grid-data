@@ -71,12 +71,17 @@ const PATTERNS: PatternDef[] = [
   },
 ];
 
+/** Maximum characters scanned per call (about 25 dense pages). PDF text is attacker-controlled. */
+const MAX_SCAN_LENGTH = 200_000;
+
 export function detectPatterns(
   text: string,
   pageIndex: number,
   enabledTypes?: PiiType[],
 ): PiiMatch[] {
   const matches: PiiMatch[] = [];
+  // Bound regex work per call: PDF text is attacker-controlled.
+  if (text.length > MAX_SCAN_LENGTH) text = text.slice(0, MAX_SCAN_LENGTH);
 
   for (const def of PATTERNS) {
     if (enabledTypes && !enabledTypes.includes(def.type)) continue;

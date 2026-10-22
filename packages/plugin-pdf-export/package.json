@@ -23,7 +23,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup && node ../../scripts/obfuscate.mjs ./dist",
+    "build": "tsup",
     "dev": "tsup --watch"
   },
   "dependencies": {

@@ -3,6 +3,26 @@ title: AI
 description: Natural language querying, anomaly detection, and smart suggestions for your data grid.
 ---
 
+:::caution{title="@gridstorm/plugin-ai is deprecated"}
+The catch-all `AIPlugin` is deprecated and will be removed in 0.3.0. Pick the specialized plugin for the job; each is smaller, better tested, and has a stable command surface.
+:::
+
+## Which intelligence plugin do I need?
+
+| I want to… | Install | Command / event surface |
+|---|---|---|
+| Type "sort by salary desc" and have the grid do it, **offline** | `@gridstorm/plugin-nl-query` | `nlquery:execute` |
+| Same, but understood by an LLM (OpenAI, Anthropic, your own) | `@gridstorm/plugin-ai-query` + `@gridstorm/ai-adapter` | `aiQuery:ask` |
+| Flag statistical outliers in a numeric column | `@gridstorm/plugin-anomaly` | `anomaly:detect`, severity tiers |
+| Suggest next actions from how the user works | `@gridstorm/plugin-intent-engine` | `intent:*`, column ranking |
+| Auto-detect email / phone / currency / URL columns | `@gridstorm/plugin-semantic` | `semantic:*` |
+| Aggregate behaviour across many grids with privacy noise | `@gridstorm/plugin-intelligence-hub` | `intelligenceHub:*` |
+| Copilot-style cell completions | `@gridstorm/plugin-cell-autocomplete` + `@gridstorm/ai-adapter` | `autocomplete:*` |
+| Let an AI **agent** operate the grid from outside | `@gridstorm/mcp-server` | MCP tools (`grid_describe`, `grid_filter`, …) |
+
+Formula plugins follow the same rule: `@gridstorm/plugin-formula` is the spreadsheet engine (`=SUM(A1:A9)`), `@gridstorm/plugin-formula-engine` extends it with 50 more functions and named ranges, and `@gridstorm/plugin-cell-formula` is a different feature, JavaScript computed columns, under the `computedColumn:*` namespace.
+
+
 The AI plugin adds intelligent data interaction to GridStorm. It includes a natural language query parser that converts plain English into filter/sort operations (regex-based, no API key required), statistical anomaly detection using Z-score and IQR methods, and context-aware suggestions for data exploration. An optional LLM adapter enables advanced queries through external models.
 
 ## Installation

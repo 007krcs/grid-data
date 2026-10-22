@@ -39,6 +39,10 @@ const engine = createGridEngine({
 
 [Clipboard Guide](https://grid-data-analytics-explorer.vercel.app//docs/clipboard) | [API Reference](https://grid-data-analytics-explorer.vercel.app//api/plugin-clipboard)
 
+## Formula injection protection
+
+Copied cells that begin with `=`, `+`, `-`, `@`, a tab or a carriage return are prefixed with an apostrophe so spreadsheets paste them as text rather than evaluating them (CWE-1236). Plain negative numbers are left untouched. Disable with `ClipboardPlugin({ neutralizeFormulas: false })` only when the clipboard target is never a spreadsheet.
+
 ## License
 
 Commercial -- [Enterprise License Required](https://grid-data-analytics-explorer.vercel.app//pricing)

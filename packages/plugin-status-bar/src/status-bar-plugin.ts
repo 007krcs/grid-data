@@ -6,6 +6,7 @@
 // recalculates aggregation results automatically.
 
 import type { GridPlugin, PluginContext, RowNode, ColumnState } from '@gridstorm/core';
+import './events';
 
 // ─── Types ───
 
@@ -164,11 +165,21 @@ export function StatusBarPlugin(options: StatusBarPluginOptions = {}): GridPlugi
         }
 
         const aggregations = calculateAggregations(rows, columns);
+        const source: 'selection' | 'all' | 'none' =
+          showOnSelection && selectedRowIds.size > 0 ? 'selection' : showForAllRows ? 'all' : 'none';
 
         ctx.setState<StatusBarState>(STATE_KEY, (prev) => ({
           ...prev,
           aggregations,
         }));
+
+        // Consumers (React status bars, MCP tools, dashboards) subscribe to
+        // this event rather than polling plugin state.
+        ctx.eventBus.emit('status-bar:updated', {
+          aggregations,
+          rowCount: rows.length,
+          source,
+        });
       }
 
       // ─── Commands ───
@@ -196,6 +207,12 @@ export function StatusBarPlugin(options: StatusBarPluginOptions = {}): GridPlugi
       const unsubSelection = ctx.eventBus.on('selection:changed', () => {
         recalculate();
       });
+      // The "all displayed rows" basis changes with filtering, sorting
+      // (pagination page), data replacement, and in-place edits.
+      const unsubFilter = ctx.eventBus.on('filter:changed', () => recalculate());
+      const unsubSort = ctx.eventBus.on('column:sort:changed', () => recalculate());
+      const unsubData = ctx.eventBus.on('rowData:changed', () => recalculate());
+      const unsubEdit = ctx.eventBus.on('cell:valueChanged', () => recalculate());
 
       // Initial calculation
       recalculate();
@@ -203,6 +220,10 @@ export function StatusBarPlugin(options: StatusBarPluginOptions = {}): GridPlugi
       // Return disposer
       return () => {
         unsubSelection();
+        unsubFilter();
+        unsubSort();
+        unsubData();
+        unsubEdit();
       };
     },
   };

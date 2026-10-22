@@ -14,7 +14,7 @@ import {
   type Ref,
   type ShallowRef,
 } from 'vue';
-import type { GridApi, GridEngine, SortModelItem, FilterModel, RowNode } from '@gridstorm/core';
+import type { GridApi, GridEngine, GridState, SortModelItem, FilterModel, RowNode, ColumnState, PinnedPosition } from '@gridstorm/core';
 import type { GridContextValue } from './types';
 
 // ── Context Key ──
@@ -462,4 +462,61 @@ export function useGridEvent<TData = any>(
       unsubscribe = null;
     }
   });
+}
+
+/**
+ * Selector-based reactive slice of grid state. Mirrors React's `useGridState`.
+ *
+ * @example
+ * ```vue
+ * <script setup lang="ts">
+ * import { useGridState } from '@gridstorm/vue';
+ *
+ * const rowCount = useGridState((s) => s.displayedRowIds.length);
+ * </script>
+ *
+ * <template><span>{{ rowCount }} rows</span></template>
+ * ```
+ */
+export function useGridState<TData = any, TResult = any>(
+  selector: (state: GridState<TData>) => TResult,
+): Ref<TResult | undefined> {
+  const context = useGridContext<TData>();
+  return useStoreRef(context, (engine) => selector(engine.store.getState() as GridState<TData>));
+}
+
+/**
+ * Column state and column actions. Mirrors React's `useGridColumn`.
+ *
+ * @example
+ * ```vue
+ * <script setup lang="ts">
+ * import { useGridColumn } from '@gridstorm/vue';
+ *
+ * const { visibleColumns, setColumnVisible, setColumnPinned } = useGridColumn();
+ * </script>
+ * ```
+ */
+export function useGridColumn(): {
+  allColumns: Ref<ColumnState[]>;
+  visibleColumns: Ref<ColumnState[]>;
+  setColumnVisible: (colId: string, visible: boolean) => void;
+  setColumnWidth: (colId: string, width: number) => void;
+  moveColumn: (colId: string, toIndex: number) => void;
+  setColumnPinned: (colId: string, pinned: PinnedPosition) => void;
+  getColumn: (colId: string) => ColumnState | undefined;
+} {
+  const context = useGridContext();
+  const allColumns = useStoreRef(context, (engine) => engine.store.getState().columns);
+  const visibleColumns = computed(() => (allColumns.value ?? []).filter((c) => !c.hide));
+
+  return {
+    allColumns: computed(() => allColumns.value ?? []) as Ref<ColumnState[]>,
+    visibleColumns,
+    setColumnVisible: (colId, visible) => context.value?.api.setColumnVisible(colId, visible),
+    setColumnWidth: (colId, width) => context.value?.api.setColumnWidth(colId, width),
+    moveColumn: (colId, toIndex) => context.value?.api.moveColumn(colId, toIndex),
+    setColumnPinned: (colId, pinned) => context.value?.api.setColumnPinned(colId, pinned),
+    getColumn: (colId) => context.value?.api.getColumn(colId),
+  };
 }

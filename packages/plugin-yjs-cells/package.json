@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-yjs-cells",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "GridStorm CRDT cell editing — conflict-free concurrent edits backed by Yjs. Pillar 1.3 of the collaboration roadmap.",
   "type": "module",
   "main": "./dist/index.cjs",

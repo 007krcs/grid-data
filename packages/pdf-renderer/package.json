@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/pdf-renderer",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "Canvas renderer with DOM text layer and annotation layer for GridStorm PDF",
   "license": "MIT",
   "type": "module",

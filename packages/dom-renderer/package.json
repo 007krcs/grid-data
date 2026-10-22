@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/dom-renderer",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "GridStorm DOM renderer with virtual scrolling",
   "type": "module",
   "main": "./dist/index.cjs",

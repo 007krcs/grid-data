@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-clipboard-pro",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "GridStorm clipboard pro — Excel-compatible copy/paste with range support, type coercion, and validation",
   "type": "module",
   "main": "./dist/index.cjs",

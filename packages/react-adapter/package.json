@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/react",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "GridStorm React adapter",
   "type": "module",
   "main": "./dist/index.cjs",

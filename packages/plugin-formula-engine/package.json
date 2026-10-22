@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-formula-engine",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "GridStorm formula engine — 50+ Excel-compatible functions, named ranges, and array formulas",
   "type": "module",
   "main": "./dist/index.cjs",

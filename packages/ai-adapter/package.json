@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/ai-adapter",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Vendor-neutral AI adapter for GridStorm — wire OpenAI, Anthropic, or any LLM behind a single interface that plugins consume.",
   "type": "module",
   "main": "./dist/index.cjs",

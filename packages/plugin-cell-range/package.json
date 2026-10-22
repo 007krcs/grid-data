@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-cell-range",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "Cell range selection with fill handle and auto-fill pattern detection",
   "type": "module",
   "main": "./dist/index.cjs",

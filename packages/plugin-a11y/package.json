@@ -1,6 +1,6 @@
 {
   "name": "@gridstorm/plugin-a11y",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "GridStorm accessibility plugin — WCAG 2.1 AA compliance with screen reader announcements, skip navigation, and high contrast support",
   "type": "module",
   "main": "./dist/index.cjs",

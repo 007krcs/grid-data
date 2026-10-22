@@ -1888,6 +1888,15 @@ off by default.
   O(chunk). Ceilings: `maxRows` 100k, `maxCells` 5M, raisable with a sink.
 
 ## 15.6 — Build & release constraints (added 2026-05-27)
+- **Root scripts must use double-quoted pnpm filters.** `--filter='./packages/*'`
+  is passed literally (quotes included) by cmd.exe, matches zero packages,
+  and `pnpm build` silently builds nothing on Windows. Fixed 2026-10-22 to
+  `--filter=\"./packages/*\"`, which works in sh and cmd. The root workspace
+  package was also renamed `gridstorm-monorepo` so it no longer shares the
+  name of `packages/gridstorm`.
+- **`pnpm verify:publish` now also fails when a tarball lacks the files its
+  manifest points at** (main/module/types/bin/exports). This is what catches a
+  package that was never built before it reaches npm.
 
 - **Internal deps use `workspace:*` and are rewritten at pack time only by
   pnpm**, not by npm. Both publish paths (`changeset publish` and

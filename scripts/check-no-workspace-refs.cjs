@@ -100,8 +100,18 @@ function newestTgz(dir) {
  * We read the gzipped tar, walk entries, and stop at the first match.
  */
 function readPkgJsonFromTarball(tgzPath) {
+  return readTarball(tgzPath).pkgJson;
+}
+
+/**
+ * Walk the gzipped tar once: return the package.json and the set of file
+ * paths inside it (with the leading `package/` stripped).
+ */
+function readTarball(tgzPath) {
   const zlib = require('zlib');
   const buf = zlib.gunzipSync(fs.readFileSync(tgzPath));
+  const files = new Set();
+  let pkgJson = null;
   // Tar block layout: 512-byte header, then file content padded to 512.
   let offset = 0;
   while (offset + 512 <= buf.length) {
@@ -116,13 +126,43 @@ function readPkgJsonFromTarball(tgzPath) {
     const size = parseInt(sizeOctal, 8) || 0;
     const dataStart = offset + 512;
     const dataEnd = dataStart + size;
+    if (name.startsWith('package/')) files.add(name.slice('package/'.length));
     if (name === 'package/package.json') {
-      return JSON.parse(buf.slice(dataStart, dataEnd).toString('utf8'));
+      pkgJson = JSON.parse(buf.slice(dataStart, dataEnd).toString('utf8'));
     }
     // Advance past data, rounded up to 512.
     offset = dataEnd + (512 - (size % 512)) % 512;
   }
-  throw new Error(`package.json not found inside ${tgzPath}`);
+  if (!pkgJson) throw new Error(`package.json not found inside ${tgzPath}`);
+  return { pkgJson, files };
+}
+
+/**
+ * Every file the manifest points consumers at (main, module, types, and the
+ * conditional exports) must physically exist in the tarball. This is what
+ * catches a package whose build never ran: the manifest looks fine, the
+ * tarball is just README + package.json, and `npm install` succeeds while
+ * every import fails.
+ */
+function findMissingEntryFiles(pkgJson, files) {
+  const wanted = new Set();
+  const add = (v) => {
+    if (typeof v === 'string' && !v.startsWith('http')) wanted.add(v.replace(/^\.\//, ''));
+  };
+  add(pkgJson.main);
+  add(pkgJson.module);
+  add(pkgJson.types);
+  add(pkgJson.typings);
+  if (pkgJson.bin) {
+    if (typeof pkgJson.bin === 'string') add(pkgJson.bin);
+    else Object.values(pkgJson.bin).forEach(add);
+  }
+  const walk = (node) => {
+    if (typeof node === 'string') add(node);
+    else if (node && typeof node === 'object') Object.values(node).forEach(walk);
+  };
+  if (pkgJson.exports) walk(pkgJson.exports);
+  return [...wanted].filter((f) => !files.has(f));
 }
 
 function findWorkspaceRefs(pkgJson) {
@@ -168,10 +208,23 @@ function checkPackages(tool) {
       }
 
       let inner;
+      let files;
       try {
-        inner = readPkgJsonFromTarball(tarball);
+        ({ pkgJson: inner, files } = readTarball(tarball));
       } catch (err) {
         failures.push({ pkg: pkgName, reason: `tarball read failed: ${err.message}` });
+        continue;
+      }
+
+      const missing = findMissingEntryFiles(inner, files);
+      if (missing.length > 0) {
+        failures.push({
+          pkg: pkgName,
+          reason: `tarball is missing files its manifest points at (was the package built?):\n${missing
+            .map((f) => `      ${f}`)
+            .join('\n')}`,
+        });
+        checked++;
         continue;
       }
 
@@ -224,10 +277,10 @@ function main() {
   }
 
   if (totalFailures > 0) {
-    console.error(`\nFAIL: ${totalFailures} package(s) would publish with unresolved workspace: refs.`);
+    console.error(`\nFAIL: ${totalFailures} package(s) would publish broken (missing entry files or unresolved workspace: refs).`);
     process.exit(1);
   }
-  console.log('\nOK: no workspace: refs survive into published tarballs.');
+  console.log('\nOK: every tarball ships its entry files and no workspace: refs survive.');
 }
 
 main();

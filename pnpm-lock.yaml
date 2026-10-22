@@ -1029,6 +1029,217 @@ importers:
       vue:
         specifier: '>=3.0.0'
         version: 3.5.31(typescript@5.9.3)
+    devDependencies:
+      '@gridstorm/ai-adapter':
+        specifier: workspace:*
+        version: link:../ai-adapter
+      '@gridstorm/angular':
+        specifier: workspace:*
+        version: link:../angular-adapter
+      '@gridstorm/codemod':
+        specifier: workspace:*
+        version: link:../codemod
+      '@gridstorm/core':
+        specifier: workspace:*
+        version: link:../core
+      '@gridstorm/dom-renderer':
+        specifier: workspace:*
+        version: link:../dom-renderer
+      '@gridstorm/i18n':
+        specifier: workspace:*
+        version: link:../i18n
+      '@gridstorm/license':
+        specifier: workspace:*
+        version: link:../license
+      '@gridstorm/mcp-server':
+        specifier: workspace:*
+        version: link:../mcp-server
+      '@gridstorm/pdf-core':
+        specifier: workspace:*
+        version: link:../pdf-core
+      '@gridstorm/pdf-plugin-form-fill':
+        specifier: workspace:*
+        version: link:../pdf-plugin-form-fill
+      '@gridstorm/pdf-plugin-intelligence':
+        specifier: workspace:*
+        version: link:../pdf-plugin-intelligence
+      '@gridstorm/pdf-plugin-pii':
+        specifier: workspace:*
+        version: link:../pdf-plugin-pii
+      '@gridstorm/pdf-plugin-text':
+        specifier: workspace:*
+        version: link:../pdf-plugin-text
+      '@gridstorm/pdf-renderer':
+        specifier: workspace:*
+        version: link:../pdf-renderer
+      '@gridstorm/pdf-theme':
+        specifier: workspace:*
+        version: link:../pdf-theme
+      '@gridstorm/platform-core':
+        specifier: workspace:*
+        version: link:../platform-core
+      '@gridstorm/plugin-a11y':
+        specifier: workspace:*
+        version: link:../plugin-a11y
+      '@gridstorm/plugin-adaptive-renderer':
+        specifier: workspace:*
+        version: link:../plugin-adaptive-renderer
+      '@gridstorm/plugin-aggregation':
+        specifier: workspace:*
+        version: link:../plugin-aggregation
+      '@gridstorm/plugin-ai':
+        specifier: workspace:*
+        version: link:../plugin-ai
+      '@gridstorm/plugin-ai-query':
+        specifier: workspace:*
+        version: link:../plugin-ai-query
+      '@gridstorm/plugin-anomaly':
+        specifier: workspace:*
+        version: link:../plugin-anomaly
+      '@gridstorm/plugin-cell-autocomplete':
+        specifier: workspace:*
+        version: link:../plugin-cell-autocomplete
+      '@gridstorm/plugin-cell-formula':
+        specifier: workspace:*
+        version: link:../plugin-cell-formula
+      '@gridstorm/plugin-cell-range':
+        specifier: workspace:*
+        version: link:../plugin-cell-range
+      '@gridstorm/plugin-charts':
+        specifier: workspace:*
+        version: link:../plugin-charts
+      '@gridstorm/plugin-clipboard':
+        specifier: workspace:*
+        version: link:../plugin-clipboard
+      '@gridstorm/plugin-clipboard-pro':
+        specifier: workspace:*
+        version: link:../plugin-clipboard-pro
+      '@gridstorm/plugin-collab':
+        specifier: workspace:*
+        version: link:../plugin-collab
+      '@gridstorm/plugin-column-autosize':
+        specifier: workspace:*
+        version: link:../plugin-column-autosize
+      '@gridstorm/plugin-column-pinning':
+        specifier: workspace:*
+        version: link:../plugin-column-pinning
+      '@gridstorm/plugin-column-reorder':
+        specifier: workspace:*
+        version: link:../plugin-column-reorder
+      '@gridstorm/plugin-column-resize':
+        specifier: workspace:*
+        version: link:../plugin-column-resize
+      '@gridstorm/plugin-comments':
+        specifier: workspace:*
+        version: link:../plugin-comments
+      '@gridstorm/plugin-conditional-formatting':
+        specifier: workspace:*
+        version: link:../plugin-conditional-formatting
+      '@gridstorm/plugin-context-menu':
+        specifier: workspace:*
+        version: link:../plugin-context-menu
+      '@gridstorm/plugin-editing':
+        specifier: workspace:*
+        version: link:../plugin-editing
+      '@gridstorm/plugin-excel-export':
+        specifier: workspace:*
+        version: link:../plugin-excel-export
+      '@gridstorm/plugin-filtering':
+        specifier: workspace:*
+        version: link:../plugin-filtering
+      '@gridstorm/plugin-formula':
+        specifier: workspace:*
+        version: link:../plugin-formula
+      '@gridstorm/plugin-formula-engine':
+        specifier: workspace:*
+        version: link:../plugin-formula-engine
+      '@gridstorm/plugin-grouping':
+        specifier: workspace:*
+        version: link:../plugin-grouping
+      '@gridstorm/plugin-intelligence-hub':
+        specifier: workspace:*
+        version: link:../plugin-intelligence-hub
+      '@gridstorm/plugin-intent-engine':
+        specifier: workspace:*
+        version: link:../plugin-intent-engine
+      '@gridstorm/plugin-master-detail':
+        specifier: workspace:*
+        version: link:../plugin-master-detail
+      '@gridstorm/plugin-nl-query':
+        specifier: workspace:*
+        version: link:../plugin-nl-query
+      '@gridstorm/plugin-pagination':
+        specifier: workspace:*
+        version: link:../plugin-pagination
+      '@gridstorm/plugin-pdf-export':
+        specifier: workspace:*
+        version: link:../plugin-pdf-export
+      '@gridstorm/plugin-pivoting':
+        specifier: workspace:*
+        version: link:../plugin-pivoting
+      '@gridstorm/plugin-presence':
+        specifier: workspace:*
+        version: link:../plugin-presence
+      '@gridstorm/plugin-privacy-lens':
+        specifier: workspace:*
+        version: link:../plugin-privacy-lens
+      '@gridstorm/plugin-row-pinning':
+        specifier: workspace:*
+        version: link:../plugin-row-pinning
+      '@gridstorm/plugin-row-reorder':
+        specifier: workspace:*
+        version: link:../plugin-row-reorder
+      '@gridstorm/plugin-selection':
+        specifier: workspace:*
+        version: link:../plugin-selection
+      '@gridstorm/plugin-semantic':
+        specifier: workspace:*
+        version: link:../plugin-semantic
+      '@gridstorm/plugin-sorting':
+        specifier: workspace:*
+        version: link:../plugin-sorting
+      '@gridstorm/plugin-sparklines':
+        specifier: workspace:*
+        version: link:../plugin-sparklines
+      '@gridstorm/plugin-ssrm':
+        specifier: workspace:*
+        version: link:../plugin-ssrm
+      '@gridstorm/plugin-state-persistence':
+        specifier: workspace:*
+        version: link:../plugin-state-persistence
+      '@gridstorm/plugin-status-bar':
+        specifier: workspace:*
+        version: link:../plugin-status-bar
+      '@gridstorm/plugin-streaming':
+        specifier: workspace:*
+        version: link:../plugin-streaming
+      '@gridstorm/plugin-temporal':
+        specifier: workspace:*
+        version: link:../plugin-temporal
+      '@gridstorm/plugin-time-travel':
+        specifier: workspace:*
+        version: link:../plugin-time-travel
+      '@gridstorm/plugin-tree-data':
+        specifier: workspace:*
+        version: link:../plugin-tree-data
+      '@gridstorm/plugin-validation':
+        specifier: workspace:*
+        version: link:../plugin-validation
+      '@gridstorm/plugin-yjs-cells':
+        specifier: workspace:*
+        version: link:../plugin-yjs-cells
+      '@gridstorm/react':
+        specifier: workspace:*
+        version: link:../react-adapter
+      '@gridstorm/svelte':
+        specifier: workspace:*
+        version: link:../svelte-adapter
+      '@gridstorm/theme-default':
+        specifier: workspace:*
+        version: link:../theme-default
+      '@gridstorm/vue':
+        specifier: workspace:*
+        version: link:../vue-adapter
 
   packages/i18n:
     devDependencies:
@@ -5446,7 +5657,7 @@ packages:
     peerDependencies:
       '@microsoft/api-extractor': ^7.36.0
       '@swc/core': ^1
-      postcss: ^8.5.23
+      postcss: ^8.5.18
       typescript: '>=4.5.0'
     peerDependenciesMeta:
       '@microsoft/api-extractor':

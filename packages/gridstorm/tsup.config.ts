@@ -17,6 +17,8 @@ export default defineConfig({
   dts: true,
   splitting: true,
   clean: true,
+  // dist/theme.css backs the `gridstorm/theme` export; the TS entries above cannot produce CSS.
+  onSuccess: 'node build-theme.cjs',
   external: [
     'react',
     'react-dom',
